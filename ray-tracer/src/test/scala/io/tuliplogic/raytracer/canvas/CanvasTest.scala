@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.canvas
 
-import io.tuliplogic.raytracer.canvas.model.{Canvas, Color}
+import io.tuliplogic.raytracer.model.{Canvas, Color}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio._

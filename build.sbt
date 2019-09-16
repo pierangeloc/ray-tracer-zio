@@ -104,7 +104,9 @@ lazy val geometry = project
       cats,
       catsEffect,
       singletonOps,
-      log4CatsSlf4j
+      log4CatsSlf4j,
+      scalaTest % "test",
+      scalaCheck % "test"
     )
   )
   .dependsOn(commons)
@@ -117,6 +119,7 @@ lazy val commons = project
     libraryDependencies ++= Seq(
       zio,
       cats,
+      mouse
     )
   )
 

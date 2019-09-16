@@ -9,9 +9,12 @@ object Dependencies {
   val catsEffectVersion = "2.0.0"
   val circeVersion      = "0.12.1"
 
-  lazy val scalaTest  = "org.scalatest" %% "scalatest"   % "3.0.5"
+  lazy val scalaTest  = "org.scalatest"  %% "scalatest"   % "3.0.5"
+  lazy val scalaCheck = "org.scalacheck" %% "scalacheck"  % "1.14.0"
+
   lazy val cats       = "org.typelevel" %% "cats-core"   % catsVersion
   lazy val catsEffect = "org.typelevel" %% "cats-effect" % catsEffectVersion
+  lazy val mouse      = "org.typelevel" %% "mouse"       % "0.23"
 
   lazy val zio        = "dev.zio"       %% "zio"              % zioVersion
   lazy val zioCats    = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
