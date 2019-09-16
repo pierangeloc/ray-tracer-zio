@@ -19,28 +19,28 @@ object model {
     override def toString: String = s"(${pixel.x}, ${pixel.y}, [${color.red}, ${color.green}, ${color.blue}])"
   }
 
-  abstract class Canvas(width: Int, height: Int) {
-    val rows: Chunk[Chunk[Color]]
+  abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array[Color]]) {
+    private def checkAccessIndex(x: Int, y: Int): IO[IndexExceedCanvasDimension, Unit] =
+      if (x >= 0 && x < width_ && y >= 0 && y < height_) IO.unit
+      else IO.fail(IndexExceedCanvasDimension(x, y, width_, height_))
 
-    private def checkAccessIndex(i: Int, j: Int): IO[IndexExceedCanvasDimension, Unit] =
-      if (i >= 0 && i < width && j >= 0 && j < height) IO.unit
-      else IO.fail(IndexExceedCanvasDimension(i, j, width, height))
+    def width: UIO[Int] = UIO.succeed(width_)
+    def height: UIO[Int] = UIO.succeed(height_)
+    def get(x: Int, y: Int): IO[IndexExceedCanvasDimension, Color] =
+      checkAccessIndex(x, y) *> UIO.succeed(rows(x)(y))
 
-    def get(i: Int, j: Int): IO[IndexExceedCanvasDimension, Color] =
-      checkAccessIndex(i, j) *> UIO.succeed(rows.toArray.apply(i).toArray.apply(j))
-
-    def update(x: Int, y, color: Color): IO[IndexExceedCanvasDimension, Unit] =
-      checkAccessIndex(x, y) *> UIO.effectTotal{
-        val colI = rows.toArray.apply(x)
-        colI.toArray.update(y, color)
+    def update(x: Int, y: Int, color: Color): IO[IndexExceedCanvasDimension, Unit] =
+      checkAccessIndex(x, y) *> UIO.effectTotal {
+        val colI = rows(x)
+        colI.update(y, color)
       }
   }
 
   object Canvas {
-    def create(width: Int, height: Int): Canvas = new Canvas(width, height) {
-      override val rows: Chunk[Chunk[Color]] = Chunk.fromArray(Array.fill(height)(Chunk.fromArray(Array.fill(width)(Color.black))))
+    def create(width: Int, height: Int): UIO[Canvas] = UIO.effectTotal {
+      new Canvas(width, height, Array.fill(width)(Array.fill(height)(Color.black))){}
     }
-
-
   }
+
+
 }
