@@ -7,20 +7,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalacheck._
 import zio._
 
-class MatrixOpsTest extends WordSpec with GeneratorDrivenPropertyChecks with DefaultRuntime {
-
-  def matrixGenWithDim(m: Int, n: Int): Gen[Matrix] =
-    for {
-      elems  <- Gen.listOfN(m * n, Gen.chooseNum[Double](-1000, 1000))
-      matrix <- Gen.const(unsafeRun(Matrix.fromRows(m, n, Chunk.fromIterable(elems.grouped(n).map(Chunk.fromIterable).toIterable))))
-    } yield matrix
-
-  def matrixGen: Gen[Matrix] =
-    for {
-      m      <- Gen.chooseNum(1, 100)
-      n      <- Gen.chooseNum(1, 100)
-      matrix <- matrixGenWithDim(m, n)
-    } yield matrix
+class MatrixOpsTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
 
   "LiveMatrixOps" should {
     import LiveMatrixOps._

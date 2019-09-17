@@ -85,9 +85,11 @@ object MatrixOps {
    */
   trait Service[R] {
     def almostEqual(m1: Matrix, m2: Matrix, maxSquaredError: Double): ZIO[R, MatrixError, Boolean]
+    def opposite(m: Matrix): ZIO[R, MatrixError, Matrix]
     def equal(m1: Matrix, m2: Matrix): ZIO[R, MatrixError, Boolean]
     def add(m1: Matrix, m2: Matrix): ZIO[R, MatrixError, Matrix]
     def mul(m1: Matrix, m2: Matrix): ZIO[R, MatrixError, Matrix]
+    def had(m1: Matrix, m2: Matrix): ZIO[R, MatrixError, Matrix]
     def invert(m: Matrix): ZIO[R, MatrixError, Matrix]
   }
 
@@ -95,18 +97,22 @@ object MatrixOps {
 
     import ChunkUtils._
     override def matrixOps: Service[Any] = new Service[Any] {
-      override def add(m1: Matrix, m2: Matrix): ZIO[Any, MatrixError, Matrix] =
+
+      private def elementWiseOp(m1: Matrix, m2: Matrix)(op: (Double, Double) => Double): ZIO[Any, MatrixError, Matrix] =
         for {
           m1_m    <- m1.m
           m1_n    <- m1.n
           m2_m    <- m2.m
           m2_n    <- m2.n
-          _       <- if (!(m1_m == m2_m && m1_n == m2_n)) IO.fail(MatrixDimError(s"can't add a matrix $m1_m x $m1_n and a matrix $m2_m x $m2_n)")) else IO.unit
+          _       <- if (!(m1_m == m2_m && m1_n == m2_n)) IO.fail(MatrixDimError(s"can't perform element-wise operation on a matrix $m1_m x $m1_n and a matrix $m2_m x $m2_n)")) else IO.unit
           rows1   <- m1.rows
           rows2   <- m2.rows
-          addRows <- UIO(rows1.zipWith(rows2) { case (row1, row2) => row1.zipWith(row2)(_ + _) })
-          res     <- Matrix.fromRows(m1_m, m1_n, addRows)
+          opRows <- UIO(rows1.zipWith(rows2) { case (row1, row2) => row1.zipWith(row2)(op) })
+          res     <- Matrix.fromRows(m1_m, m1_n, opRows)
         } yield res
+
+      override def add(m1: Matrix, m2: Matrix): ZIO[Any, MatrixError, Matrix] =
+        elementWiseOp(m1, m2)(_ + _)
 
       override def mul(m1: Matrix, m2: Matrix): ZIO[Any, MatrixError, Matrix] = for {
         m1_m    <- m1.m
@@ -135,11 +141,8 @@ object MatrixOps {
           nrRows <- m.m
           nrCols <- m.n
           arrayElems: Array[Double] = rows.flatten.toArray
-          _ = println("matrix elements: " + arrayElems.mkString(", "))
           bm = DenseMatrix.create(nrRows, nrCols, arrayElems)
-          _ = println("breeze matrix: \n" + bm)
-          _ = println("inverted matrix: \n" + inv(bm))
-            inverse <- ZIO.effect(inv(bm)).mapError(_ => MatrixError.MatrixNotInvertible)
+          inverse <- ZIO.effect(inv(bm)).mapError(_ => MatrixError.MatrixNotInvertible)
           res <- io.tuliplogic.geometry.matrix.Matrix.fromRows(nrRows, nrCols, Chunk.fromArray(inverse.data.grouped(nrCols).map(Chunk.fromArray).toArray))
         } yield res
       }
@@ -165,6 +168,16 @@ object MatrixOps {
         diff    <- UIO.succeed(rows1.flatten.zipWith(rows2.flatten)(_ - _))
         squaredError <- IO.effectTotal(ChunkUtils.l2(diff))
       } yield squaredError / (m1_m * m2_n) < maxMSEr
+
+      override def opposite(m: Matrix): ZIO[Any, MatrixError, Matrix] = for {
+        m_m  <- m.m
+        m_n  <- m.n
+        rows <- m.rows
+        res  <- Matrix.fromRows(m_m, m_n, rows.map(_.map(x => -x)))
+      } yield res
+
+      override def had(m1: Matrix, m2: Matrix): ZIO[Any, MatrixError, Matrix] =
+        elementWiseOp(m1, m2)(_ * _)
     }
   }
 
