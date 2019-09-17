@@ -103,6 +103,8 @@ lazy val geometry = project
       zioCats,
       cats,
       catsEffect,
+      breeze,
+      breezeNative,
       singletonOps,
       log4CatsSlf4j,
       scalaTest % "test",
