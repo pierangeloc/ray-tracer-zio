@@ -28,3 +28,8 @@ object CanvasError {
     override def getMessage = s"Attempted to access index ($x, $y) in a canvas $width x $height"
   }
 }
+
+sealed trait IOError extends RayTracerError
+object IOError {
+  case class CanvasRenderingError(override val getMessage: String, override val getCause: Throwable) extends IOError
+}

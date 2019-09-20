@@ -132,6 +132,7 @@ lazy val `ray-tracer` = project
     name := "ray-tracer",
     libraryDependencies ++= Seq(
       zio,
+      zioNio,
       zioCats,
       cats,
       catsEffect,

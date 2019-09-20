@@ -1,8 +1,7 @@
 package io.tuliplogic.raytracer.model
 
 import io.tuliplogic.raytracer.errors.CanvasError.IndexExceedCanvasDimension
-import zio.{IO, UIO}
-
+import zio.{Chunk, IO, UIO}
 
 abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array[Color]]) {
   private def checkAccessIndex(x: Int, y: Int): IO[IndexExceedCanvasDimension, Unit] =
@@ -19,6 +18,9 @@ abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array
       val colI = rows(x)
       colI.update(y, color)
     }
+
+  def rows: UIO[Array[Array[Color]]] =
+    UIO.succeed(rows)
 }
 
 object Canvas {

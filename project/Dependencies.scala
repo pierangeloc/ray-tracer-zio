@@ -1,26 +1,32 @@
 import sbt._
 
 object Dependencies {
-  val http4sVersion     = "0.21.0-M4"
-  val zioVersion        = "1.0.0-RC12-1"
-  val zioCatsVersion    = "2.0.0.0-RC3"
+  val http4sVersion      = "0.21.0-M4"
+
+  val zioVersion         = "1.0.0-RC12-1"
+  val zioCatsVersion     = "2.0.0.0-RC3"
+  val zioNioVersion      = "0.1.3-M6"
+  val zioDelegateVersion = "0.0.5"
+
   val fs2Version        = "2.0.0"
   val catsVersion       = "2.0.0"
   val catsEffectVersion = "2.0.0"
   val circeVersion      = "0.12.1"
 
-  lazy val scalaTest  = "org.scalatest"  %% "scalatest"   % "3.0.5"
-  lazy val scalaCheck = "org.scalacheck" %% "scalacheck"  % "1.14.0"
+  lazy val scalaTest   = "org.scalatest"  %% "scalatest"   % "3.0.5"
+  lazy val scalaCheck  = "org.scalacheck" %% "scalacheck"  % "1.14.0"
 
-  lazy val cats       = "org.typelevel" %% "cats-core"   % catsVersion
-  lazy val catsEffect = "org.typelevel" %% "cats-effect" % catsEffectVersion
-  lazy val catsLaws   = "org.typelevel" %% "cats-laws"   % "1.1.0"
-  lazy val mouse      = "org.typelevel" %% "mouse"       % "0.23"
+  lazy val cats        = "org.typelevel" %% "cats-core"   % catsVersion
+  lazy val catsEffect  = "org.typelevel" %% "cats-effect" % catsEffectVersion
+  lazy val catsLaws    = "org.typelevel" %% "cats-laws"   % "1.1.0"
 
-  lazy val zio        = "dev.zio"       %% "zio"              % zioVersion
-  lazy val zioCats    = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
+  lazy val mouse       = "org.typelevel" %% "mouse"       % "0.23"
+  lazy val zio         = "dev.zio"       %% "zio"              % zioVersion
+  lazy val zioCats     = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
+  lazy val zioNio      = "dev.zio"       %% "zio-nio"          % zioNioVersion
+  lazy val zioDelegate = "dev.zio"       %% "zio-delegate"     % zioDelegateVersion
 
-  lazy val fs2 = "co.fs2" %% "fs2-io" % fs2Version
+  lazy val fs2         = "co.fs2"       %% "fs2-io" % fs2Version
 
   lazy val http4sServer  = "org.http4s" %% "http4s-blaze-server" % http4sVersion
   lazy val http4sClient  = "org.http4s" %% "http4s-blaze-client" % http4sVersion
