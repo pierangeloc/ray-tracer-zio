@@ -25,6 +25,6 @@ abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array
 
 object Canvas {
   def create(width: Int, height: Int): UIO[Canvas] = UIO.effectTotal {
-    new Canvas(width, height, Array.fill(width)(Array.fill(height)(Color.black))){}
+    new Canvas(width, height, Array.fill(height)(Array.fill(width)(Color.black))){}
   }
 }

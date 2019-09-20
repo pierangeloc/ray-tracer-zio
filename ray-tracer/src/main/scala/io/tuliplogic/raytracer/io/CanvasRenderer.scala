@@ -1,11 +1,9 @@
 package io.tuliplogic.raytracer.io
 
-import java.io.OutputStream
-import java.nio.file.Path
+import java.nio.file.{Path, StandardOpenOption}
 
 import io.tuliplogic.raytracer.errors.IOError
 import io.tuliplogic.raytracer.model.{Canvas, Color}
-import zio.blocking.Blocking
 import zio.blocking.Blocking.Live
 import zio.nio.channels.AsynchronousFileChannel
 import zio.stream._
@@ -52,16 +50,16 @@ object CanvasRenderer {
 
       def channelSink(channel: AsynchronousFileChannel): Sink[Exception, Nothing, Chunk[Byte], Int] =
         Sink.foldM(0) { (pos: Int, chunk: Chunk[Byte]) =>
-          channel.write(chunk, pos).flatMap(newPos => UIO(ZSink.Step.more(newPos)))
+          channel.write(chunk, pos).flatMap(written => UIO(ZSink.Step.more(pos + written)))
         }
 
       override def render(canvas: Canvas, maxColor: Int): ZIO[Any, IOError, Unit] =
         (for {
-          channel <- AsynchronousFileChannel.open(path, Set.empty).provide(self)
+          channel <- AsynchronousFileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ).provide(self)
           _       <- (
             Stream.fromEffect(headers(canvas, maxColor).map(Chunk(_))) ++
             rowsStream(canvas, maxColor)
-            ).map(_.flatMap(_.toCharArray.map(_.toByte) |> Chunk.fromArray))
+            ).tap(s => UIO.effectTotal(print(s.toString() + "---------"))).map(_.flatMap(_.getBytes |> Chunk.fromArray))
            .run(channelSink(channel))
         } yield ()).mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
 
