@@ -9,6 +9,7 @@ import zio.nio.channels.AsynchronousFileChannel
 import zio.stream._
 import zio.{Chunk, UIO, ZIO}
 import mouse.all._
+import zio.blocking.Blocking
 
 import scala.math.max
 
@@ -21,7 +22,8 @@ object CanvasRenderer {
     def render(canvas: Canvas, maxColor: Int): ZIO[R, IOError, Unit]
   }
 
-  class PPMCanvasRenderer(path: Path) extends CanvasRenderer with Live { self =>
+  trait PPMCanvasRenderer extends CanvasRenderer with Blocking { self =>
+    def path: Path
     override def renderer: Service[Any] = new Service[Any] {
 
       def formatHeader: String = "P3"
