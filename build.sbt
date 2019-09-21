@@ -103,6 +103,7 @@ lazy val geometry = project
       zioCats,
       cats,
       catsEffect,
+      fs2,
       breeze,
       breezeNative,
       singletonOps,

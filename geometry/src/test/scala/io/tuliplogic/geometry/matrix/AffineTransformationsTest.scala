@@ -9,6 +9,7 @@ import zio.stream._
 import zio._
 
 class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
+  import Types._
 
   import LiveMatrixOps.matrixOps
 
@@ -17,10 +18,10 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
       forAll {
         for {
           x <- reasonableDouble
-            y <- reasonableDouble
-            z <- reasonableDouble
-            point <- pointGen
-        } yield (x, y, z, AffineTransformations.translation(x, y, z), point)
+          y <- reasonableDouble
+          z <- reasonableDouble
+          point <- pointGen
+        } yield (x, y, z, AffineTransformations.translate(x, y, z), point)
       } { case (x, y, z, translation, point) =>
         unsafeRun(
           for {
@@ -39,10 +40,10 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
       forAll {
         for {
           x <- reasonableDouble
-            y <- reasonableDouble
-            z <- reasonableDouble
-            vector <- vectorGen
-        } yield (AffineTransformations.translation(x, y, z), vector)
+          y <- reasonableDouble
+          z <- reasonableDouble
+          vector <- vectorGen
+        } yield (AffineTransformations.translate(x, y, z), vector)
       } { case (translation, vector) =>
         unsafeRun(
           for {
@@ -59,10 +60,10 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
       forAll {
         for {
           x <- reasonableDouble
-            y <- reasonableDouble
-            z <- reasonableDouble
-            point <- pointGen
-        } yield (x, y, z, AffineTransformations.translation(x, y, z).flatMap(matrixOps.invert), point)
+          y <- reasonableDouble
+          z <- reasonableDouble
+          point <- pointGen
+        } yield (x, y, z, AffineTransformations.translate(x, y, z).flatMap(matrixOps.invert), point)
       } { case (x, y, z, inverted, point) =>
         unsafeRun(
           for {
@@ -86,7 +87,7 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
           y <- reasonableDouble
           z <- reasonableDouble
           point <- pointGen
-        } yield (x, y, z, AffineTransformations.scaling(x, y, z), point)
+        } yield (x, y, z, AffineTransformations.scale(x, y, z), point)
       } { case (x, y, z, scaling, point) =>
         unsafeRun(
           for {
@@ -123,12 +124,13 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
       unsafeRun {
         for {
           rotationMatrix   <- rotateZ(rotationAngle)
-          scalingMatrix    <- scaling(640 / 2, 480 / 2, 0)
-          translationMtx   <- translation(640 / 2, 480 / 2, 0)
+          scalingMatrix    <- scale(640 / 2, 480 / 2, 0)
+          translationMtx   <- translate(640 / 2, 480 / 2, 0)
           composed1        <- matrixOps.mul(rotationMatrix, scalingMatrix)
           composed2        <- matrixOps.mul(translationMtx, composed1)
           horizontalRadius <- vector(1, 0, 0)
-          positions        <- Stream.unfoldM(horizontalRadius)(v => matrixOps.mul(composed2, v).map(vv => Some((vv, vv)))).take(12).run(Sink.collectAll)
+          str = Stream.unfoldM(horizontalRadius)(v => matrixOps.mul(composed2, v).map(vv => Some((vv, vv)))).take(12)
+          positions        <- str.run(Sink.collectAll[M])
           _                <- ZIO.traverse(positions) { pos =>
             for {
               x <- pos.get(0, 0)

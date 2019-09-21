@@ -9,17 +9,20 @@ import zio._
 
 class MatrixOpsTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
 
+  import Types._
+  import vectorizable.comp
+
   "LiveMatrixOps" should {
     import LiveMatrixOps._
 
     "add correctly 2 matrices" in {
       unsafeRun {
         for {
-          m1         <- Matrix.fromRows(3, 2, Chunk(Chunk(1, 2), Chunk(3, 4), Chunk(5, 6)))
-          m2         <- Matrix.fromRows(3, 2, Chunk(Chunk(10, 20), Chunk(30, 40), Chunk(50, 60)))
+          m1         <- factory.fromRows(3, 2, comp(comp(1d, 2d), comp(3d, 4d), comp(5d, 6d)))
+          m2         <- factory.fromRows(3, 2, comp(comp(10d, 20d), comp(30d, 40d), comp(50d, 60d)))
           plusMatrix <- matrixOps.add(m1, m2)
           plusRows   <- plusMatrix.rows
-          _          <- IO.effect(plusRows shouldEqual Chunk(Chunk(11, 22), Chunk(33, 44), Chunk(55, 66)))
+          _          <- IO.effect(plusRows shouldEqual comp(comp(11d, 22d), comp(33d, 44d), comp(55d, 66d)))
         } yield ()
       }
     }
@@ -32,7 +35,7 @@ class MatrixOpsTest extends WordSpec with GeneratorDrivenPropertyChecks with Gen
           m1 <- matrixGenWithDim(m, n)
           m2 <- matrixGenWithDim(m, n)
           m3 <- matrixGenWithDim(m, n)
-          zero <- Gen.const(unsafeRun(Matrix.zero(m, n)))
+          zero <- Gen.const(unsafeRun(factory.zero(m, n)))
         } yield (m1, m2, m3, zero)
       } { case (m1, m2, m3, zero) =>
           unsafeRun (
@@ -55,10 +58,10 @@ class MatrixOpsTest extends WordSpec with GeneratorDrivenPropertyChecks with Gen
       "multiply correctly 2 matrices" in {
         unsafeRun {
           for {
-            m1         <- Matrix.fromRows(3, 4, Chunk(Chunk(1, 2, 3, 4), Chunk(5, 6, 7, 8), Chunk(9, 10, 11, 12)))
-            m2         <- Matrix.fromRows(4, 2, Chunk(Chunk(1, 2), Chunk(3, 4), Chunk(5, 6), Chunk(7, 8)))
+            m1         <- factory.fromRows(3, 4, comp(comp(1d, 2d, 3d, 4d), comp(5d, 6d, 7d, 8d), comp(9d, 10d, 11d, 12d)))
+            m2         <- factory.fromRows(4, 2, comp(comp(1d, 2d), comp(3d, 4d), comp(5d, 6d), comp(7d, 8d)))
             mulMatrix  <- matrixOps.mul(m1, m2)
-            expected   <- Matrix.fromRows(3, 2, Chunk(Chunk(50, 60), Chunk(114, 140), Chunk(178, 220)))
+            expected   <- factory.fromRows(3, 2, comp(comp(50d, 60d), comp(114d, 140d), comp(178d, 220d)))
             equality   <- matrixOps.equal(mulMatrix, expected)
             _          <- IO.effect(equality shouldEqual true)
           } yield ()
@@ -72,7 +75,7 @@ class MatrixOpsTest extends WordSpec with GeneratorDrivenPropertyChecks with Gen
           m1 <- matrixGenWithDim(m, m)
           m2 <- matrixGenWithDim(m, m)
           m3 <- matrixGenWithDim(m, m)
-          idM <- Gen.const(unsafeRun(Matrix.eye(m)))
+          idM <- Gen.const(unsafeRun(factory.eye(m)))
         } yield (m1, m2, m3, idM)
       } { case (m1, m2, m3, idM) =>
         unsafeRun (
@@ -101,10 +104,14 @@ class MatrixOpsTest extends WordSpec with GeneratorDrivenPropertyChecks with Gen
           //​ 	    |  7 |  5 |  6 |  1 |
           //​ 	    | -6 |  0 |  9 |  6 |
           //​ 	    | -3 |  0 | -9 | -4 |
-          m          <- Matrix.fromRows(4, 4, Chunk(Chunk(8, -5, 9, 2), Chunk(7, 5, 6, 1), Chunk(-6, 0, 9, 6), Chunk(-3, 0, -9, -4)))
+          m          <- factory.fromRows(4, 4, comp(
+            comp(8d, -5d, 9d, 2d),
+            comp(7d, 5d, 6d, 1d),
+            comp(-6d, 0d, 9d, 6d),
+            comp(-3d, 0d, -9d, -4d)))
           mulMatrix  <- matrixOps.invert(m)
           expectedId <- matrixOps.mul(m, mulMatrix)
-          eye        <- Matrix.eye(4)
+          eye        <- factory.eye(4)
           equality   <- matrixOps.almostEqual(expectedId, eye, 10e-9)
           _          <- IO.effect(equality shouldEqual true)
         } yield ()
@@ -114,9 +121,17 @@ class MatrixOpsTest extends WordSpec with GeneratorDrivenPropertyChecks with Gen
     "transpose a matrix" in {
       unsafeRun {
         for {
-          m           <- Matrix.fromRows(3, 4, Chunk(Chunk(1, 2, 3, 4), Chunk(5, 6, 7, 8), Chunk(9, 10, 11, 12)))
+          m           <- factory.fromRows(3, 4, comp(
+            comp(1d, 2d, 3d, 4d),
+            comp(5d, 6d, 7d, 8d),
+            comp(9d, 10d, 11d, 12d)
+          ))
           transposed  <- m.transpose
-          expected   <- Matrix.fromRows(4, 3, Chunk(Chunk(1, 5, 9), Chunk(2, 6, 10), Chunk(3, 7, 11), Chunk(4, 8, 12)))
+          expected   <- factory.fromRows(4, 3, comp(
+            comp(1d, 5d, 9d),
+            comp(2d, 6d, 10d),
+            comp(3d, 7d, 11d),
+            comp(4d, 8d, 12d)))
           equality   <- matrixOps.equal(transposed, expected)
           _          <- IO.effect(equality shouldEqual true)
         } yield ()
