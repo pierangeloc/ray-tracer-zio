@@ -120,6 +120,7 @@ lazy val commons = project
     name := "commons",
     libraryDependencies ++= Seq(
       zio,
+      zioStreams,
       cats,
       mouse
     )

@@ -11,12 +11,12 @@ abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array
   def width: UIO[Int] = UIO.succeed(width_)
   def height: UIO[Int] = UIO.succeed(height_)
   def get(x: Int, y: Int): IO[IndexExceedCanvasDimension, Color] =
-    checkAccessIndex(x, y) *> UIO.succeed(rows(x)(y))
+    checkAccessIndex(x, y) *> UIO.succeed(rows(y)(x))
 
   def update(x: Int, y: Int, color: Color): IO[IndexExceedCanvasDimension, Unit] =
     checkAccessIndex(x, y) *> UIO.effectTotal {
-      val colI = rows(x)
-      colI.update(y, color)
+      val colI = rows(y)
+      colI.update(x, color)
     }
 
   def rows: UIO[Array[Array[Color]]] =

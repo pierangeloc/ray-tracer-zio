@@ -4,7 +4,9 @@ import io.tuliplogic.geometry.matrix.MatrixOps.LiveMatrixOps
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import zio.{DefaultRuntime, IO}
+import zio.{DefaultRuntime, IO, UIO}
+import zio.stream._
+import zio._
 
 class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
 
@@ -111,5 +113,37 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
     "" in {
       pending
     }
+  }
+
+  "all transformations" should {
+    "compose" in {
+      import AffineTransformations._
+      val center = point(0, 0, 0)
+      val rotationAngle = scala.math.Pi / 6
+      unsafeRun {
+        for {
+          rotationMatrix   <- rotateZ(rotationAngle)
+          scalingMatrix    <- scaling(640 / 2, 480 / 2, 0)
+          translationMtx   <- translation(640 / 2, 480 / 2, 0)
+          composed1        <- matrixOps.mul(rotationMatrix, scalingMatrix)
+          composed2        <- matrixOps.mul(translationMtx, composed1)
+          horizontalRadius <- vector(1, 0, 0)
+          positions        <- Stream.unfoldM(horizontalRadius)(v => matrixOps.mul(composed2, v).map(vv => Some((vv, vv)))).take(12).run(Sink.collectAll)
+          _                <- ZIO.traverse(positions) { pos =>
+            for {
+              x <- pos.get(0, 0)
+              y <- pos.get(1, 0)
+              z <- pos.get(2, 0)
+              k <- pos.get(3, 0)
+              _ <- IO(println(s"($x, $y, $z, $k)"))
+            } yield ()
+          }
+          _                <- console.putStrLn(positions.mkString("\n"))
+        } yield ()
+
+      }
+
+    }
+
   }
 }

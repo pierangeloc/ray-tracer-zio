@@ -16,7 +16,7 @@ object AffineTransformations {
    * - a vector cannot be translated, i.e. if I translate a vector I get the same vector back, as a vector can be seen as always starting from the origin
    */
 
-  def point(x: Double, y: Double, z: Double): UIO[Col] = Matrix.createColVector(Chunk(x, y, z, 1))
+  def point(x: Double, y: Double, z: Double): UIO[Col]  = Matrix.createColVector(Chunk(x, y, z, 1))
   def vector(x: Double, y: Double, z: Double): UIO[Col] = Matrix.createColVector(Chunk(x, y, z, 0))
 
   def translation(x: Double, y: Double, z: Double): UIO[Matrix] =

@@ -1,17 +1,16 @@
-package io.tuliplogic.raytracer.io
+package io.tuliplogic.raytracer.io.rendering
 
 import java.nio.file.{Path, StandardOpenOption}
 
 import io.tuliplogic.raytracer.errors.IOError
 import io.tuliplogic.raytracer.model.{Canvas, Color}
-import zio.blocking.Blocking.Live
 import zio.nio.channels.AsynchronousFileChannel
 import zio.stream._
 import zio.{Chunk, UIO, ZIO}
 import mouse.all._
 import zio.blocking.Blocking
 
-import scala.math.max
+import scala.math.min
 
 trait CanvasRenderer {
   def renderer: CanvasRenderer.Service[Any]
@@ -39,9 +38,9 @@ object CanvasRenderer {
 
       def rowToString(row: Array[Color], maxColor: Int): Chunk[String] = Chunk.fromArray(row).map {
         case Color(r, g, b) =>
-          val cappedR = max((r * maxColor).toInt, maxColor)
-          val cappedG = max((g * maxColor).toInt, maxColor)
-          val cappedB = max((b * maxColor).toInt, maxColor)
+          val cappedR = min((r * maxColor).toInt, maxColor)
+          val cappedG = min((g * maxColor).toInt, maxColor)
+          val cappedB = min((b * maxColor).toInt, maxColor)
           s"$cappedR $cappedG $cappedB "
       } ++ Chunk.single("\n")
 

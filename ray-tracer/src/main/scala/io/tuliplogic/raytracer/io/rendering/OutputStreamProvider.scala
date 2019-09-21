@@ -1,4 +1,4 @@
-package io.tuliplogic.raytracer.io
+package io.tuliplogic.raytracer.io.rendering
 
 import java.io.OutputStream
 

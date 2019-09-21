@@ -20,8 +20,9 @@ object Dependencies {
   lazy val catsEffect  = "org.typelevel" %% "cats-effect" % catsEffectVersion
   lazy val catsLaws    = "org.typelevel" %% "cats-laws"   % "1.1.0"
 
-  lazy val mouse       = "org.typelevel" %% "mouse"       % "0.23"
+  lazy val mouse       = "org.typelevel" %% "mouse"            % "0.23"
   lazy val zio         = "dev.zio"       %% "zio"              % zioVersion
+  lazy val zioStreams  = "dev.zio"       %% "zio-streams"      % zioVersion
   lazy val zioCats     = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
   lazy val zioNio      = "dev.zio"       %% "zio-nio"          % zioNioVersion
   lazy val zioDelegate = "dev.zio"       %% "zio-delegate"     % zioDelegateVersion

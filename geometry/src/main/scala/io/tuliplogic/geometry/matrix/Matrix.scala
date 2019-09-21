@@ -16,7 +16,15 @@ class Matrix private (private val m_ : Int, n_ : Int, rows_ : Chunk[Chunk[Double
   def cols: UIO[Chunk[Chunk[Double]]] = UIO.succeed(cols_)
   def transpose: UIO[Matrix]          = UIO.succeed(new Matrix(n_, m_, cols_))
   def get(i: Int, j: Int): IO[IndexExceedMatrixDimension, Double] =
-    Matrix.checkAccessIndex(i, j, m_, n_) *> UIO.succeed(rows_.toArray.apply(i).toArray.apply(j))
+    Matrix.checkAccessIndex(i, j, m_, n_) *>
+//    UIO.effectTotal(5.0)
+      UIO.effectTotal {
+        println(s"i, j: $i, $j")
+        println(rows_)
+        val res = rows_.toArray.apply(i).toArray.apply(j)
+        println("result: "+ res)
+        res
+      }
 
   override def toString: String = rows_.map(rs => "| " +  rs.mkString(" ") + " |").mkString("\n")
 }
@@ -49,7 +57,8 @@ object Matrix {
       _ <- if (rows.length == m && rows.foldLeft(true)((s, r) => s && r.length == n)) IO.unit
       else IO.fail(MatrixConstructionError(s"can't build a matrix out of these rows as dimensions are not correct: m = $m, n = $n, rows.length = ${rows.length}"))
     } yield
-      new Matrix(m, n, rows) {}
+      //trying to fix a boxing issue with Chunk //TODO: find a minimal example that shows this weird chunk behavior
+      new Matrix(m, n, Chunk.fromArray[Chunk[Double]](rows.map(chunk => Chunk.fromArray[Double](chunk.toArray)).toArray)) {}
 
   /*
     some util methods to:
@@ -119,12 +128,12 @@ object MatrixOps {
         m1_n    <- m1.n
         m2_m    <- m2.m
         m2_n    <- m2.n
-        _       <- if (!(m1_n == m2_m)) IO.fail(MatrixDimError(s"can't multuply a matrix $m1_m x $m1_n and a matrix $m2_m x $m2_n)")) else IO.unit
+        _       <- if (!(m1_n == m2_m)) IO.fail(MatrixDimError(s"can't multiply a matrix $m1_m x $m1_n and a matrix $m2_m x $m2_n)")) else IO.unit
         m1Rows <- m1.rows
         m2Cols <- m2.cols
         tmp = for {
           m1Row <- m1Rows
-            m2Col <- m2Cols
+          m2Col <- m2Cols
         } yield scalarProduct(m1Row, m2Col)
         resultRows = groupChunk(tmp)(m2_n)
         res    <- Matrix.fromRows(
@@ -184,3 +193,20 @@ object MatrixOps {
   object LiveMatrixOps extends LiveMatrixOps
 
 }
+
+//object matrixOperations extends MatrixOps.Service[MatrixOps] {
+//  override def almostEqual(m1: Matrix, m2: Matrix, maxSquaredError: Double): ZIO[MatrixOps, MatrixError, Boolean] =
+//    ZIO.accessM(_.matrixOps.almostEqual(m1, m2, maxSquaredError))
+//
+//  override def opposite(m: Matrix): ZIO[MatrixOps, MatrixError, Matrix] = ???
+//
+//  override def equal(m1: Matrix, m2: Matrix): ZIO[MatrixOps, MatrixError, Boolean] = ???
+//
+//  override def add(m1: Matrix, m2: Matrix): ZIO[MatrixOps, MatrixError, Matrix] = ???
+//
+//  override def mul(m1: Matrix, m2: Matrix): ZIO[MatrixOps, MatrixError, Matrix] = ???
+//
+//  override def had(m1: Matrix, m2: Matrix): ZIO[MatrixOps, MatrixError, Matrix] = ???
+//
+//  override def invert(m: Matrix): ZIO[MatrixOps, MatrixError, Matrix] = ???
+//}
