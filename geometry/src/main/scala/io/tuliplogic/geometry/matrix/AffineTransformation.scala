@@ -1,5 +1,6 @@
 package io.tuliplogic.geometry.matrix
 
+import io.tuliplogic.geometry.matrix.Entity3D.{Pt, Vec}
 import io.tuliplogic.geometry.matrix.Types.{Col, M}
 import io.tuliplogic.raytracer.errors.MatrixError
 import zio.{IO, UIO, ZIO}
@@ -9,7 +10,7 @@ import zio.{IO, UIO, ZIO}
   * A transformation is by construction a 4 x 4 matrix. We need just to validate the vectors that it operates on are 4 x 1
   */
 class AffineTransformation private (val m: M) {
-  def on(v: Col): ZIO[MatrixOps, MatrixError, Col] =
+  private def on(v: Col): ZIO[MatrixOps, MatrixError, Col] =
     for {
       v_m <- v.m
       v_n <- v.n
@@ -17,6 +18,9 @@ class AffineTransformation private (val m: M) {
       res <- matrixOperations.mul(m, v)
 
     } yield res
+
+  def on(pt: Pt): ZIO[MatrixOps, MatrixError, Pt] = on(pt.col).map(Pt.apply)
+  def on(vec: Vec): ZIO[MatrixOps, MatrixError, Vec] = on(vec.col).map(Vec.apply)
 
   def >=>(next: AffineTransformation): ZIO[MatrixOps, Nothing, AffineTransformation] =
     matrixOperations.mul(next.m, this.m).map(new AffineTransformation(_)).orDie
@@ -44,8 +48,8 @@ object AffineTransformation {
     * - a point can be translated and moved (it's referred to the origin of the reference frame)
     * - a vector cannot be translated, i.e. if I translate a vector I get the same vector back, as a vector can be seen as always starting from the origin
     */
-  def point(x: Double, y: Double, z: Double): UIO[Col]  = factory.createColVector(comp(x, y, z, 1))
-  def vector(x: Double, y: Double, z: Double): UIO[Col] = factory.createColVector(comp(x, y, z, 0))
+  def point(x: Double, y: Double, z: Double): UIO[Pt]  = factory.createColVector(comp(x, y, z, 1)).map(Pt.apply)
+  def vector(x: Double, y: Double, z: Double): UIO[Vec] = factory.createColVector(comp(x, y, z, 0)).map(Vec.apply)
 
   def id: UIO[AffineTransformation] = translate(0, 0, 0)
 

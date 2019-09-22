@@ -5,10 +5,11 @@ import java.nio.file.{Path, Paths}
 import io.tuliplogic.geometry.matrix.AffineTransformation
 import io.tuliplogic.raytracer.model.{Canvas, Color}
 import io.tuliplogic.geometry.matrix.AffineTransformation._
+import io.tuliplogic.geometry.matrix.Entity3D.Pt
 import io.tuliplogic.geometry.matrix.MatrixOps.LiveMatrixOps
 import io.tuliplogic.raytracer.errors.MatrixError
 import org.scalatest.WordSpec
-import zio.{console, DefaultRuntime, IO}
+import zio.{DefaultRuntime, IO, console}
 import zio.blocking.Blocking
 import zio.stream.{Sink, Stream, ZStream}
 
@@ -37,10 +38,10 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
         override def path: Path = Paths.get(canvasFile)
       }
 
-      def updateCanvasFromXY(c: Canvas, p: Col): IO[MatrixError, Unit] =
+      def updateCanvasFromXY(c: Canvas, p: Pt): IO[MatrixError, Unit] =
         for {
-          x <- p.get(0, 0)
-          y <- p.get(1, 0)
+          x <- p.col.get(0, 0)
+          y <- p.col.get(1, 0)
           _ <- c.update(x.toInt, y.toInt, Color(255, 255, 255))
         } yield ()
 

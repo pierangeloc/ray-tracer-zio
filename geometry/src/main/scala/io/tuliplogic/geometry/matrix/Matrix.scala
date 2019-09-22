@@ -45,7 +45,8 @@ object Matrix {
 
     def zero(m: Int, n: Int): UIO[Matrix[L]] = hom(m, n, 0)
     def ones(m: Int, n: Int): UIO[Matrix[L]] = hom(m, n, 1)
-    def eye(n: Int): UIO[Matrix[L]]          = fromRows(n, n, L.fromArray(Array.tabulate(n, n)((x, y) => if (x == y) 1d else 0d).map(L.fromArray))).orDie
+    def diag(n: Int, α: Double): UIO[Matrix[L]] = fromRows(n, n, L.fromArray(Array.tabulate(n, n)((x, y) => if (x == y) α else 0d).map(L.fromArray))).orDie
+    def eye(n: Int): UIO[Matrix[L]]             = diag(n, 1d)
 
     def createRowVector(elems: L[Double]): UIO[Row] = UIO.succeed(new Matrix[L](1, L.length(elems), L.fromArray(Array(elems))))
     def createColVector(elems: L[Double]): UIO[Col] = UIO.succeed(new Matrix[L](L.length(elems), 1, elems.map(x => L.fromArray(Array(x)))))

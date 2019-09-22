@@ -17,5 +17,6 @@ object Types {
   type M   = Matrix[L]
   type Row = M
   type Col = M
+  //TODO: Maybe see how we can make point and vector typesafe (wrap them in case class)
   val factory = new Matrix.MatrixFactory[L]()
 }

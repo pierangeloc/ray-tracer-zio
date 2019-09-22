@@ -26,6 +26,13 @@ object MatrixOps {
     def mul(m1: M, m2: M): ZIO[R, MatrixError, M]
     def had(m1: M, m2: M): ZIO[R, MatrixError, M]
     def invert(m: M): ZIO[R, MatrixError, M]
+
+    def times(α: Double, m: M): ZIO[R, Nothing, M] = for {
+      m_m <- m.m
+      m_n <- m.n
+      other <- factory.hom(m_m, m_n, α)
+      res   <- had(m, other).orDie
+    } yield res
   }
 
   trait LiveMatrixOps extends MatrixOps {

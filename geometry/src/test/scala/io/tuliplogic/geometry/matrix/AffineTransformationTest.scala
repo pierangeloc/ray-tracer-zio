@@ -31,8 +31,8 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
               transl          <- translation
               result          <- transl.on(point).provide(LiveMatrixOps)
               vectorToBeAdded <- AffineTransformation.vector(x, y, z)
-              expected        <- matrixOps.add(vectorToBeAdded, point)
-              eq              <- matrixOps.equal(expected, result)
+              expected        <- matrixOps.add(vectorToBeAdded.col, point.col)
+              eq              <- matrixOps.equal(expected, result.col)
               _               <- IO.effect(eq shouldEqual true)
             } yield ()
           )
@@ -53,7 +53,7 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
             for {
               transl <- translation
               result <- transl.on(vector).provide(LiveMatrixOps)
-              eq     <- matrixOps.equal(vector, result)
+              eq     <- matrixOps.equal(vector.col, result.col)
               _      <- IO.effect(eq shouldEqual true)
             } yield ()
           )
@@ -77,8 +77,8 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
               scal            <- scaling
               result          <- scal.on(point).provide(LiveMatrixOps)
               vectorToBeAdded <- AffineTransformation.point(x, y, z)
-              expected        <- matrixOps.had(vectorToBeAdded, point)
-              eq              <- matrixOps.equal(expected, result)
+              expected        <- matrixOps.had(vectorToBeAdded.col, point.col)
+              eq              <- matrixOps.equal(expected, result.col)
               _               <- IO.effect(eq shouldEqual true)
             } yield ()
           )
@@ -112,7 +112,7 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
           comp             <- composeLeft(rotateTf, scaleTf, translateTf)
           res              <- comp on horizontalRadius
           expected         <- AffineTransformation.point(10, 50, 0)
-          _                <- matrixOperations.almostEqual(res, expected, 10e-10).flatMap(res => IO.effect(res shouldEqual true))
+          _                <- matrixOperations.almostEqual(res.col, expected.col, 10e-10).flatMap(res => IO.effect(res shouldEqual true))
         } yield ()).provide(new LiveMatrixOps with Console.Live {})
       }
     }
