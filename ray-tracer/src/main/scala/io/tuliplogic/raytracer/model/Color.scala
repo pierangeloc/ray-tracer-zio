@@ -19,4 +19,3 @@ object Color {
 final case class ColoredPoint(pixel: Pixel, color: Color) {
   override def toString: String = s"(${pixel.x}, ${pixel.y}, [${color.red}, ${color.green}, ${color.blue}])"
 }
-

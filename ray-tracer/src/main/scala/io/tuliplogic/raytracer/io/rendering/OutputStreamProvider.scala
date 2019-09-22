@@ -5,9 +5,7 @@ import java.io.OutputStream
 import io.tuliplogic.raytracer.errors.IOError
 import zio.ZIO
 
-trait OutputStreamProvider {
-
-}
+trait OutputStreamProvider {}
 
 object OutputStreamProvider {
   trait Service[R] {

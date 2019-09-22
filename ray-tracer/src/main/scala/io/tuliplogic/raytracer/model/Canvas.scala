@@ -8,7 +8,7 @@ abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array
     if (x >= 0 && x < width_ && y >= 0 && y < height_) IO.unit
     else IO.fail(IndexExceedCanvasDimension(x, y, width_, height_))
 
-  def width: UIO[Int] = UIO.succeed(width_)
+  def width: UIO[Int]  = UIO.succeed(width_)
   def height: UIO[Int] = UIO.succeed(height_)
   def get(x: Int, y: Int): IO[IndexExceedCanvasDimension, Color] =
     checkAccessIndex(x, y) *> UIO.succeed(rows(y)(x))
@@ -16,10 +16,11 @@ abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array
   def update(x: Int, y: Int, color: Color, failOutOfBound: Boolean = false): IO[IndexExceedCanvasDimension, Unit] =
     checkAccessIndex(x, y).foldM(
       exc => if (failOutOfBound) ZIO.fail(exc) else ZIO.succeed(()),
-      _ => UIO.effectTotal {
-              val colI = rows(y)
-              colI.update(x, color)
-            }
+      _ =>
+        UIO.effectTotal {
+          val colI = rows(y)
+          colI.update(x, color)
+      }
     )
 
   def rows: UIO[Array[Array[Color]]] =
@@ -28,6 +29,6 @@ abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array
 
 object Canvas {
   def create(width: Int, height: Int): UIO[Canvas] = UIO.effectTotal {
-    new Canvas(width, height, Array.fill(height)(Array.fill(width)(Color.black))){}
+    new Canvas(width, height, Array.fill(height)(Array.fill(width)(Color.black))) {}
   }
 }
