@@ -2,6 +2,8 @@ package io.tuliplogic.geometry.matrix
 
 import io.tuliplogic.geometry.matrix.AffineTransformation._
 import io.tuliplogic.geometry.matrix.MatrixOps.LiveMatrixOps
+import io.tuliplogic.geometry.matrix.SpatialEntity.{Pt, Vec, toCol}
+import mouse.all._
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -30,9 +32,11 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
             for {
               transl          <- translation
               result          <- transl.on(point).provide(LiveMatrixOps)
-              vectorToBeAdded <- AffineTransformation.vector(x, y, z)
-              expected        <- matrixOps.add(vectorToBeAdded.col, point.col)
-              eq              <- matrixOps.equal(expected, result.col)
+              resultCol       <- result |> toCol
+              vectorToBeAdded <- Vec(x, y, z) |> toCol
+              pointCol        <- point |> toCol
+              expected        <- matrixOps.add(vectorToBeAdded, pointCol)
+              eq              <- matrixOps.equal(expected, resultCol)
               _               <- IO.effect(eq shouldEqual true)
             } yield ()
           )
@@ -53,7 +57,9 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
             for {
               transl <- translation
               result <- transl.on(vector).provide(LiveMatrixOps)
-              eq     <- matrixOps.equal(vector.col, result.col)
+              resultCol <- result |> toCol
+              vectorCol <- vector |> toCol
+              eq     <- matrixOps.equal(vectorCol, resultCol)
               _      <- IO.effect(eq shouldEqual true)
             } yield ()
           )
@@ -76,9 +82,11 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
             for {
               scal            <- scaling
               result          <- scal.on(point).provide(LiveMatrixOps)
-              vectorToBeAdded <- AffineTransformation.point(x, y, z)
-              expected        <- matrixOps.had(vectorToBeAdded.col, point.col)
-              eq              <- matrixOps.equal(expected, result.col)
+              resultCol       <- result |> toCol
+              pointCol        <- point |> toCol
+              vectorToBeAdded <- Pt(x, y, z) |> toCol
+              expected        <- matrixOps.had(vectorToBeAdded, pointCol)
+              eq              <- matrixOps.equal(expected, resultCol)
               _               <- IO.effect(eq shouldEqual true)
             } yield ()
           )
@@ -105,14 +113,15 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
 
       unsafeRun {
         (for {
-          horizontalRadius <- point(1, 0, 0)
+          horizontalRadius <- UIO.succeed(Pt(1, 0, 0))
           rotateTf         <- rotateZ(rotationAngle)
           scaleTf          <- scale(20, 20, 20)
           translateTf      <- translate(10, 30, 0)
           comp             <- composeLeft(rotateTf, scaleTf, translateTf)
           res              <- comp on horizontalRadius
-          expected         <- AffineTransformation.point(10, 50, 0)
-          _                <- matrixOperations.almostEqual(res.col, expected.col, 10e-10).flatMap(res => IO.effect(res shouldEqual true))
+          resCol           <- res |> toCol
+          expectedCol      <- Pt(10, 50, 0) |> toCol
+          _                <- matrixOperations.almostEqual(resCol, expectedCol, 10e-10).flatMap(res => IO.effect(res shouldEqual true))
         } yield ()).provide(new LiveMatrixOps with Console.Live {})
       }
     }

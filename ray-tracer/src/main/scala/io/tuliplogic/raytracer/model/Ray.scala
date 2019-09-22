@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.model
 
-import io.tuliplogic.geometry.matrix.Entity3D.{Pt, Vec}
-import io.tuliplogic.geometry.matrix.MatrixOps
+import io.tuliplogic.geometry.matrix.SpatialEntity.{Pt, Vec}
+import io.tuliplogic.geometry.matrix.{MatrixOps, SpatialEntity}
 import zio.ZIO
 
 case class Ray(origin: Pt, direction: Vec)
@@ -19,15 +19,17 @@ object RayOps {
     def rayOpsService: RayOps.Service[Any] = new Service[Any] {
       override def positionAt(ray: Ray, t: Double): ZIO[Any, Nothing, Pt] =
         for {
-          s1 <- matrixOps.times(t, ray.direction.col)
-          res <- matrixOps.add(s1, ray.origin.col).orDie
-        } yield Pt(res)
+          dirCol  <- SpatialEntity.toCol(ray.direction)
+          s1      <- matrixOps.times(t, dirCol)
+          origCol <- SpatialEntity.toCol(ray.origin)
+          resCol  <- matrixOps.add(s1, origCol).orDie
+          res     <- SpatialEntity.colToPt(resCol).orDie
+        } yield res
     }
-
   }
 }
 
-object rayOperations extends RayOps.Service[RayOps]{
+object rayOperations extends RayOps.Service[RayOps] {
   override def positionAt(ray: Ray, t: Double): ZIO[RayOps, Nothing, Pt] =
     ZIO.accessM(_.rayOpsService.positionAt(ray, t))
 }

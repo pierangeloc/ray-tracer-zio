@@ -1,6 +1,6 @@
 package io.tuliplogic.geometry.matrix
 
-import io.tuliplogic.geometry.matrix.Entity3D.{Pt, Vec}
+import io.tuliplogic.geometry.matrix.SpatialEntity.{Pt, Vec}
 import org.scalacheck.Gen
 import zio.{Chunk, DefaultRuntime}
 
@@ -23,13 +23,13 @@ trait Generators { self: DefaultRuntime =>
   def vectorGen: Gen[Vec] =
     for {
       elems  <- Gen.listOfN(3, Gen.chooseNum[Double](-1000, 1000))
-      vector <- Gen.const(unsafeRun(AffineTransformation.vector(elems(0), elems(1), elems(2))))
+      vector <- Gen.const(Vec(elems(0), elems(1), elems(2)))
     } yield vector
 
   def pointGen: Gen[Pt] =
     for {
       elems <- Gen.listOfN(3, Gen.chooseNum[Double](-1000, 1000))
-      point <- Gen.const(unsafeRun(AffineTransformation.point(elems(0), elems(1), elems(2))))
+      point <- Gen.const(Pt(elems(0), elems(1), elems(2)))
     } yield point
 
   val reasonableDouble = Gen.chooseNum[Double](-1000, 1000)

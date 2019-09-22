@@ -5,7 +5,7 @@ import java.nio.file.{Path, Paths}
 import io.tuliplogic.geometry.matrix.AffineTransformation
 import io.tuliplogic.raytracer.model.{Canvas, Color}
 import io.tuliplogic.geometry.matrix.AffineTransformation._
-import io.tuliplogic.geometry.matrix.Entity3D.Pt
+import io.tuliplogic.geometry.matrix.SpatialEntity.Pt
 import io.tuliplogic.geometry.matrix.MatrixOps.LiveMatrixOps
 import io.tuliplogic.raytracer.errors.MatrixError
 import org.scalatest.WordSpec
@@ -39,22 +39,19 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
       }
 
       def updateCanvasFromXY(c: Canvas, p: Pt): IO[MatrixError, Unit] =
-        for {
-          x <- p.col.get(0, 0)
-          y <- p.col.get(1, 0)
-          _ <- c.update(x.toInt, y.toInt, Color(255, 255, 255))
-        } yield ()
+        c.update(p.x.toInt, p.y.toInt, Color(255, 255, 255))
 
       val rotationAngle = math.Pi / 12
       val ww            = 640
       val hh            = 480
+      val horizontalRadius = Pt(1, 0, 0)
+
       unsafeRun {
         (for {
           rotateTf         <- rotateZ(rotationAngle)
           scaleTf          <- scale(math.min(ww, hh) / 3, math.min(ww, hh) / 3, 0)
           translateTf      <- translate(ww / 2, hh / 2, 0)
           composed         <- scaleTf >=> translateTf
-          horizontalRadius <- point(1, 0, 0)
           c                <- Canvas.create(ww, hh)
           positions <- ZStream
             .unfoldM(horizontalRadius)(v => rotateTf.on(v).map(vv => Some((vv, vv))))
