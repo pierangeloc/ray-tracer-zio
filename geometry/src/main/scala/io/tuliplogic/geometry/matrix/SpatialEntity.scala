@@ -1,16 +1,28 @@
 package io.tuliplogic.geometry.matrix
 
+import io.tuliplogic.geometry.matrix.SpatialEntity.Pt
 import io.tuliplogic.geometry.matrix.Types.{Col, factory}
 import io.tuliplogic.raytracer.errors.MatrixError.IndexExceedMatrixDimension
+import io.tuliplogic.geometry.matrix.Types.vectorizable.comp
 import zio.{IO, UIO}
 
 sealed trait SpatialEntity
-  import io.tuliplogic.geometry.matrix.Types.vectorizable.comp
 
 
 object SpatialEntity {
-  case class Pt(x: Double, y: Double, z: Double)  extends SpatialEntity
-  case class Vec(x: Double, y: Double, z: Double) extends SpatialEntity
+  case class Pt(x: Double, y: Double, z: Double)  extends SpatialEntity {
+    def -(otherPt: Pt): Vec = Vec(x - otherPt.x, y - otherPt.y, z - otherPt.z)
+  }
+  case class Vec(x: Double, y: Double, z: Double) extends SpatialEntity {
+    def plus(other: Vec): Vec = Vec(x + other.x, y + other.y, z + other.z)
+    def plus(otherPt: Pt): Pt = Pt(x + otherPt.x, y + otherPt.y, z + otherPt.z)
+    def dot(other: Vec): Double = x * other.x + y * other.y + z * other.z
+  }
+
+  sealed trait SceneObject
+  object SceneObject {
+    case class Sphere(center: Pt, radius: Double) extends SceneObject
+  }
 
   /**
    * this makes calculations simpler through matrix multiplication
@@ -35,7 +47,9 @@ object SpatialEntity {
       y <- col.get(1, 0)
       z <- col.get(2, 0)
     } yield Vec(x, y, z)
+
 }
+
 
 
 

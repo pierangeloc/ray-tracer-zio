@@ -64,7 +64,6 @@ object CanvasRenderer {
             Stream.fromEffect(headers(canvas, maxColor).map(Chunk(_))) ++
               rowsStream(canvas, maxColor)
           )
-//            .tap(s => UIO.effectTotal(print(s.toString() + "---------")))
             .map(_.flatMap(_.getBytes |> Chunk.fromArray))
             .run(channelSink(channel))
         } yield ()).mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
