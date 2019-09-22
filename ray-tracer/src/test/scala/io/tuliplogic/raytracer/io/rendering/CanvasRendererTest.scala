@@ -2,13 +2,15 @@ package io.tuliplogic.raytracer.io.rendering
 
 import java.nio.file.{Path, Paths}
 
+import io.tuliplogic.geometry.matrix.AffineTransformation
 import io.tuliplogic.raytracer.model.{Canvas, Color}
-import io.tuliplogic.geometry.matrix.AffineTransformations._
+import io.tuliplogic.geometry.matrix.AffineTransformation._
+import io.tuliplogic.geometry.matrix.MatrixOps.LiveMatrixOps
 import io.tuliplogic.raytracer.errors.MatrixError
 import org.scalatest.WordSpec
 import zio.{DefaultRuntime, IO, console}
 import zio.blocking.Blocking
-import zio.stream.{Sink, Stream}
+import zio.stream.{Sink, Stream, ZStream}
 
 
 class CanvasRendererTest extends WordSpec with DefaultRuntime {
@@ -47,20 +49,17 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
       val ww = 640
       val hh = 480
       unsafeRun{
-        for {
-          rotationMatrix   <- rotateZ(rotationAngle)
-            scalingMatrix    <- scale(ww / 2, hh / 2, 0)
-            translationMtx   <- translate(ww / 2, hh / 2, 0)
-            composed1        <- matrixOps.mul(rotationMatrix, scalingMatrix)
-            composed2        <- matrixOps.mul(translationMtx, composed1)
+        (for {
+          rotateTf   <- rotateZ(rotationAngle)
+            scaleTf    <- scale(ww / 2, hh / 2, 0)
+            translateTf   <- translate(ww / 2, hh / 2, 0)
+          composed         <- AffineTransformation.composeLeft(rotateTf, scaleTf, translateTf)
             horizontalRadius <- vector(1, 0, 0)
             c                <- Canvas.create(ww, hh)
-            positions        <- Stream.unfoldM(horizontalRadius)(v => matrixOps.mul(composed2, v).map(vv => Some((vv, vv))))
+            positions        <- ZStream.unfoldM(horizontalRadius)(v => composed.on(v).map(vv => Some((vv, vv))))
               .take(12).mapM {p => updateCanvasFromXY(c, p)}.run(Sink.collectAll)
-//
-//            _                <- console.putStrLn(positions.mkString("\n"))
             _ <- cr.renderer.render(c, 256)
-        } yield ()
+        } yield ()).provide(LiveMatrixOps)
       }
     }
   }

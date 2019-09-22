@@ -7,8 +7,9 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import zio.{DefaultRuntime, IO, UIO}
 import zio.stream._
 import zio._
+import zio.console.Console
 
-class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
+class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
   import Types._
 
   import LiveMatrixOps.matrixOps
@@ -21,16 +22,16 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
           y <- reasonableDouble
           z <- reasonableDouble
           point <- pointGen
-        } yield (x, y, z, AffineTransformations.translate(x, y, z), point)
+        } yield (x, y, z, AffineTransformation.translate(x, y, z), point)
       } { case (x, y, z, translation, point) =>
         unsafeRun(
           for {
             transl <- translation
-              result <- matrixOps.mul(transl, point)
-              vectorToBeAdded <- AffineTransformations.vector(x, y, z)
-              expected <- matrixOps.add(vectorToBeAdded, point)
-              eq <- matrixOps.equal(expected, result)
-              _ <- IO.effect(eq shouldEqual true)
+            result <- transl.on(point).provide(LiveMatrixOps)
+            vectorToBeAdded <- AffineTransformation.vector(x, y, z)
+            expected <- matrixOps.add(vectorToBeAdded, point)
+            eq <- matrixOps.equal(expected, result)
+            _ <- IO.effect(eq shouldEqual true)
           } yield ()
         )
       }
@@ -43,35 +44,13 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
           y <- reasonableDouble
           z <- reasonableDouble
           vector <- vectorGen
-        } yield (AffineTransformations.translate(x, y, z), vector)
+        } yield (AffineTransformation.translate(x, y, z), vector)
       } { case (translation, vector) =>
         unsafeRun(
           for {
             transl <- translation
-              result <- matrixOps.mul(transl, vector)
+              result <- transl.on(vector).provide(LiveMatrixOps)
               eq <- matrixOps.equal(vector, result)
-              _ <- IO.effect(eq shouldEqual true)
-          } yield ()
-        )
-      }
-    }
-
-    "invert(translate(x, y, z)).apply(point) === point + vector(-x, -y, -z)" in {
-      forAll {
-        for {
-          x <- reasonableDouble
-          y <- reasonableDouble
-          z <- reasonableDouble
-          point <- pointGen
-        } yield (x, y, z, AffineTransformations.translate(x, y, z).flatMap(matrixOps.invert), point)
-      } { case (x, y, z, inverted, point) =>
-        unsafeRun(
-          for {
-            inv <- inverted
-              result <- matrixOps.mul(inv, point)
-              vectorToBeAdded <- AffineTransformations.vector(-x, -y, -z)
-              expected <- matrixOps.add(vectorToBeAdded, point)
-              eq <- matrixOps.almostEqual(expected, result, 10e-15)
               _ <- IO.effect(eq shouldEqual true)
           } yield ()
         )
@@ -87,13 +66,13 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
           y <- reasonableDouble
           z <- reasonableDouble
           point <- pointGen
-        } yield (x, y, z, AffineTransformations.scale(x, y, z), point)
+        } yield (x, y, z, AffineTransformation.scale(x, y, z), point)
       } { case (x, y, z, scaling, point) =>
         unsafeRun(
           for {
             scal <- scaling
-            result <- matrixOps.mul(scal, point)
-            vectorToBeAdded <- AffineTransformations.point(x, y, z)
+            result <- scal.on(point).provide(LiveMatrixOps)
+            vectorToBeAdded <- AffineTransformation.point(x, y, z)
             expected <- matrixOps.had(vectorToBeAdded, point)
             eq <- matrixOps.equal(expected, result)
             _ <- IO.effect(eq shouldEqual true)
@@ -118,18 +97,17 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
 
   "all transformations" should {
     "compose" in {
-      import AffineTransformations._
+      import AffineTransformation._
       val center = point(0, 0, 0)
       val rotationAngle = scala.math.Pi / 6
       unsafeRun {
-        for {
-          rotationMatrix   <- rotateZ(rotationAngle)
-          scalingMatrix    <- scale(640 / 2, 480 / 2, 0)
-          translationMtx   <- translate(640 / 2, 480 / 2, 0)
-          composed1        <- matrixOps.mul(rotationMatrix, scalingMatrix)
-          composed2        <- matrixOps.mul(translationMtx, composed1)
+        (for {
+          rotateTf         <- rotateZ(rotationAngle)
+          scaleTf          <- scale(640 / 2, 480 / 2, 0)
+          translateTf      <- translate(640 / 2, 480 / 2, 0)
+          composed         <- AffineTransformation.composeLeft(rotateTf, scaleTf, translateTf)
           horizontalRadius <- vector(1, 0, 0)
-          str = Stream.unfoldM(horizontalRadius)(v => matrixOps.mul(composed2, v).map(vv => Some((vv, vv)))).take(12)
+          str = ZStream.unfoldM(horizontalRadius)(v => composed.on(v).map(vv => Some((vv, vv)))).take(12)
           positions        <- str.run(Sink.collectAll[M])
           _                <- ZIO.traverse(positions) { pos =>
             for {
@@ -140,8 +118,7 @@ class AffineTransformationsTest extends WordSpec with GeneratorDrivenPropertyChe
               _ <- IO(println(s"($x, $y, $z, $k)"))
             } yield ()
           }
-          _                <- console.putStrLn(positions.mkString("\n"))
-        } yield ()
+        } yield ()).provide(LiveMatrixOps)
 
       }
 

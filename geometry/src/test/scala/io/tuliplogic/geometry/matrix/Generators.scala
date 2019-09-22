@@ -21,12 +21,12 @@ trait Generators { self: DefaultRuntime =>
 
   def vectorGen: Gen[M] = for {
     elems  <- Gen.listOfN(3, Gen.chooseNum[Double](-1000, 1000))
-    vector <- Gen.const(unsafeRun(AffineTransformations.vector(elems(0), elems(1), elems(2))))
+    vector <- Gen.const(unsafeRun(AffineTransformation.vector(elems(0), elems(1), elems(2))))
   } yield vector
 
   def pointGen: Gen[M] = for {
     elems <- Gen.listOfN(3, Gen.chooseNum[Double](-1000, 1000))
-    point <- Gen.const(unsafeRun(AffineTransformations.point(elems(0), elems(1), elems(2))))
+    point <- Gen.const(unsafeRun(AffineTransformation.point(elems(0), elems(1), elems(2))))
   } yield point
 
   val reasonableDouble = Gen.chooseNum[Double](-1000, 1000)
