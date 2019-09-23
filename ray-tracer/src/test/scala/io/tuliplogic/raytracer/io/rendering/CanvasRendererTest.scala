@@ -2,14 +2,14 @@ package io.tuliplogic.raytracer.io.rendering
 
 import java.nio.file.{Path, Paths}
 
-import io.tuliplogic.geometry.matrix.AffineTransformation
+import io.tuliplogic.geometry.matrix.{affineTfOps, AffineTransformation, AffineTransformationOps}
 import io.tuliplogic.raytracer.model.{Canvas, Color}
 import io.tuliplogic.geometry.matrix.AffineTransformation._
 import io.tuliplogic.geometry.matrix.SpatialEntity.Pt
-import io.tuliplogic.geometry.matrix.MatrixOps.LiveMatrixOps
+import io.tuliplogic.geometry.matrix.MatrixOps.Live$
 import io.tuliplogic.raytracer.errors.MatrixError
 import org.scalatest.WordSpec
-import zio.{DefaultRuntime, IO, console}
+import zio.{console, DefaultRuntime, IO}
 import zio.blocking.Blocking
 import zio.stream.{Sink, Stream, ZStream}
 
@@ -41,29 +41,29 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
       def updateCanvasFromXY(c: Canvas, p: Pt): IO[MatrixError, Unit] =
         c.update(p.x.toInt, p.y.toInt, Color(255, 255, 255))
 
-      val rotationAngle = math.Pi / 12
-      val ww            = 640
-      val hh            = 480
+      val rotationAngle    = math.Pi / 12
+      val ww               = 640
+      val hh               = 480
       val horizontalRadius = Pt(1, 0, 0)
 
       unsafeRun {
         (for {
-          rotateTf         <- rotateZ(rotationAngle)
-          scaleTf          <- scale(math.min(ww, hh) / 3, math.min(ww, hh) / 3, 0)
-          translateTf      <- translate(ww / 2, hh / 2, 0)
-          composed         <- scaleTf >=> translateTf
-          c                <- Canvas.create(ww, hh)
+          rotateTf    <- rotateZ(rotationAngle)
+          scaleTf     <- scale(math.min(ww, hh) / 3, math.min(ww, hh) / 3, 0)
+          translateTf <- translate(ww / 2, hh / 2, 0)
+          composed    <- scaleTf >=> translateTf
+          c           <- Canvas.create(ww, hh)
           positions <- ZStream
-            .unfoldM(horizontalRadius)(v => rotateTf.on(v).map(vv => Some((vv, vv))))
+            .unfoldM(horizontalRadius)(v => affineTfOps.on(rotateTf, v).map(vv => Some((vv, vv))))
             .take(24)
             .mapM { p =>
-              (composed on p) flatMap { p =>
+              affineTfOps.on(composed, p) flatMap { p =>
                 updateCanvasFromXY(c, p)
               }
             }
             .run(Sink.collectAll)
           _ <- cr.renderer.render(c, 256)
-        } yield ()).provide(LiveMatrixOps)
+        } yield ()).provide(AffineTransformationOps.Live)
       }
     }
   }

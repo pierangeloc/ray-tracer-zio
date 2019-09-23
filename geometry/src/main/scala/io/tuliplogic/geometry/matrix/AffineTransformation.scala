@@ -5,37 +5,69 @@ import io.tuliplogic.geometry.matrix.Types.{Col, M}
 import io.tuliplogic.raytracer.errors.MatrixError
 import zio.{UIO, ZIO}
 
-//TODO: applyAffineTransformations require an implementation of matrix ops
+//TODO:
+// define affine transformations as a service that requires MatrixOps. applyAffineTransformations require an implementation of matrix ops
 /**
   * A transformation is by construction a 4 x 4 matrix. We need just to validate the vectors that it operates on are 4 x 1
   */
-class AffineTransformation private (val m: M) {
-  private def on(v: Col): ZIO[MatrixOps, MatrixError, Col] =
-    for {
-      v_m <- v.m
-      v_n <- v.n
-      _   <- if (v_m != 4 || v_n != 1) ZIO.fail(MatrixError.MatrixDimError(s"can't apply an affine transformation to a matrix $v_m x $v_n")) else ZIO.unit
-      res <- matrixOperations.mul(m, v)
+trait AffineTransformationOps {
+  def affineTfOps: AffineTransformationOps.Service[Any]
+}
 
-    } yield res
+object AffineTransformationOps {
+  trait Service[R] {
+    def on(at: AffineTransformation, pt: Pt): ZIO[R, MatrixError, Pt]
+    def on(at: AffineTransformation, pt: Vec): ZIO[R, MatrixError, Vec]
+    def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[R, MatrixError, AffineTransformation]
+  }
 
-  def on(pt: Pt): ZIO[MatrixOps, MatrixError, Pt] = for {
-    col <- SpatialEntity.toCol(pt)
-    colRes <- on(col)
-    res <- SpatialEntity.colToPt(colRes)
-  } yield res
+  trait Live extends AffineTransformationOps with MatrixOps { live =>
+    override def affineTfOps: Service[Any] = new Service[Any] {
 
-  def on(pt: Vec): ZIO[MatrixOps, MatrixError, Vec] = for {
-    col    <- SpatialEntity.toCol(pt)
-    colRes <- on(col)
-    res    <- SpatialEntity.colToVec(colRes)
-  } yield res
+      private def on(at: AffineTransformation, v: Col): ZIO[Any, MatrixError, Col] =
+        for {
+          v_m <- v.m
+          v_n <- v.n
+          _   <- if (v_m != 4 || v_n != 1) ZIO.fail(MatrixError.MatrixDimError(s"can't apply an affine transformation to a matrix $v_m x $v_n")) else ZIO.unit
+          res <- matrixOperations.mul(at.m, v).provide(live)
+        } yield res
 
-  def >=>(next: AffineTransformation): ZIO[MatrixOps, Nothing, AffineTransformation] =
-    matrixOperations.mul(next.m, this.m).map(new AffineTransformation(_)).orDie
+      override def on(at: AffineTransformation, pt: Pt): ZIO[Any, MatrixError, Pt] =
+        for {
+          col    <- SpatialEntity.toCol(pt)
+          colRes <- on(at, col)
+          res    <- SpatialEntity.colToPt(colRes)
+        } yield res
 
-  def <=<(next: AffineTransformation): ZIO[MatrixOps, Nothing, AffineTransformation] =
-    matrixOperations.mul(this.m, next.m).map(new AffineTransformation(_)).orDie
+      override def on(at: AffineTransformation, vec: Vec): ZIO[Any, MatrixError, Vec] =
+        for {
+          col    <- SpatialEntity.toCol(vec)
+          colRes <- on(at, col)
+          res    <- SpatialEntity.colToVec(colRes)
+        } yield res
+
+      override def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[Any, MatrixError, AffineTransformation] =
+        matrixOperations.mul(at2.m, at1.m).provide(live).map(AffineTransformation(_))
+    }
+  }
+  object Live extends Live with MatrixOps.Live
+}
+
+object affineTfOps extends AffineTransformationOps.Service[AffineTransformationOps] {
+  override def on(at: AffineTransformation, pt: Pt): ZIO[AffineTransformationOps, MatrixError, Pt] =
+    ZIO.accessM(_.affineTfOps.on(at, pt))
+
+  override def on(at: AffineTransformation, vec: Vec): ZIO[AffineTransformationOps, MatrixError, Vec] =
+    ZIO.accessM(_.affineTfOps.on(at, vec))
+
+  override def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[AffineTransformationOps, MatrixError, AffineTransformation] =
+    ZIO.accessM(_.affineTfOps.compose(at1, at2))
+}
+
+//TODO: see if we can define an affinetransformation as a function Pt => Pt | Vec => Vec
+case class AffineTransformation(m: M) {
+  def >=>(next: AffineTransformation): ZIO[AffineTransformationOps, Nothing, AffineTransformation] =
+    affineTfOps.compose(this, next).orDie
 }
 
 object AffineTransformation {
@@ -43,8 +75,8 @@ object AffineTransformation {
   import vectorizable.comp
 
   import math.{cos, sin}
-  def composeLeft(tf: AffineTransformation*): ZIO[MatrixOps, Nothing, AffineTransformation] =
-    tf.toList.foldLeft(id.provideSome[MatrixOps](r => r)) {
+  def composeLeft(tf: AffineTransformation*): ZIO[AffineTransformationOps, Nothing, AffineTransformation] =
+    tf.toList.foldLeft(id.provideSome((x: AffineTransformationOps) => x)) {
       case (accF, next) =>
         for {
           acc <- accF

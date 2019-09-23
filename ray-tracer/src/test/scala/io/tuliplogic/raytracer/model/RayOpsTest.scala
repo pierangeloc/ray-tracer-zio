@@ -1,53 +1,67 @@
 package io.tuliplogic.raytracer.model
 
+import cats.data.NonEmptyList
 import io.tuliplogic.geometry.matrix.SpatialEntity.SceneObject._
-import io.tuliplogic.geometry.matrix.SpatialEntity.{Pt, Vec, toCol}
+import io.tuliplogic.geometry.matrix.SpatialEntity.{toCol, Pt, Vec}
 import mouse.all._
 import io.tuliplogic.geometry.matrix._
-import io.tuliplogic.raytracer.model.RayOps.LiveRayService
+import io.tuliplogic.raytracer.model.RayOps.Live
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, ZIO}
-
 
 class RayOpsTest extends WordSpec with DefaultRuntime {
 
   "Ray operations" should {
     "calculate position at different t" in {
       unsafeRun {
-        val p = Pt(2, 3, 4)
-        val v = Vec(1, 0, 0)
+        val p   = Pt(2, 3, 4)
+        val v   = Vec(1, 0, 0)
         val ray = Ray(p, v)
 
         (for {
           res1 <- rayOperations.positionAt(ray, 0) >>= toCol
-            res2 <- rayOperations.positionAt(ray, 1) >>= toCol
-            res3 <- rayOperations.positionAt(ray, -1) >>= toCol
-            res4 <- rayOperations.positionAt(ray, 2.5) >>= toCol
-            exp1 <- Pt(2, 3, 4) |> toCol
-            exp2 <- Pt(3, 3, 4) |> toCol
-            exp3 <- Pt(1, 3, 4) |> toCol
-            exp4 <- Pt(4.5, 3, 4) |> toCol
-            _ <- ZIO.sequence(
+          res2 <- rayOperations.positionAt(ray, 1) >>= toCol
+          res3 <- rayOperations.positionAt(ray, -1) >>= toCol
+          res4 <- rayOperations.positionAt(ray, 2.5) >>= toCol
+          exp1 <- Pt(2, 3, 4) |> toCol
+          exp2 <- Pt(3, 3, 4) |> toCol
+          exp3 <- Pt(1, 3, 4) |> toCol
+          exp4 <- Pt(4.5, 3, 4) |> toCol
+          _ <- ZIO
+            .sequence(
               List(
                 matrixOperations.equal(res1, exp1),
                 matrixOperations.equal(res2, exp2),
                 matrixOperations.equal(res3, exp3),
                 matrixOperations.equal(res4, exp4)
               )
-            ).flatMap(deltas => IO(deltas.forall(_ == true) shouldEqual true))
-        } yield ()).provide(new LiveRayService with MatrixOps.LiveMatrixOps {})
+            )
+            .flatMap(deltas => IO(deltas.forall(_ == true) shouldEqual true))
+        } yield ()).provide(RayOps.Live)
       }
     }
 
     "calculate intersection ray-sphere" in {
       unsafeRun {
         val ray = Ray(Pt(0, 0, -5), Vec(0, 0, 1))
-        val s = Sphere(Pt(0, 0, 0), 1)
+        val s   = Sphere(Pt(0, 0, 0), 1)
         (for {
           intersectionPoints <- rayOperations.intersect(ray, s)
-          _ <- IO(intersectionPoints shouldEqual List(4d, 6d).map(Intersection(_, s)))
-        } yield ()).provide(LiveRayService)
+          _                  <- IO(intersectionPoints shouldEqual List(4d, 6d).map(Intersection(_, s)))
+        } yield ()).provide(Live)
+      }
+    }
+
+    "calculate hit" in {
+      unsafeRun {
+        val s             = Sphere(Pt(0, 0, 0), 1)
+        val intersections = NonEmptyList.fromListUnsafe(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s)))
+        (for {
+          hit <- rayOperations.hit(intersections)
+          _   <- IO(hit.t shouldEqual 2)
+          _   <- IO(hit.sceneObject shouldEqual s)
+        } yield ()).provide(Live)
       }
     }
 

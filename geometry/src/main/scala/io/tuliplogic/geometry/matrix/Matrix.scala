@@ -43,8 +43,8 @@ object Matrix {
       new Matrix[L](m, n, elems)
     }
 
-    def zero(m: Int, n: Int): UIO[Matrix[L]] = hom(m, n, 0)
-    def ones(m: Int, n: Int): UIO[Matrix[L]] = hom(m, n, 1)
+    def zero(m: Int, n: Int): UIO[Matrix[L]]    = hom(m, n, 0)
+    def ones(m: Int, n: Int): UIO[Matrix[L]]    = hom(m, n, 1)
     def diag(n: Int, α: Double): UIO[Matrix[L]] = fromRows(n, n, L.fromArray(Array.tabulate(n, n)((x, y) => if (x == y) α else 0d).map(L.fromArray))).orDie
     def eye(n: Int): UIO[Matrix[L]]             = diag(n, 1d)
 

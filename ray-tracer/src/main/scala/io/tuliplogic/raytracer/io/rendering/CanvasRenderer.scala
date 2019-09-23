@@ -63,8 +63,7 @@ object CanvasRenderer {
           _ <- (
             Stream.fromEffect(headers(canvas, maxColor).map(Chunk(_))) ++
               rowsStream(canvas, maxColor)
-          )
-            .map(_.flatMap(_.getBytes |> Chunk.fromArray))
+          ).map(_.flatMap(_.getBytes |> Chunk.fromArray))
             .run(channelSink(channel))
         } yield ()).mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
 

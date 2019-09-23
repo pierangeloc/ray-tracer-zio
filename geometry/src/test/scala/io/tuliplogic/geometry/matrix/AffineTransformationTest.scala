@@ -1,8 +1,7 @@
 package io.tuliplogic.geometry.matrix
 
 import io.tuliplogic.geometry.matrix.AffineTransformation._
-import io.tuliplogic.geometry.matrix.MatrixOps.LiveMatrixOps
-import io.tuliplogic.geometry.matrix.SpatialEntity.{Pt, Vec, toCol}
+import io.tuliplogic.geometry.matrix.SpatialEntity.{toCol, Pt, Vec}
 import mouse.all._
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
@@ -14,9 +13,7 @@ import zio.console.Console
 
 class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
   import Types._
-
-  import LiveMatrixOps.matrixOps
-
+  val env = new AffineTransformationOps.Live with MatrixOps.Live
   "translation transformation " should {
     "translate(x, y, z).apply(point) === point + vector(x, y, z)" in {
       forAll {
@@ -29,16 +26,16 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
       } {
         case (x, y, z, translation, point) =>
           unsafeRun(
-            for {
+            (for {
               transl          <- translation
-              result          <- transl.on(point).provide(LiveMatrixOps)
+              result          <- affineTfOps.on(transl, point)
               resultCol       <- result |> toCol
               vectorToBeAdded <- Vec(x, y, z) |> toCol
               pointCol        <- point |> toCol
-              expected        <- matrixOps.add(vectorToBeAdded, pointCol)
-              eq              <- matrixOps.equal(expected, resultCol)
+              expected        <- matrixOperations.add(vectorToBeAdded, pointCol)
+              eq              <- matrixOperations.equal(expected, resultCol)
               _               <- IO.effect(eq shouldEqual true)
-            } yield ()
+            } yield ()).provide(env)
           )
       }
     }
@@ -54,14 +51,14 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
       } {
         case (translation, vector) =>
           unsafeRun(
-            for {
-              transl <- translation
-              result <- transl.on(vector).provide(LiveMatrixOps)
+            (for {
+              transl    <- translation
+              result    <- affineTfOps.on(transl, vector)
               resultCol <- result |> toCol
               vectorCol <- vector |> toCol
-              eq     <- matrixOps.equal(vectorCol, resultCol)
-              _      <- IO.effect(eq shouldEqual true)
-            } yield ()
+              eq        <- matrixOperations.equal(vectorCol, resultCol)
+              _         <- IO.effect(eq shouldEqual true)
+            } yield ()).provide(env)
           )
       }
     }
@@ -79,16 +76,16 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
       } {
         case (x, y, z, scaling, point) =>
           unsafeRun(
-            for {
+            (for {
               scal            <- scaling
-              result          <- scal.on(point).provide(LiveMatrixOps)
+              result          <- affineTfOps.on(scal, point)
               resultCol       <- result |> toCol
               pointCol        <- point |> toCol
               vectorToBeAdded <- Pt(x, y, z) |> toCol
-              expected        <- matrixOps.had(vectorToBeAdded, pointCol)
-              eq              <- matrixOps.equal(expected, resultCol)
+              expected        <- matrixOperations.had(vectorToBeAdded, pointCol)
+              eq              <- matrixOperations.equal(expected, resultCol)
               _               <- IO.effect(eq shouldEqual true)
-            } yield ()
+            } yield ()).provide(env)
           )
       }
     }
@@ -118,11 +115,11 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
           scaleTf          <- scale(20, 20, 20)
           translateTf      <- translate(10, 30, 0)
           comp             <- composeLeft(rotateTf, scaleTf, translateTf)
-          res              <- comp on horizontalRadius
+          res              <- affineTfOps.on(comp, horizontalRadius)
           resCol           <- res |> toCol
           expectedCol      <- Pt(10, 50, 0) |> toCol
           _                <- matrixOperations.almostEqual(resCol, expectedCol, 10e-10).flatMap(res => IO.effect(res shouldEqual true))
-        } yield ()).provide(new LiveMatrixOps with Console.Live {})
+        } yield ()).provide(env)
       }
     }
 

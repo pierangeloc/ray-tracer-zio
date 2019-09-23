@@ -27,15 +27,16 @@ object MatrixOps {
     def had(m1: M, m2: M): ZIO[R, MatrixError, M]
     def invert(m: M): ZIO[R, MatrixError, M]
 
-    def times(α: Double, m: M): ZIO[R, Nothing, M] = for {
-      m_m <- m.m
-      m_n <- m.n
-      other <- factory.hom(m_m, m_n, α)
-      res   <- had(m, other).orDie
-    } yield res
+    def times(α: Double, m: M): ZIO[R, Nothing, M] =
+      for {
+        m_m   <- m.m
+        m_n   <- m.n
+        other <- factory.hom(m_m, m_n, α)
+        res   <- had(m, other).orDie
+      } yield res
   }
 
-  trait LiveMatrixOps extends MatrixOps {
+  trait Live extends MatrixOps {
 
     override def matrixOps: Service[Any] = new Service[Any] {
 
@@ -132,7 +133,7 @@ object MatrixOps {
     }
   }
 
-  object LiveMatrixOps extends LiveMatrixOps
+  object Live extends Live
 
 }
 
