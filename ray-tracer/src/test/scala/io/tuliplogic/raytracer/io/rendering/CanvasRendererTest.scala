@@ -6,7 +6,6 @@ import io.tuliplogic.geometry.matrix.{affineTfOps, AffineTransformation, AffineT
 import io.tuliplogic.raytracer.model.{Canvas, Color}
 import io.tuliplogic.geometry.matrix.AffineTransformation._
 import io.tuliplogic.geometry.matrix.SpatialEntity.Pt
-import io.tuliplogic.geometry.matrix.MatrixOps.Live$
 import io.tuliplogic.raytracer.errors.MatrixError
 import org.scalatest.WordSpec
 import zio.{console, DefaultRuntime, IO}

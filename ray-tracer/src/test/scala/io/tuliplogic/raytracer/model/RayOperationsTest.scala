@@ -2,15 +2,15 @@ package io.tuliplogic.raytracer.model
 
 import cats.data.NonEmptyList
 import io.tuliplogic.geometry.matrix.SpatialEntity.SceneObject._
-import io.tuliplogic.geometry.matrix.SpatialEntity.{toCol, Pt, Vec}
+import io.tuliplogic.geometry.matrix.SpatialEntity.{Pt, Vec, toCol}
 import mouse.all._
 import io.tuliplogic.geometry.matrix._
-import io.tuliplogic.raytracer.model.RayOps.Live
+import io.tuliplogic.raytracer.model.RayOperations.Live
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
-import zio.{DefaultRuntime, IO, ZIO}
+import zio.{DefaultRuntime, IO, UIO, ZIO}
 
-class RayOpsTest extends WordSpec with DefaultRuntime {
+class RayOperationsTest extends WordSpec with DefaultRuntime {
 
   "Ray operations" should {
     "calculate position at different t" in {
@@ -20,10 +20,10 @@ class RayOpsTest extends WordSpec with DefaultRuntime {
         val ray = Ray(p, v)
 
         (for {
-          res1 <- rayOperations.positionAt(ray, 0) >>= toCol
-          res2 <- rayOperations.positionAt(ray, 1) >>= toCol
-          res3 <- rayOperations.positionAt(ray, -1) >>= toCol
-          res4 <- rayOperations.positionAt(ray, 2.5) >>= toCol
+          res1 <- rayOps.positionAt(ray, 0) >>= toCol
+          res2 <- rayOps.positionAt(ray, 1) >>= toCol
+          res3 <- rayOps.positionAt(ray, -1) >>= toCol
+          res4 <- rayOps.positionAt(ray, 2.5) >>= toCol
           exp1 <- Pt(2, 3, 4) |> toCol
           exp2 <- Pt(3, 3, 4) |> toCol
           exp3 <- Pt(1, 3, 4) |> toCol
@@ -38,16 +38,16 @@ class RayOpsTest extends WordSpec with DefaultRuntime {
               )
             )
             .flatMap(deltas => IO(deltas.forall(_ == true) shouldEqual true))
-        } yield ()).provide(RayOps.Live)
+        } yield ()).provide(RayOperations.Live)
       }
     }
 
     "calculate intersection ray-sphere" in {
       unsafeRun {
         val ray = Ray(Pt(0, 0, -5), Vec(0, 0, 1))
-        val s   = Sphere(Pt(0, 0, 0), 1)
         (for {
-          intersectionPoints <- rayOperations.intersect(ray, s)
+          s                  <- Sphere.unit
+          intersectionPoints <- rayOps.intersect(ray, s)
           _                  <- IO(intersectionPoints shouldEqual List(4d, 6d).map(Intersection(_, s)))
         } yield ()).provide(Live)
       }
@@ -55,10 +55,12 @@ class RayOpsTest extends WordSpec with DefaultRuntime {
 
     "calculate hit" in {
       unsafeRun {
-        val s             = Sphere(Pt(0, 0, 0), 1)
-        val intersections = NonEmptyList.fromListUnsafe(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s)))
         (for {
-          hit <- rayOperations.hit(intersections)
+          s   <- Sphere.unit
+          intersections <- UIO.succeed(
+            NonEmptyList.fromListUnsafe(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s)))
+          )
+          hit <- rayOps.hit(intersections)
           _   <- IO(hit.t shouldEqual 2)
           _   <- IO(hit.sceneObject shouldEqual s)
         } yield ()).provide(Live)
@@ -71,9 +73,9 @@ class RayOpsTest extends WordSpec with DefaultRuntime {
 
         (for {
           tf  <- AffineTransformation.translate(3, 4, 5)
-          res <- rayOperations.transform(tf, ray)
-          _ <- IO(res.origin shouldEqual Pt(4, 6, 8))
-            _ <- IO(res.direction shouldEqual Vec(0, 1, 0))
+          res <- rayOps.transform(tf, ray)
+          _   <- IO(res.origin shouldEqual Pt(4, 6, 8))
+          _   <- IO(res.direction shouldEqual Vec(0, 1, 0))
         } yield ()).provide(Live)
       }
     }
@@ -84,9 +86,9 @@ class RayOpsTest extends WordSpec with DefaultRuntime {
 
         (for {
           tf  <- AffineTransformation.scale(2, 3, 4)
-            res <- rayOperations.transform(tf, ray)
-            _ <- IO(res.origin shouldEqual Pt(2, 6, 12))
-            _ <- IO(res.direction shouldEqual Vec(0, 3, 0))
+          res <- rayOps.transform(tf, ray)
+          _   <- IO(res.origin shouldEqual Pt(2, 6, 12))
+          _   <- IO(res.direction shouldEqual Vec(0, 3, 0))
         } yield ()).provide(Live)
       }
     }

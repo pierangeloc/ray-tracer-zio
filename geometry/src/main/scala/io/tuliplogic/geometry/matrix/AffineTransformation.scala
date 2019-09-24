@@ -19,6 +19,7 @@ object AffineTransformationOps {
     def transform(at: AffineTransformation, pt: Pt): ZIO[R, MatrixError, Pt]
     def transform(at: AffineTransformation, pt: Vec): ZIO[R, MatrixError, Vec]
     def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[R, MatrixError, AffineTransformation]
+    def invert(at: AffineTransformation): ZIO[R, MatrixError, AffineTransformation]
   }
 
   trait Live extends AffineTransformationOps with MatrixOps { live =>
@@ -48,6 +49,9 @@ object AffineTransformationOps {
 
       override def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[Any, MatrixError, AffineTransformation] =
         matrixOperations.mul(at2.m, at1.m).provide(live).map(AffineTransformation(_))
+
+      override def invert(at: AffineTransformation): ZIO[Any, MatrixError, AffineTransformation] =
+        matrixOperations.invert(at.m).map(AffineTransformation(_)).provide(live)
     }
   }
   object Live extends Live with MatrixOps.Live
@@ -62,9 +66,13 @@ object affineTfOps extends AffineTransformationOps.Service[AffineTransformationO
 
   override def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[AffineTransformationOps, MatrixError, AffineTransformation] =
     ZIO.accessM(_.affineTfOps.compose(at1, at2))
+
+  override def invert(at: AffineTransformation): ZIO[AffineTransformationOps, MatrixError, AffineTransformation] =
+    ZIO.accessM(_.affineTfOps.invert(at))
 }
 
 //TODO: see if we can define an affinetransformation as a function Pt => Pt | Vec => Vec
+// def f[A <: SpatialEntity](a: A): A
 case class AffineTransformation(m: M) {
   def >=>(next: AffineTransformation): ZIO[AffineTransformationOps, Nothing, AffineTransformation] =
     affineTfOps.compose(this, next).orDie

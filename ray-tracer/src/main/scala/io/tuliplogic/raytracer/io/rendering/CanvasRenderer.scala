@@ -53,8 +53,8 @@ object CanvasRenderer {
         } yield rowToString(rowArray, maxColor)
 
       def channelSink(channel: AsynchronousFileChannel): Sink[Exception, Nothing, Chunk[Byte], Int] =
-        Sink.foldM(0) { (pos: Int, chunk: Chunk[Byte]) =>
-          channel.write(chunk, pos).flatMap(written => UIO(ZSink.Step.more(pos + written)))
+        Sink.foldLeftM(0) { (pos: Int, chunk: Chunk[Byte]) =>
+          channel.write(chunk, pos).flatMap(written => UIO(pos + written))
         }
 
       override def render(canvas: Canvas, maxColor: Int): ZIO[Any, IOError, Unit] =
@@ -66,13 +66,12 @@ object CanvasRenderer {
           ).map(_.flatMap(_.getBytes |> Chunk.fromArray))
             .run(channelSink(channel))
         } yield ()).mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
-
     }
   }
 
 }
 
-object canvasIO extends CanvasRenderer.Service[CanvasRenderer] {
+object canvasRendering extends CanvasRenderer.Service[CanvasRenderer] {
   override def render(canvas: Canvas, maxColor: Int): ZIO[CanvasRenderer, IOError, Unit] =
     ZIO.accessM(_.renderer.render(canvas, maxColor))
 }

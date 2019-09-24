@@ -1,6 +1,5 @@
 package io.tuliplogic.geometry.matrix
 
-import io.tuliplogic.geometry.matrix.SpatialEntity.Pt
 import io.tuliplogic.geometry.matrix.Types.{factory, Col}
 import io.tuliplogic.raytracer.errors.MatrixError.IndexExceedMatrixDimension
 import io.tuliplogic.geometry.matrix.Types.vectorizable.comp
@@ -12,6 +11,7 @@ object SpatialEntity {
   case class Pt(x: Double, y: Double, z: Double) extends SpatialEntity {
     def -(otherPt: Pt): Vec = Vec(x - otherPt.x, y - otherPt.y, z - otherPt.z)
   }
+
   case class Vec(x: Double, y: Double, z: Double) extends SpatialEntity {
     def plus(other: Vec): Vec   = Vec(x + other.x, y + other.y, z + other.z)
     def plus(otherPt: Pt): Pt   = Pt(x + otherPt.x, y + otherPt.y, z + otherPt.z)
@@ -20,7 +20,16 @@ object SpatialEntity {
 
   sealed trait SceneObject
   object SceneObject {
-    case class Sphere(center: Pt, radius: Double) extends SceneObject
+
+    /**
+    * A unit sphere centered in (0, 0, 0) and a transformation on the sphere that puts it  into final position
+     * This can be e.g. a chain of transate and shear
+     */
+    case class Sphere(transformation: AffineTransformation) extends SceneObject
+    object Sphere {
+      def withTransform(tf: AffineTransformation): UIO[Sphere] = UIO(tf).map(Sphere(_))
+      def unit: UIO[Sphere] = AffineTransformation.id.flatMap(withTransform)
+    }
   }
 
   /**
