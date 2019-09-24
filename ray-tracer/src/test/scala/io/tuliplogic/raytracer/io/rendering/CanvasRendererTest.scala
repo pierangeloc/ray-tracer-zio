@@ -54,10 +54,10 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
           composed    <- scaleTf >=> translateTf
           c           <- Canvas.create(ww, hh)
           positions <- ZStream
-            .unfoldM(horizontalRadius)(v => affineTfOps.on(rotateTf, v).map(vv => Some((vv, vv))))
+            .unfoldM(horizontalRadius)(v => affineTfOps.transform(rotateTf, v).map(vv => Some((vv, vv))))
             .take(24)
             .mapM { p =>
-              affineTfOps.on(composed, p) flatMap { p =>
+              affineTfOps.transform(composed, p) flatMap { p =>
                 updateCanvasFromXY(c, p)
               }
             }

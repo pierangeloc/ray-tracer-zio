@@ -65,5 +65,30 @@ class RayOpsTest extends WordSpec with DefaultRuntime {
       }
     }
 
+    "perform ray translation translating origin and leaving direction as is" in {
+      unsafeRun {
+        val ray = Ray(Pt(1, 2, 3), Vec(0, 1, 0))
+
+        (for {
+          tf  <- AffineTransformation.translate(3, 4, 5)
+          res <- rayOperations.transform(tf, ray)
+          _ <- IO(res.origin shouldEqual Pt(4, 6, 8))
+            _ <- IO(res.direction shouldEqual Vec(0, 1, 0))
+        } yield ()).provide(Live)
+      }
+    }
+
+    "perform ray scaling scaling origin and scaling direction as is" in {
+      unsafeRun {
+        val ray = Ray(Pt(1, 2, 3), Vec(0, 1, 0))
+
+        (for {
+          tf  <- AffineTransformation.scale(2, 3, 4)
+            res <- rayOperations.transform(tf, ray)
+            _ <- IO(res.origin shouldEqual Pt(2, 6, 12))
+            _ <- IO(res.direction shouldEqual Vec(0, 3, 0))
+        } yield ()).provide(Live)
+      }
+    }
   }
 }

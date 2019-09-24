@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.model
 import cats.data.NonEmptyList
 import io.tuliplogic.geometry.matrix.SpatialEntity.SceneObject._
 import io.tuliplogic.geometry.matrix.SpatialEntity.{Pt, SceneObject, Vec}
-import io.tuliplogic.geometry.matrix.{MatrixOps, SpatialEntity}
+import io.tuliplogic.geometry.matrix.{AffineTransformation, AffineTransformationOps, MatrixOps, SpatialEntity, affineTfOps}
 import zio.{UIO, URIO, ZIO}
 
 case class Ray(origin: Pt, direction: Vec)
@@ -24,9 +24,11 @@ object RayOps {
     def intersect(ray: Ray, s: Sphere): URIO[R, List[Intersection]]
 
     def hit(intersections: NonEmptyList[Intersection]): URIO[R, Intersection]
+
+    def transform(at: AffineTransformation, ray:Ray): URIO[R, Ray]
   }
 
-  trait Live extends RayOps with MatrixOps {
+  trait Live extends RayOps with MatrixOps with AffineTransformationOps { self =>
     def rayOpsService: RayOps.Service[Any] = new Service[Any] {
       override def positionAt(ray: Ray, t: Double): ZIO[Any, Nothing, Pt] =
         for {
@@ -56,10 +58,15 @@ object RayOps {
           if (newInt.t >= 0 && newInt.t <= oldInt.t) newInt else oldInt
         }
       }
+
+      override def transform(at: AffineTransformation, ray: Ray): URIO[Any, Ray] = (for {
+        tfPt <- affineTfOps.transform(at, ray.origin)
+        tfVec <- affineTfOps.transform(at, ray.direction)
+      } yield Ray(tfPt, tfVec)).provide(self).orDie
     }
   }
 
-  object Live extends Live with MatrixOps.Live
+  object Live extends Live with MatrixOps.Live with AffineTransformationOps.Live
 }
 
 object rayOperations extends RayOps.Service[RayOps] {
@@ -74,4 +81,7 @@ object rayOperations extends RayOps.Service[RayOps] {
 
   override def hit(intersections: NonEmptyList[Intersection]): URIO[RayOps, Intersection] =
     ZIO.accessM(_.rayOpsService.hit(intersections))
+
+  override def transform(at: AffineTransformation, ray: Ray): URIO[RayOps, Ray] =
+    ZIO.accessM(_.rayOpsService.transform(at, ray))
 }

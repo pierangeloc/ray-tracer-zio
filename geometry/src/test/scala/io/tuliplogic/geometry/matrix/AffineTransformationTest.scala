@@ -28,7 +28,7 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
           unsafeRun(
             (for {
               transl          <- translation
-              result          <- affineTfOps.on(transl, point)
+              result          <- affineTfOps.transform(transl, point)
               resultCol       <- result |> toCol
               vectorToBeAdded <- Vec(x, y, z) |> toCol
               pointCol        <- point |> toCol
@@ -53,7 +53,7 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
           unsafeRun(
             (for {
               transl    <- translation
-              result    <- affineTfOps.on(transl, vector)
+              result    <- affineTfOps.transform(transl, vector)
               resultCol <- result |> toCol
               vectorCol <- vector |> toCol
               eq        <- matrixOperations.equal(vectorCol, resultCol)
@@ -78,7 +78,7 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
           unsafeRun(
             (for {
               scal            <- scaling
-              result          <- affineTfOps.on(scal, point)
+              result          <- affineTfOps.transform(scal, point)
               resultCol       <- result |> toCol
               pointCol        <- point |> toCol
               vectorToBeAdded <- Pt(x, y, z) |> toCol
@@ -115,7 +115,7 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
           scaleTf          <- scale(20, 20, 20)
           translateTf      <- translate(10, 30, 0)
           comp             <- composeLeft(rotateTf, scaleTf, translateTf)
-          res              <- affineTfOps.on(comp, horizontalRadius)
+          res              <- affineTfOps.transform(comp, horizontalRadius)
           resCol           <- res |> toCol
           expectedCol      <- Pt(10, 50, 0) |> toCol
           _                <- matrixOperations.almostEqual(resCol, expectedCol, 10e-10).flatMap(res => IO.effect(res shouldEqual true))

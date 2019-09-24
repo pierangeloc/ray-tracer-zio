@@ -16,15 +16,15 @@ trait AffineTransformationOps {
 
 object AffineTransformationOps {
   trait Service[R] {
-    def on(at: AffineTransformation, pt: Pt): ZIO[R, MatrixError, Pt]
-    def on(at: AffineTransformation, pt: Vec): ZIO[R, MatrixError, Vec]
+    def transform(at: AffineTransformation, pt: Pt): ZIO[R, MatrixError, Pt]
+    def transform(at: AffineTransformation, pt: Vec): ZIO[R, MatrixError, Vec]
     def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[R, MatrixError, AffineTransformation]
   }
 
   trait Live extends AffineTransformationOps with MatrixOps { live =>
     override def affineTfOps: Service[Any] = new Service[Any] {
 
-      private def on(at: AffineTransformation, v: Col): ZIO[Any, MatrixError, Col] =
+      private def transform(at: AffineTransformation, v: Col): ZIO[Any, MatrixError, Col] =
         for {
           v_m <- v.m
           v_n <- v.n
@@ -32,17 +32,17 @@ object AffineTransformationOps {
           res <- matrixOperations.mul(at.m, v).provide(live)
         } yield res
 
-      override def on(at: AffineTransformation, pt: Pt): ZIO[Any, MatrixError, Pt] =
+      override def transform(at: AffineTransformation, pt: Pt): ZIO[Any, MatrixError, Pt] =
         for {
           col    <- SpatialEntity.toCol(pt)
-          colRes <- on(at, col)
+          colRes <- transform(at, col)
           res    <- SpatialEntity.colToPt(colRes)
         } yield res
 
-      override def on(at: AffineTransformation, vec: Vec): ZIO[Any, MatrixError, Vec] =
+      override def transform(at: AffineTransformation, vec: Vec): ZIO[Any, MatrixError, Vec] =
         for {
           col    <- SpatialEntity.toCol(vec)
-          colRes <- on(at, col)
+          colRes <- transform(at, col)
           res    <- SpatialEntity.colToVec(colRes)
         } yield res
 
@@ -54,11 +54,11 @@ object AffineTransformationOps {
 }
 
 object affineTfOps extends AffineTransformationOps.Service[AffineTransformationOps] {
-  override def on(at: AffineTransformation, pt: Pt): ZIO[AffineTransformationOps, MatrixError, Pt] =
-    ZIO.accessM(_.affineTfOps.on(at, pt))
+  override def transform(at: AffineTransformation, pt: Pt): ZIO[AffineTransformationOps, MatrixError, Pt] =
+    ZIO.accessM(_.affineTfOps.transform(at, pt))
 
-  override def on(at: AffineTransformation, vec: Vec): ZIO[AffineTransformationOps, MatrixError, Vec] =
-    ZIO.accessM(_.affineTfOps.on(at, vec))
+  override def transform(at: AffineTransformation, vec: Vec): ZIO[AffineTransformationOps, MatrixError, Vec] =
+    ZIO.accessM(_.affineTfOps.transform(at, vec))
 
   override def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[AffineTransformationOps, MatrixError, AffineTransformation] =
     ZIO.accessM(_.affineTfOps.compose(at1, at2))
