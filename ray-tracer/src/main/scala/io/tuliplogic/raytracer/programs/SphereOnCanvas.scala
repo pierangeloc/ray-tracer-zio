@@ -18,7 +18,7 @@ import scala.{Stream => ScalaStream}
 import zio.stream._
 
 object SphereOnCanvas extends App {
-  val lightPt          = Pt(0, 0, -5)
+  val lightPt          = Pt(0, 0, -2.5)
   val canvasHalfWidth  = 7d
   val canvasHalfHeight = 7d
   val canvasZCoord     = 10
