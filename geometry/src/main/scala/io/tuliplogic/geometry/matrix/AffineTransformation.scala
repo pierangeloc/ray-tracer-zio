@@ -5,8 +5,10 @@ import io.tuliplogic.geometry.matrix.Types.{Col, M}
 import io.tuliplogic.raytracer.errors.MatrixError
 import zio.{UIO, ZIO}
 
-//TODO:
+//TODO: #1
 // define affine transformations as a service that requires MatrixOps. applyAffineTransformations require an implementation of matrix ops
+//TODO: #2
+// to improve performance, store with every affine transformation, the inverse transformation to avoid performing too many inverse for nothing
 /**
   * A transformation is by construction a 4 x 4 matrix. We need just to validate the vectors that it operates on are 4 x 1
   */
