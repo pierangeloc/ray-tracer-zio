@@ -6,7 +6,7 @@ import io.tuliplogic.geometry.matrix.{affineTfOps, AffineTransformation, AffineT
 import io.tuliplogic.raytracer.model.{Canvas, Color}
 import io.tuliplogic.geometry.matrix.AffineTransformation._
 import io.tuliplogic.geometry.matrix.SpatialEntity.Pt
-import io.tuliplogic.raytracer.errors.MatrixError
+import io.tuliplogic.raytracer.errors.AlgebraicError
 import org.scalatest.WordSpec
 import zio.{console, DefaultRuntime, IO}
 import zio.blocking.Blocking
@@ -37,7 +37,7 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
         override def path: Path = Paths.get(canvasFile)
       }
 
-      def updateCanvasFromXY(c: Canvas, p: Pt): IO[MatrixError, Unit] =
+      def updateCanvasFromXY(c: Canvas, p: Pt): IO[AlgebraicError, Unit] =
         c.update(p.x.toInt, p.y.toInt, Color(255, 255, 255))
 
       val rotationAngle    = math.Pi / 12

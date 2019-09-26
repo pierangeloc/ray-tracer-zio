@@ -2,7 +2,7 @@ package io.tuliplogic.geometry.matrix
 
 import cats.Functor
 import cats.implicits._
-import io.tuliplogic.raytracer.errors.MatrixError.{IndexExceedMatrixDimension, MatrixConstructionError}
+import io.tuliplogic.raytracer.errors.AlgebraicError.{IndexExceedMatrixDimension, MatrixConstructionError}
 import mouse.all._
 import zio.{IO, _}
 

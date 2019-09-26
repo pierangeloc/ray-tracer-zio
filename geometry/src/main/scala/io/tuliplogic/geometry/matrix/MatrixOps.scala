@@ -1,8 +1,8 @@
 package io.tuliplogic.geometry.matrix
 
 import io.tuliplogic.geometry.matrix.Types.M
-import io.tuliplogic.raytracer.errors.MatrixError
-import io.tuliplogic.raytracer.errors.MatrixError.MatrixDimError
+import io.tuliplogic.raytracer.errors.AlgebraicError
+import io.tuliplogic.raytracer.errors.AlgebraicError.MatrixDimError
 import zio.{IO, UIO, ZIO}
 
 trait MatrixOps {
@@ -19,13 +19,13 @@ object MatrixOps {
     - invert
    */
   trait Service[R] {
-    def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[R, MatrixError, Boolean]
-    def opposite(m: M): ZIO[R, MatrixError, M]
-    def equal(m1: M, m2: M): ZIO[R, MatrixError, Boolean]
-    def add(m1: M, m2: M): ZIO[R, MatrixError, M]
-    def mul(m1: M, m2: M): ZIO[R, MatrixError, M]
-    def had(m1: M, m2: M): ZIO[R, MatrixError, M]
-    def invert(m: M): ZIO[R, MatrixError, M]
+    def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[R, AlgebraicError, Boolean]
+    def opposite(m: M): ZIO[R, AlgebraicError, M]
+    def equal(m1: M, m2: M): ZIO[R, AlgebraicError, Boolean]
+    def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
+    def mul(m1: M, m2: M): ZIO[R, AlgebraicError, M]
+    def had(m1: M, m2: M): ZIO[R, AlgebraicError, M]
+    def invert(m: M): ZIO[R, AlgebraicError, M]
 
     def times(α: Double, m: M): ZIO[R, Nothing, M] =
       for {
@@ -40,7 +40,7 @@ object MatrixOps {
 
     override def matrixOps: Service[Any] = new Service[Any] {
 
-      private def elementWiseOp(m1: M, m2: M)(op: (Double, Double) => Double): ZIO[Any, MatrixError, M] =
+      private def elementWiseOp(m1: M, m2: M)(op: (Double, Double) => Double): ZIO[Any, AlgebraicError, M] =
         for {
           m1_m <- m1.m
           m1_n <- m1.n
@@ -55,10 +55,10 @@ object MatrixOps {
           res    <- factory.fromRows(m1_m, m1_n, opRows)
         } yield res
 
-      override def add(m1: M, m2: M): ZIO[Any, MatrixError, M] =
+      override def add(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
         elementWiseOp(m1, m2)(_ + _)
 
-      override def mul(m1: M, m2: M): ZIO[Any, MatrixError, M] =
+      override def mul(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
         for {
           m1_m   <- m1.m
           m1_n   <- m1.n
@@ -79,7 +79,7 @@ object MatrixOps {
           )
         } yield res
 
-      override def invert(m: M): ZIO[Any, MatrixError, M] = {
+      override def invert(m: M): ZIO[Any, AlgebraicError, M] = {
         //cheating here, I don't want to bother coming up with a correct implementation of this, it might take considerable time
         import breeze.linalg._
         for {
@@ -88,12 +88,12 @@ object MatrixOps {
           nrCols <- m.n
           arrayElems: Array[Double] = rows.flatten.toArray
           bm                        = DenseMatrix.create(nrRows, nrCols, arrayElems)
-          inverse <- ZIO.effect(inv(bm)).mapError(_ => MatrixError.MatrixNotInvertible)
+          inverse <- ZIO.effect(inv(bm)).mapError(_ => AlgebraicError.MatrixNotInvertible)
           res     <- factory.fromRows(nrRows, nrCols, vectorizable.fromArray(inverse.data.grouped(nrCols).map(vectorizable.fromArray).toArray))
         } yield res
       }
 
-      override def equal(m1: M, m2: M): ZIO[Any, MatrixError, Boolean] =
+      override def equal(m1: M, m2: M): ZIO[Any, AlgebraicError, Boolean] =
         for {
           m1_m <- m1.m
           m1_n <- m1.n
@@ -105,7 +105,7 @@ object MatrixOps {
           rows2 <- m2.rows
         } yield rows1 == rows2
 
-      override def almostEqual(m1: M, m2: M, maxMSEr: Double): ZIO[Any, MatrixError, Boolean] =
+      override def almostEqual(m1: M, m2: M, maxMSEr: Double): ZIO[Any, AlgebraicError, Boolean] =
         for {
           m1_m <- m1.m
           m1_n <- m1.n
@@ -120,7 +120,7 @@ object MatrixOps {
           squaredError <- IO.effectTotal(vectorizable.l2(diff))
         } yield squaredError / (m1_m * m2_n) < maxMSEr
 
-      override def opposite(m: M): ZIO[Any, MatrixError, M] =
+      override def opposite(m: M): ZIO[Any, AlgebraicError, M] =
         for {
           m_m  <- m.m
           m_n  <- m.n
@@ -128,7 +128,7 @@ object MatrixOps {
           res  <- factory.fromRows(m_m, m_n, rows.map(_.map(x => -x)))
         } yield res
 
-      override def had(m1: M, m2: M): ZIO[Any, MatrixError, M] =
+      override def had(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
         elementWiseOp(m1, m2)(_ * _)
     }
   }
@@ -138,24 +138,24 @@ object MatrixOps {
 }
 
 object matrixOperations extends MatrixOps.Service[MatrixOps] {
-  override def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[MatrixOps, MatrixError, Boolean] =
+  override def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[MatrixOps, AlgebraicError, Boolean] =
     ZIO.accessM(_.matrixOps.almostEqual(m1, m2, maxSquaredError))
 
-  override def opposite(m: M): ZIO[MatrixOps, MatrixError, M] =
+  override def opposite(m: M): ZIO[MatrixOps, AlgebraicError, M] =
     ZIO.accessM(_.matrixOps.opposite(m))
 
-  override def equal(m1: M, m2: M): ZIO[MatrixOps, MatrixError, Boolean] =
+  override def equal(m1: M, m2: M): ZIO[MatrixOps, AlgebraicError, Boolean] =
     ZIO.accessM(_.matrixOps.equal(m1, m2))
 
-  override def add(m1: M, m2: M): ZIO[MatrixOps, MatrixError, M] =
+  override def add(m1: M, m2: M): ZIO[MatrixOps, AlgebraicError, M] =
     ZIO.accessM(_.matrixOps.add(m1, m2))
 
-  override def mul(m1: M, m2: M): ZIO[MatrixOps, MatrixError, M] =
+  override def mul(m1: M, m2: M): ZIO[MatrixOps, AlgebraicError, M] =
     ZIO.accessM(_.matrixOps.mul(m1, m2))
 
-  override def had(m1: M, m2: M): ZIO[MatrixOps, MatrixError, M] =
+  override def had(m1: M, m2: M): ZIO[MatrixOps, AlgebraicError, M] =
     ZIO.accessM(_.matrixOps.had(m1, m2))
 
-  override def invert(m: M): ZIO[MatrixOps, MatrixError, M] =
+  override def invert(m: M): ZIO[MatrixOps, AlgebraicError, M] =
     ZIO.accessM(_.matrixOps.invert(m))
 }

@@ -1,8 +1,9 @@
 package io.tuliplogic.geometry.matrix
 
-import io.tuliplogic.geometry.matrix.Types.{factory, Col}
-import io.tuliplogic.raytracer.errors.MatrixError.IndexExceedMatrixDimension
+import io.tuliplogic.geometry.matrix.Types.{Col, factory}
+import io.tuliplogic.raytracer.errors.AlgebraicError.IndexExceedMatrixDimension
 import io.tuliplogic.geometry.matrix.Types.vectorizable.comp
+import io.tuliplogic.raytracer.errors.AlgebraicError
 import zio.{IO, UIO}
 
 sealed trait SpatialEntity
@@ -16,6 +17,11 @@ object SpatialEntity {
     def plus(other: Vec): Vec   = Vec(x + other.x, y + other.y, z + other.z)
     def plus(otherPt: Pt): Pt   = Pt(x + otherPt.x, y + otherPt.y, z + otherPt.z)
     def dot(other: Vec): Double = x * other.x + y * other.y + z * other.z
+    def normalized: IO[AlgebraicError, Vec] = for {
+      l2 <- UIO.succeed(x * x + y * y + z * z)
+      norm <- UIO.succeed(math.sqrt(l2))
+      res <- if (l2 == 0) IO.fail(AlgebraicError.VectorNonNormalizable) else IO.succeed(Vec(x / norm, y / norm, z / norm))
+    } yield res
   }
 
   sealed trait SceneObject
