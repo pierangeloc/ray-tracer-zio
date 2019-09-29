@@ -23,7 +23,7 @@ object SpatialEntity {
 
 //    case class Material(color: Color, )
     //TODO refine Double > 0
-    case class PointLight(position: Pt, intensity: Double)
+    case class PointLight(position: Pt, intensity: Color)
 
     /**
     * A unit sphere centered in (0, 0, 0) and a transformation on the sphere that puts it  into final position

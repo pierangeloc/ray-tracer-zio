@@ -14,7 +14,7 @@ trait PhongReflection {
 object PhongReflection {
 
   case class PhongComponents(ambient: Color, diffuse: Color, reflective: Color) {
-    def toIntensity: Color = ambient + diffuse + reflective
+    def toColor: Color = ambient + diffuse + reflective
   }
 
   trait Service[R] {
@@ -55,7 +55,7 @@ object PhongReflection {
           for {
             factor   <- UIO(math.pow(reflectDotEye, material.shininess))
             specular <- UIO(pointLight.intensity * material.specular * factor)
-          } yield Color.white * specular
+          } yield specular
 
         for {
           effectiveColor <- UIO.succeed(material.color * pointLight.intensity)
@@ -72,7 +72,7 @@ object PhongReflection {
   object Live extends Live with SpatialEntityOperations.Live with AffineTransformationOps.Live with MatrixOps.Live
 }
 
-object phong extends PhongReflection.Service[PhongReflection] {
+object phongOps extends PhongReflection.Service[PhongReflection] {
   override def lighting(
       material: Material,
       pointLight: PointLight,
