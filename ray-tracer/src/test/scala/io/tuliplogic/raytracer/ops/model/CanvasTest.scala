@@ -1,11 +1,8 @@
-package io.tuliplogic.raytracer.canvas
+package io.tuliplogic.raytracer.ops.model
 
-import io.tuliplogic.raytracer.ops.model.{Canvas, Color}
-import org.scalatest.WordSpec
 import org.scalatest.Matchers._
+import org.scalatest.WordSpec
 import zio._
-
-import scala.collection.immutable
 
 class CanvasTest extends WordSpec with DefaultRuntime {
 
