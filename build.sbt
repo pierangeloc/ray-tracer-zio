@@ -143,5 +143,4 @@ lazy val `ray-tracer` = project
       scalaTest % "test"
     )
   )
-  .dependsOn(geometry)
-  .dependsOn(commons)
+  .dependsOn(geometry % "test->test;compile->compile")
