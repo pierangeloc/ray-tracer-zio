@@ -45,7 +45,7 @@ object RayOperations {
         * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
         */
       override def intersect(ray: Ray, s: Sphere): ZIO[Any, Nothing, List[Intersection]] = {
-        def intersectUnitSphere(r: Ray): List[Intersection] = {
+        def intersectUnitSphere(ray: Ray): List[Intersection] = {
           val sphereToRay = ray.origin - Pt(0, 0, 0)
           val a           = ray.direction dot ray.direction
           val b           = 2 * (ray.direction dot sphereToRay)
@@ -55,6 +55,7 @@ object RayOperations {
           if (delta < 0) List()
           else List((-b - math.sqrt(delta)) / (2 * a), (-b + math.sqrt(delta)) / (2 * a)).map(Intersection(_, s))
         }
+
         for {
           inverseTf <- affineTfOps.invert(s.transformation).orDie
           tfRay     <- transform(inverseTf, ray)
