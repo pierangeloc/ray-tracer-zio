@@ -2,33 +2,19 @@ package io.tuliplogic.raytracer.ops.programs
 
 import java.nio.file.{Path, Paths}
 
-import cats.data.NonEmptyList
-import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, CanvasError, RayTracerError}
+import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
-import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, AffineTransformationOps}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, AffineTransformationOps}
+import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
+import io.tuliplogic.raytracer.ops.drawing.{SampledRect, Scene}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{
-  phongOps,
-  rayOps,
-  spatialEntityOps,
-  Canvas,
-  Color,
-  Intersection,
-  Material,
-  PhongReflection,
-  Ray,
-  RayOperations,
-  SpatialEntityOperations
-}
-import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
+import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
+import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.stream._
-import zio.{clock, console, App, Chunk, IO, UIO, ZIO}
-
-import scala.{Stream => ScalaStream}
+import zio.{App, UIO, ZIO, clock, console}
 
 object Chapter6Sphere extends App {
   val sphereMaterial   = Material(Color(1, 0.2, 1), ambient = 0.2, diffuse = 0.9, 0.9, 50d)
@@ -41,66 +27,21 @@ object Chapter6Sphere extends App {
   val canvasVRes       = 500
   val canvasFile       = "/tmp/nioexp/chapter-6-shaded-sphere.ppm"
 
-  def pixelsChunked(chunkSize: Int): ScalaStream[Chunk[(Pt, Int, Int)]] =
-    (for {
-      xn <- ScalaStream.from(0).take(canvasHRes)
-      yn <- ScalaStream.from(0).take(canvasVRes)
-    } yield {
-      val cX = xn * (canvasHalfWidth * 2) / canvasHRes
-      val cY = yn * (canvasHalfHeight * 2) / canvasVRes
-      (Pt(cX - canvasHalfWidth, -cY + canvasHalfHeight, canvasZCoord), xn, yn)
-    })
-      .grouped(chunkSize)
-      .map(str => Chunk.fromIterable(str))
-      .toStream
-
-  def canvasPixelsAsPoints: StreamChunk[Nothing, (Pt, Int, Int)] =
-    StreamChunk(Stream.fromIterable(pixelsChunked(4096)))
-
-  def rayForPixel(px: Pt): IO[AlgebraicError, Ray] =
-    for {
-      normalizedDirection <- (px - infinitePoint).normalized
-    } yield Ray(origin = infinitePoint, direction = normalizedDirection)
-
-  def colorForHit(
-      ray: Ray,
-      hit: Intersection,
-      material: Material): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, PhongReflection.PhongComponents] =
-    hit.sceneObject match {
-      case s @ Sphere(_, _) =>
-        for {
-          pt      <- rayOps.positionAt(ray, hit.t)
-          normalV <- spatialEntityOps.normal(pt, s)
-          eyeV    <- UIO(-ray.direction)
-          color   <- phongOps.lighting(material, pointLight, pt, eyeV, normalV)
-        } yield color
-      case _ => IO.fail(BusinessError.GenericError("can't handle anything but spheres"))
-    }
-
   type RichRayOperations = PhongReflection with SpatialEntityOperations with RayOperations
-  object RichRayOperations {
-    trait Live extends PhongReflection.Live with SpatialEntityOperations.Live with RayOperations.Live
-  }
-  def intersectAndRender(px: Pt, sphere: Sphere, xn: Int, yn: Int, canvas: Canvas) =
-    for {
-      ray           <- rayForPixel(px)
-      intersections <- rayOps.intersect(ray, sphere)
-      maybeHit      <- NonEmptyList.fromList(intersections).map(ix => rayOps.hit(ix).map(Some(_))).getOrElse(UIO(None))
-      _ <- maybeHit.fold[ZIO[RichRayOperations, RayTracerError, Unit]](
-        canvas.update(xn, yn, Color.black)
-      ) { hit =>
-        colorForHit(ray, hit, sphere.material).flatMap(phongComps => canvas.update(xn, yn, phongComps.toColor))
-      }
-    } yield ()
 
   val program: ZIO[CanvasRenderer with RichRayOperations with Clock with Console, RayTracerError, Unit] = for {
     startTime    <- clock.nanoTime
     canvas       <- Canvas.create(canvasHRes, canvasVRes)
+    sampledRect  <- UIO.succeed(SampledRect(canvasHalfWidth, canvasHalfHeight, canvasZCoord, canvasHRes, canvasVRes))
+    scene        <- UIO.succeed(Scene(infinitePoint, pointLight))
     sphereTransf <- AffineTransformation.id
     sphere       <- UIO(Sphere(sphereTransf, sphereMaterial))
-    _ <- canvasPixelsAsPoints.foreach {
+    _ <- sampledRect.pixelsChunkedStream.foreach {
       case (pt, xn, yn) =>
-        intersectAndRender(pt, sphere, xn, yn, canvas)
+        scene.intersectAndComputePhong(pt, sphere).flatMap {
+          case None =>         canvas.update(xn, yn, Color.black)
+          case Some(phongComps) => canvas.update(xn, yn, phongComps.toColor)
+        }
     }
     calcTime <- clock.nanoTime
     _        <- console.putStr(s"computation time: ${(calcTime - startTime) / 1000} us")
