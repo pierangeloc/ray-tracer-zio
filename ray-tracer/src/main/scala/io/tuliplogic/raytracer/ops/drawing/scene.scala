@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.drawing
 import cats.data.NonEmptyList
 import cats.implicits._
 import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, RayTracerError}
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.model.PhongReflection.PhongComponents
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
@@ -47,28 +47,36 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
       normalizedDirection <- (px - infinitePoint).normalized
     } yield Ray(origin = infinitePoint, direction = normalizedDirection)
 
-  private def colorForHit(
+  case class HitComps(obj: Sphere, pt: Pt, normalV: Vec, eyeV: Vec)
+
+  private def hitComps(
     ray: Ray,
-    hit: Intersection,
-    material: Material): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, PhongReflection.PhongComponents] =
+    hit: Intersection
+  ): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, HitComps] =
     hit.sceneObject match {
       case s @ Sphere(_, _) =>
         for {
           pt      <- rayOps.positionAt(ray, hit.t)
           normalV <- spatialEntityOps.normal(pt, s)
           eyeV    <- UIO(-ray.direction)
-          color   <- phongOps.lighting(material, pointLight, pt, eyeV, normalV)
-        } yield color
+        } yield HitComps(s, pt, normalV, eyeV)
       case _ => IO.fail(BusinessError.GenericError("can't handle anything but spheres"))
     }
 
+  private def colorForHit(
+    ray: Ray,
+    hit: Intersection
+  ): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, PhongReflection.PhongComponents] =
+    hitComps(ray, hit).flatMap {
+      case HitComps(sphere, pt, normalV, eyeV) => phongOps.lighting(sphere.material, pointLight, pt, eyeV, normalV)
+    }
 
   def intersectAndComputePhong(canvasPx: Pt, sphere: Sphere): ZIO[RichRayOperations, RayTracerError, Option[PhongComponents]] =
     for {
       ray           <- rayForPixel(canvasPx)
       intersections <- rayOps.intersect(ray, sphere)
       maybeHit      <- NonEmptyList.fromList(intersections).map(ix => rayOps.hit(ix).map(Some(_))).getOrElse(UIO(None))
-      maybeComps    <- maybeHit.map(colorForHit(ray, _, sphere.material)).sequence
+      maybeComps    <- maybeHit.map(colorForHit(ray, _)).sequence
     } yield maybeComps
 
 }
