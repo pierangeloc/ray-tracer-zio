@@ -54,6 +54,7 @@ lazy val tpolecatSettings = Seq(
       "-Ywarn-value-discard",              // Warn when non-Unit expression results are unused.
       "-Ywarn-macros:before", // via som
       "-Yrangepos" // for longer squiggles
+      /*plus JVM options -XX:MaxInlineLevel=18 -XX:MaxInlineSize=270 -XX:MaxTrivialSize=12 (https://twitter.com/leifwickland/status/1179419045055086595)*/
     )
   ,
   scalacOptions in (Compile, console) --= Seq("-Xfatal-warnings", "-Ywarn-unused:imports", "-Yno-imports")

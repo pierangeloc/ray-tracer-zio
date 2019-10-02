@@ -16,6 +16,23 @@ import zio.console.Console
 class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
   import Types._
   val env = new Live with MatrixOps.Live
+
+  "identity transformation " should {
+    "identity.apply(point) === point" in {
+      forAll {
+        pointGen
+      } { point =>
+        unsafeRun(
+          (for {
+            tf <- AffineTransformation.id
+            result <- affineTfOps.transform(tf, point)
+            _ <- IO.effect(result === point)
+          } yield ()).provide(env)
+        )
+      }
+    }
+  }
+
   "translation transformation " should {
     "translate(x, y, z).apply(point) === point + vector(x, y, z)" in {
       forAll {

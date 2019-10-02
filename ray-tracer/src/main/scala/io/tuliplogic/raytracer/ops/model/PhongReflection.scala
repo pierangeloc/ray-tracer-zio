@@ -13,7 +13,9 @@ trait PhongReflection {
 
 object PhongReflection {
 
-  case class HitComps(obj: Sphere, pt: Pt, normalV: Vec, eyeV: Vec)
+  case class HitComps(obj: Sphere, pt: Pt, normalV: Vec, eyeV: Vec) {
+    def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
+  }
 
   case class PhongComponents(ambient: Color, diffuse: Color, reflective: Color) {
     def toColor: Color = ambient + diffuse + reflective
