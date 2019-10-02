@@ -2,7 +2,7 @@ package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.commons.errors.CanvasError.IndexExceedCanvasDimension
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
-import zio.{Chunk, IO, UIO, ZIO, stream}
+import zio.{Chunk, IO, UIO, ZIO}
 import zio.stream._
 
 import scala.{Stream => ScalaStream}

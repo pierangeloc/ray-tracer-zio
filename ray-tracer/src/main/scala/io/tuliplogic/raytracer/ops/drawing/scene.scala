@@ -5,7 +5,7 @@ import cats.implicits._
 import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, RayTracerError}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
-import io.tuliplogic.raytracer.ops.model.PhongReflection.PhongComponents
+import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Intersection, Material, PhongReflection, Ray, RayOperations, SpatialEntityOperations, phongOps, rayOps, spatialEntityOps}
 import zio.interop.catz._
@@ -47,7 +47,6 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
       normalizedDirection <- (px - infinitePoint).normalized
     } yield Ray(origin = infinitePoint, direction = normalizedDirection)
 
-  case class HitComps(obj: Sphere, pt: Pt, normalV: Vec, eyeV: Vec)
 
   private def hitComps(
     ray: Ray,
@@ -67,8 +66,8 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
     ray: Ray,
     hit: Intersection
   ): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, PhongReflection.PhongComponents] =
-    hitComps(ray, hit).flatMap {
-      case HitComps(sphere, pt, normalV, eyeV) => phongOps.lighting(sphere.material, pointLight, pt, eyeV, normalV)
+    hitComps(ray, hit).flatMap { hitComps =>
+      phongOps.lighting(pointLight, hitComps)
     }
 
   def intersectAndComputePhong(canvasPx: Pt, sphere: Sphere): ZIO[RichRayOperations, RayTracerError, Option[PhongComponents]] =
