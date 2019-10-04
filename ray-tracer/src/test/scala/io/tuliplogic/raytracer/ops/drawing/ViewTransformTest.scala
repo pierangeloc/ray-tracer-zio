@@ -13,6 +13,8 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
 
   val env = new Live with MatrixOps.Live
 
+  //TODO: property of this transform is that a view with proportional `to - from` vectors should give the same transformation
+
   "View transform" should {
     "provide identity transformaton for default view" in {
       forAll {

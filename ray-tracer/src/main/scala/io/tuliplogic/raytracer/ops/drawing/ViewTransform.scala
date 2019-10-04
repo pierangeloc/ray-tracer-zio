@@ -6,6 +6,14 @@ import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, Affin
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import zio.{UIO, ZIO}
 
+/**
+  * Given
+  * @param from The point where my eye is
+  * @param to The point my eye is looking at
+  * @param up The upper direction of my eye
+  *
+  * we provide the equivalent transformation of the world needed to produce the same perspective
+  */
 case class ViewTransform(from: Pt, to: Pt, up: Vec) {
 
   def tf: ZIO[AffineTransformationOps, AlgebraicError, AffineTransformation] = {
