@@ -26,13 +26,9 @@ class CameraTest extends WordSpec with OpsTestUtils with DefaultRuntime {
         (for {
           camera <- AffineTransformation.id.map(Camera(201, 101, math.Pi / 2, _))
           ray <- camera.rayForPixel(0, 0)
-          _   <- IO.effect(ray should === (Ray(Pt.origin, Vec(1.66519, 0.33259, -0.66851))))
+          _   <- IO.effect(ray should === (Ray(Pt.origin, Vec(0.66519, 0.33259, -0.66851))))
         } yield ()).provide(AffineTransformationOps.Live)
       }
-    }
-
-    "fail" in {
-      unsafeRun(Task(Color(0.38066119308103435,0.47582649135129296,0.28549589481077575) should === (Color(9.38066, 0.47583, 0.2855))))
     }
 
     "compute the ray for pixel when the camera is transformed" in {
@@ -42,7 +38,7 @@ class CameraTest extends WordSpec with OpsTestUtils with DefaultRuntime {
           transl  <- AffineTransformation.translate(0, -2, 5)
           camera <- (transl >=> rot).map(Camera(201, 101, math.Pi / 2, _))
           ray    <- camera.rayForPixel(100, 50)
-          _      <- IO.effect(ray should === (Ray(Pt(0, 2, -5), Vec(math.sqrt(2) / 2, 0, -math.sqrt(2) / 2))))
+          _      <- IO.effect(ray should === (Ray(Pt(0, 2, -5), Vec(-math.sqrt(2) / 2, 0, -math.sqrt(2) / 2))))
         } yield ()).provide(AffineTransformationOps.Live)
       }
     }
