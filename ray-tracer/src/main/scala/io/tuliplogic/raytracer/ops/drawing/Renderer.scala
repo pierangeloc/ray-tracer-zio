@@ -20,7 +20,7 @@ object Renderer {
       } yield (px, py, color)
     }
 
-  def pixels(chunkSize: Int)(camera: Camera): scala.Stream[Chunk[(Int, Int)]] = (for {
+  private def pixels(chunkSize: Int)(camera: Camera): scala.Stream[Chunk[(Int, Int)]] = (for {
     px <- ScalaStream.from(0).take(camera.hRes)
     py <- ScalaStream.from(0).take(camera.vRes)
   } yield (px, py))
@@ -28,6 +28,6 @@ object Renderer {
     .map(str => Chunk.fromIterable(str))
     .toStream
 
-  def pixelsChunkedStream: Camera => UStreamC[(Int, Int)] = c => StreamChunk(Stream.fromIterable(pixels(4096)(c)))
+  private def pixelsChunkedStream: Camera => UStreamC[(Int, Int)] = c => StreamChunk(Stream.fromIterable(pixels(4096)(c)))
 
 }
