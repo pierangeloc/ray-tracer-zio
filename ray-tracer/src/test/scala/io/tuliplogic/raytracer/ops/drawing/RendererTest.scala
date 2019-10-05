@@ -25,7 +25,7 @@ class RendererTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             pixels <- Renderer.render(c, w).flattenChunks.collect {
               case (5, 5, c) => c
             }.run(Sink.collectAllN(1))
-            _    <- Task.effectTotal{ println(pixels.head); pixels.head should === (Color(0.38066, 0.47583, 0.2855)) }
+            _    <- Task.effectTotal{ pixels.head should === (Color(0.38066, 0.47583, 0.2855)) }
         } yield pixels).provide(new RayOperations.Live with PhongReflection.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live)
       }
     }

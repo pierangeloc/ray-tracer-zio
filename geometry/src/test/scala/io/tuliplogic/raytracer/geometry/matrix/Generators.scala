@@ -33,5 +33,6 @@ trait Generators { self: DefaultRuntime =>
     } yield point
 
   val reasonableDouble = Gen.chooseNum[Double](-1000, 1000)
+  val reasonablePositiveDouble = Gen.chooseNum[Double](-1000, 1000)
 
 }

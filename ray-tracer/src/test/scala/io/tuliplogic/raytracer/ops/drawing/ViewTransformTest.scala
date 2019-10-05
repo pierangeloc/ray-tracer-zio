@@ -6,6 +6,7 @@ import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps.Live
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformation}
 import org.scalatest.WordSpec
+import org.scalatest.Matchers._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import zio.{DefaultRuntime, IO}
 
@@ -24,7 +25,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
           (for {
             tf <- ViewTransform.default.tf
             result <- affineTfOps.transform(tf, point)
-            _      <- IO.effect(result === point)
+            _      <- IO.effect(result should === (point))
           } yield ()).provide(env)
         )
       }
@@ -38,25 +39,25 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
           (for {
             tf <- ViewTransform(Pt.origin, Pt(0, 0, 1), Vec.uy).tf
             result <- affineTfOps.transform(tf, point)
-            _      <- IO.effect(result === point.copy(-point.x, point.y, -point.z))
+            _      <- IO.effect(result should === (point.copy(-point.x, point.y, -point.z)))
           } yield ()).provide(env)
         )
       }
     }
 
-    "provide a translation of -deltaZ for any ViewTransform with origini in deltaZ" in {
+    "provide a translation of -deltaZ for any ViewTransform with origin in deltaZ" in {
       forAll {
         for {
-          pt     <- pointGen
-          deltaZ <- reasonableDouble
-        } yield (pt, deltaZ)
+          point  <- pointGen
+          deltaZ <- reasonablePositiveDouble
+        } yield (point, deltaZ)
       } {
         case (point, deltaZ) =>
           unsafeRun(
             (for {
-              tf <- ViewTransform(Pt.origin.copy(z = deltaZ), Pt(0, 0, 1), Vec.uy).tf
+              tf <- ViewTransform(Pt.origin.copy(z = deltaZ), Pt(0, 0, deltaZ - 1), Vec.uy).tf
               result <- affineTfOps.transform(tf, point)
-              _      <- IO.effect(result === point.copy(point.x, point.y, point.z - deltaZ))
+              _      <- IO.effect(result should === (point.copy(point.x, point.y, point.z - deltaZ)))
             } yield ()).provide(env)
           )
       }
@@ -79,7 +80,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
               )
             )
             expected <- affineTfOps.transform(AffineTransformation(expectedTfMatrix), point)
-            _        <- IO.effect(result === expected)
+            _        <- IO.effect(result should === (expected))
           } yield ()).provide(env)
         )
 

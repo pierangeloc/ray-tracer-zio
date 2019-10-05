@@ -32,7 +32,7 @@ object PointVec {
       for {
         l2   <- UIO.succeed(x * x + y * y + z * z)
         norm <- UIO.succeed(math.sqrt(l2))
-        res  <- if (l2 == 0) IO.fail(AlgebraicError.VectorNonNormalizable) else IO.succeed(Vec(x / norm, y / norm, z / norm))
+        res  <- if (l2 == 0) IO.fail(AlgebraicError.VectorNonNormalizable(this.toString)) else IO.succeed(Vec(x / norm, y / norm, z / norm))
       } yield res
 
     def unary_- : Vec = Vec(-x, -y, -z)

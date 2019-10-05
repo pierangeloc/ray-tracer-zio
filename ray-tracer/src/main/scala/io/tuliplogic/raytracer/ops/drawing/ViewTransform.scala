@@ -29,7 +29,7 @@ case class ViewTransform(from: Pt, to: Pt, up: Vec) {
           Vector(left.x,    left.y,   left.z,   0d),
           Vector(trueUp.x,  trueUp.y, trueUp.z, 0d),
           Vector(-fwd.x,    -fwd.y,   -fwd.z,   0d),
-          Vector(0,         0,        0,        1)
+          Vector(0d,        0d,       0d,       1d)
         ))
       translateTf <- AffineTransformation.translate(-from.x, -from.y, - from.z)
       composed    <- translateTf >=> AffineTransformation(orientationMatrix)

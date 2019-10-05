@@ -7,9 +7,9 @@ sealed trait RayTracerError extends Exception
   */
 sealed trait AlgebraicError extends RayTracerError
 object AlgebraicError {
-  case class MatrixDimError(str: String) extends AlgebraicError
+  case class MatrixDimError(override val getMessage: String) extends AlgebraicError
   case object MatrixNotInvertible        extends AlgebraicError
-  case object VectorNonNormalizable      extends AlgebraicError
+  case class VectorNonNormalizable(override val getMessage: String) extends AlgebraicError
 
   case class IndexExceedMatrixDimension(row: Int, col: Int, m: Int, n: Int) extends AlgebraicError {
     override def getMessage = s"Attempted to access index ($row, $col) in a matrix $m x $n"
