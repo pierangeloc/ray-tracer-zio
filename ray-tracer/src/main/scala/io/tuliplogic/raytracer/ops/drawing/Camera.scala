@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.drawing
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
 import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, AffineTransformationOps, affineTfOps}
-import io.tuliplogic.raytracer.ops.model.Ray
+import io.tuliplogic.raytracer.ops.model.{Canvas, Ray}
 import zio.{UIO, ZIO}
 
 /**
@@ -35,6 +35,7 @@ case class Camera(
     origin <- affineTfOps.transform(inverseTf, Pt.origin)
     direction <- (pixel - origin).normalized
     } yield Ray(origin, direction)
+
 }
 
 

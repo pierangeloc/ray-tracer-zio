@@ -10,8 +10,8 @@ trait OpsTestUtils extends TestUtils with Tolerance {
   implicit val colEq: Equality[Color] = new Equality[Color] {
     override def areEqual(a: Color, b: Any): Boolean = b match {
       case Color(r, g, b) =>
-        a.red   === r +- 0.001
-        a.green === g +- 0.001
+        a.red   === r +- 0.001 &&
+        a.green === g +- 0.001 &&
         a.blue  === b +- 0.001
       case _ => false
     }

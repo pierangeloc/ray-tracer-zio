@@ -3,10 +3,10 @@ package io.tuliplogic.raytracer.ops.drawing
 import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, AffineTransformationOps}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
-import io.tuliplogic.raytracer.ops.model.Ray
+import io.tuliplogic.raytracer.ops.model.{Color, Ray}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
-import zio.{DefaultRuntime, IO}
+import zio.{DefaultRuntime, IO, Task}
 
 class CameraTest extends WordSpec with OpsTestUtils with DefaultRuntime {
 
@@ -29,6 +29,10 @@ class CameraTest extends WordSpec with OpsTestUtils with DefaultRuntime {
           _   <- IO.effect(ray should === (Ray(Pt.origin, Vec(1.66519, 0.33259, -0.66851))))
         } yield ()).provide(AffineTransformationOps.Live)
       }
+    }
+
+    "fail" in {
+      unsafeRun(Task(Color(0.38066119308103435,0.47582649135129296,0.28549589481077575) should === (Color(9.38066, 0.47583, 0.2855))))
     }
 
     "compute the ray for pixel when the camera is transformed" in {

@@ -11,7 +11,7 @@ import mouse.all._
 import zio.blocking.Blocking
 
 import scala.math.min
-
+//TODO: rename this package "serializing"
 trait CanvasRenderer {
   def renderer: CanvasRenderer.Service[Any]
 }

@@ -9,8 +9,8 @@ trait TestUtils extends Tolerance {
   implicit val vecEq: Equality[Vec] = new Equality[Vec] {
     override def areEqual(a: Vec, b: Any): Boolean = b match {
       case Vec(x, y, z) =>
-        a.x === x +- 0.001
-        a.y === y +- 0.001
+        a.x === x +- 0.001 &&
+        a.y === y +- 0.001 &&
         a.z === z +- 0.001
       case _ => false
     }
@@ -19,8 +19,8 @@ trait TestUtils extends Tolerance {
   implicit val ptEq: Equality[Pt] = new Equality[Pt] {
     override def areEqual(a: Pt, b: Any): Boolean = b match {
       case Pt(x, y, z) =>
-        a.x === x +- 0.001
-        a.y === y +- 0.001
+        a.x === x +- 0.001 &&
+        a.y === y +- 0.001 &&
         a.z === z +- 0.001
       case _ => false
     }

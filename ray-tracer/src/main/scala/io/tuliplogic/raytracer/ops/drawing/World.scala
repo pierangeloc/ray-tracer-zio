@@ -28,8 +28,8 @@ object World {
       case s @ Sphere(_, _) =>
         for {
           pt      <- rayOps.positionAt(ray, hit.t)
-            normalV <- spatialEntityOps.normal(pt, s)
-            eyeV    <- UIO(-ray.direction)
+          normalV <- spatialEntityOps.normal(pt, s)
+          eyeV    <- UIO(-ray.direction)
         } yield HitComps(s, pt, normalV, eyeV)
       case _ => IO.fail(BusinessError.GenericError("can't handle anything but spheres"))
     }
