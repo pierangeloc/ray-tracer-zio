@@ -78,6 +78,48 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       }
     }
   }
+
+  "isShadowed, with sphere of ray=1 around the origin and light at (-10, 10, -10)" should {
+    "return false for a point in LOS with point light" in {
+      unsafeRun {
+        (for {
+          w <- defaultWorld
+          inShadow <- w.isShadowed(Pt(0, 10, 0))
+          _ <- IO {inShadow shouldEqual false}
+        } yield ()).provide(RayOperations.Live)
+      }
+    }
+
+    "return true for a point at the antipodes of the light, with the sphere being around the origin" in {
+      unsafeRun {
+        (for {
+          w <- defaultWorld
+          inShadow <- w.isShadowed(Pt(10, -10, 10))
+          _ <- IO {inShadow shouldEqual true}
+        } yield ()).provide(RayOperations.Live)
+      }
+    }
+
+    "return false for a point on the other side of the sphere light, with respect to the sphere" in {
+      unsafeRun {
+        (for {
+          w <- defaultWorld
+            inShadow <- w.isShadowed(Pt(-20, 20, -20))
+            _ <- IO {inShadow shouldEqual false}
+        } yield ()).provide(RayOperations.Live)
+      }
+    }
+
+    "return false for a point between the light and the sphere" in {
+      unsafeRun {
+        (for {
+          w <- defaultWorld
+            inShadow <- w.isShadowed(Pt(-2, 2, -2))
+            _ <- IO {inShadow shouldEqual false}
+        } yield ()).provide(RayOperations.Live)
+      }
+    }
+  }
 }
 
 object WorldTest {

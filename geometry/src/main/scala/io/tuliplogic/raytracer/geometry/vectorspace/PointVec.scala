@@ -28,11 +28,12 @@ object PointVec {
       z * other.x - x * other.z,
       x * other.y - y * other.x
     )
-    def normalized: IO[AlgebraicError, Vec] =
-      for {
-        l2   <- UIO.succeed(x * x + y * y + z * z)
-        norm <- UIO.succeed(math.sqrt(l2))
-        res  <- if (l2 == 0) IO.fail(AlgebraicError.VectorNonNormalizable(this.toString)) else IO.succeed(Vec(x / norm, y / norm, z / norm))
+
+    def norm = UIO.succeed(math.sqrt(x * x + y * y + z * z))
+
+    def normalized: IO[AlgebraicError, Vec] = for {
+        length <- norm
+        res  <- if (length == 0) IO.fail(AlgebraicError.VectorNonNormalizable(this.toString)) else IO.succeed(Vec(x / length, y / length, z / length))
       } yield res
 
     def unary_- : Vec = Vec(-x, -y, -z)

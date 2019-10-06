@@ -29,13 +29,13 @@ object PhongReflection {
       * @param hitComps the components of the ray hit
       * @return
       */
-    def lighting(pointLight: PointLight, hitComps: HitComps): URIO[R, PhongComponents]
+    def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[R, PhongComponents]
   }
 
   trait Live extends PhongReflection with SpatialEntityOperations {
     override def phongReflectionService: Service[Any] = new Service[Any] {
 
-      override def lighting(pointLight: PointLight, hitComps: HitComps): UIO[PhongComponents] = {
+      override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
 
         def diffuseAndReflect(lightV: Vec, effectiveColor: Color, lightDotNormal: Double, ambient: Color): UIO[PhongComponents] =
           for {
@@ -68,5 +68,6 @@ object PhongReflection {
 }
 
 object phongOps extends PhongReflection.Service[PhongReflection] {
-  override def lighting(pointLight: PointLight, hitComps: HitComps): URIO[PhongReflection, PhongComponents] = ZIO.accessM(_.phongReflectionService.lighting(pointLight, hitComps))
+  override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[PhongReflection, PhongComponents] =
+    ZIO.accessM(_.phongReflectionService.lighting(pointLight, hitComps, inShadow))
 }

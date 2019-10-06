@@ -26,7 +26,6 @@ object Chapter7World extends App {
   val hRes = 100
   val vRes = 50
 
-
   override def run(args: List[String]): ZIO[Chapter7World.Environment, Nothing, Int] =
     program.provide {
       new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live

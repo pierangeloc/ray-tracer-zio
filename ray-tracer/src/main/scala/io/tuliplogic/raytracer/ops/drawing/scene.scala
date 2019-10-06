@@ -67,7 +67,7 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
     hit: Intersection
   ): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, PhongReflection.PhongComponents] =
     hitComps(ray, hit).flatMap { hitComps =>
-      phongOps.lighting(pointLight, hitComps)
+      phongOps.lighting(pointLight, hitComps, false)
     }
 
   def intersectAndComputePhong(canvasPx: Pt, sphere: Sphere): ZIO[RichRayOperations, RayTracerError, Option[PhongComponents]] =
