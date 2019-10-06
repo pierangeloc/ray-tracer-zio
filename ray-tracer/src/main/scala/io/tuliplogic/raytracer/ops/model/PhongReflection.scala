@@ -15,6 +15,11 @@ object PhongReflection {
 
   case class HitComps(obj: Sphere, pt: Pt, normalV: Vec, eyeV: Vec) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
+    def overPoint: Pt = pt + normalV.scale(HitComps.epsilon)
+  }
+
+  object HitComps {
+    val epsilon: Double = 1e-6
   }
 
   case class PhongComponents(ambient: Color, diffuse: Color, reflective: Color) {
@@ -54,7 +59,7 @@ object PhongReflection {
           } yield specular
 
         def computeInShadow(ambient: Color) =
-          UIO.effectTotal(println(s"computeInShadow($ambient)")) *> UIO(PhongComponents(ambient, Color.black, Color.black))
+          UIO(PhongComponents(ambient, Color.black, Color.black))
 
         def computeInLight(ambient: Color, effectiveColor: Color): UIO[PhongComponents] = for {
           lightV         <- (pointLight.position - hitComps.pt).normalized.orDie

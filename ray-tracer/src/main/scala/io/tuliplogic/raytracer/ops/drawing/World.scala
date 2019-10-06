@@ -19,7 +19,7 @@ case class World(pointLight: PointLight, objects: List[Sphere]) {
       intersections <- intersect(ray)
       maybeHitComps <- intersections.find(_.t > 0).traverse(World.hitComps(ray, _))
       color <- maybeHitComps
-        .map(hc => isShadowed(hc.pt).flatMap { shadowed =>
+        .map(hc => isShadowed(hc.overPoint).flatMap { shadowed =>
           phongOps.lighting(pointLight, hc, shadowed).map(_.toColor)
         }
       ).getOrElse(UIO(Color.black))

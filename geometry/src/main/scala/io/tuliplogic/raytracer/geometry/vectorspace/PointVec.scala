@@ -11,6 +11,7 @@ sealed trait PointVec
 object PointVec {
   case class Pt(x: Double, y: Double, z: Double) extends PointVec {
     def -(otherPt: Pt): Vec = Vec(x - otherPt.x, y - otherPt.y, z - otherPt.z)
+    def +(vec: Vec) = Pt(x + vec.x, y + vec.y, z + vec.z)
   }
 
   object Pt {

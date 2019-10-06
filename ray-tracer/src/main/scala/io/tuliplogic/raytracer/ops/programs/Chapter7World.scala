@@ -23,7 +23,7 @@ object Chapter7World extends App {
   val cameraTo = Pt(0, 1, 0)
   val cameraUp = Vec(0, 1, 0)
 
-  val (hRes, vRes) = (160, 120)
+  val (hRes, vRes) = (640, 480)
 
   override def run(args: List[String]): ZIO[Chapter7World.Environment, Nothing, Int] =
     program.provide {
