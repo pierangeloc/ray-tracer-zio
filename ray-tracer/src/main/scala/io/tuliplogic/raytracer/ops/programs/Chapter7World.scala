@@ -17,14 +17,13 @@ import zio.console.Console
 import zio.{App, UIO, ZIO, console}
 
 object Chapter7World extends App {
-  val canvasFile       = "/tmp/nioexp/chapter-7-three-spheres-" + System.currentTimeMillis +  ".ppm"
+  val canvasFile       = "/tmp/nioexp/chapter-7-three-spheres-shadow-" + System.currentTimeMillis +  ".ppm"
   val lightPosition = Pt(-10, 5, -10)
   val cameraFrom = Pt(0, 1.5, -5)
   val cameraTo = Pt(0, 1, 0)
-  val cameraUp = Vec(1, 1, 0)
+  val cameraUp = Vec(0, 1, 0)
 
-  val hRes = 100
-  val vRes = 50
+  val (hRes, vRes) = (160, 120)
 
   override def run(args: List[String]): ZIO[Chapter7World.Environment, Nothing, Int] =
     program.provide {
@@ -54,7 +53,7 @@ object Chapter7World extends App {
     rightWallTf4 <- AffineTransformation.translate(0, 0, 5)
     rightWallTf  <- (rightWallTf1 >=> rightWallTf2).flatMap(_ >=> rightWallTf3).flatMap(_ >=> rightWallTf4)
     rightWallS   <- UIO(Sphere(rightWallTf, mat))
-    s1Tf         <- AffineTransformation.translate(-0.5, 1, 0.5)
+    s1Tf         <- AffineTransformation.translate(-0.5, 1.2, 0.5)
     s1           <- UIO(Sphere(s1Tf, Material.default.copy(color = Color(0.1, 1, 0.5), diffuse = 0.7, specular = 0.3)))
     s2Tf1        <- AffineTransformation.scale(0.5, 0.5, 0.5)
     s2Tf2        <- AffineTransformation.translate(1.5, 0.5, -0.5)

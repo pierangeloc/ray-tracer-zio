@@ -27,6 +27,7 @@ object PhongReflection {
       * Lighting intensity must result as ambient + diffuse + specular
       * @param pointLight the pointlight that source the illumination
       * @param hitComps the components of the ray hit
+      * @param inShadow if the point is in shadow
       * @return
       */
     def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[R, PhongComponents]
@@ -52,13 +53,20 @@ object PhongReflection {
             specular <- UIO(pointLight.intensity * hitComps.obj.material.specular * factor)
           } yield specular
 
-        for {
-          effectiveColor <- UIO.succeed(hitComps.obj.material.color * pointLight.intensity)
+        def computeInShadow(ambient: Color) =
+          UIO.effectTotal(println(s"computeInShadow($ambient)")) *> UIO(PhongComponents(ambient, Color.black, Color.black))
+
+        def computeInLight(ambient: Color, effectiveColor: Color): UIO[PhongComponents] = for {
           lightV         <- (pointLight.position - hitComps.pt).normalized.orDie
-          ambient        <- UIO(effectiveColor * hitComps.obj.material.ambient)
           lightDotNormal <- UIO(lightV dot hitComps.normalV)
           res <- if (lightDotNormal < 0) UIO(PhongComponents(ambient, Color.black, Color.black))
           else diffuseAndReflect(lightV, effectiveColor, lightDotNormal, ambient)
+        } yield res
+
+        for {
+          effectiveColor <- UIO.succeed(hitComps.obj.material.color * pointLight.intensity)
+          ambient        <- UIO(effectiveColor * hitComps.obj.material.ambient)
+          res <- if (inShadow) computeInShadow(ambient) else computeInLight(ambient, effectiveColor)
         } yield res
       }
     }

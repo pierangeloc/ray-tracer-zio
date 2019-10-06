@@ -60,19 +60,31 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w     <- defaultWorld
           ray   <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           color <- w.colorAt(ray)
-          _     <- IO { color === Color(0.38066, 0.47583, 0.2855) }
+          _     <- IO { color should ===(Color(0.38066, 0.47583, 0.2855)) }
         } yield color)
           .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
       }
     }
 
-    "compute correct color for a ray that intersects the innermost sphere, from the inside" in {
+    "compute correct color for a ray that intersects the innermost sphere, from the inside" ignore {
       unsafeRun {
         (for {
-          w     <- defaultWorld2
+          w     <- defaultWorld
           ray   <- UIO(Ray(Pt(0, 0, 0.75), Vec(0, 0, -1)))
           color <- w.colorAt(ray)
-          _     <- IO { color === Color.white }
+          _     <- IO { color should ===(Color.white) }
+        } yield color)
+          .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
+
+    "compute the correct color for a ray under shadow" in {
+      unsafeRun {
+        (for {
+          w     <- defaultWorld
+          ray   <- UIO(Ray(Pt(0, 0, 0.75), Vec(0, 0, -1)))
+          color <- w.colorAt(ray)
+          _     <- IO { color should ===(Color.white) }
         } yield color)
           .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
       }
@@ -83,9 +95,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     "return false for a point in LOS with point light" in {
       unsafeRun {
         (for {
-          w <- defaultWorld
+          w        <- defaultWorld
           inShadow <- w.isShadowed(Pt(0, 10, 0))
-          _ <- IO {inShadow shouldEqual false}
+          _        <- IO { inShadow shouldEqual false }
         } yield ()).provide(RayOperations.Live)
       }
     }
@@ -93,9 +105,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     "return true for a point at the antipodes of the light, with the sphere being around the origin" in {
       unsafeRun {
         (for {
-          w <- defaultWorld
+          w        <- defaultWorld
           inShadow <- w.isShadowed(Pt(10, -10, 10))
-          _ <- IO {inShadow shouldEqual true}
+          _        <- IO { inShadow shouldEqual true }
         } yield ()).provide(RayOperations.Live)
       }
     }
@@ -103,9 +115,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     "return false for a point on the other side of the sphere light, with respect to the sphere" in {
       unsafeRun {
         (for {
-          w <- defaultWorld
-            inShadow <- w.isShadowed(Pt(-20, 20, -20))
-            _ <- IO {inShadow shouldEqual false}
+          w        <- defaultWorld
+          inShadow <- w.isShadowed(Pt(-20, 20, -20))
+          _        <- IO { inShadow shouldEqual false }
         } yield ()).provide(RayOperations.Live)
       }
     }
@@ -113,10 +125,22 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     "return false for a point between the light and the sphere" in {
       unsafeRun {
         (for {
-          w <- defaultWorld
-            inShadow <- w.isShadowed(Pt(-2, 2, -2))
-            _ <- IO {inShadow shouldEqual false}
+          w        <- defaultWorld
+          inShadow <- w.isShadowed(Pt(-2, 2, -2))
+          _        <- IO { inShadow shouldEqual false }
         } yield ()).provide(RayOperations.Live)
+      }
+    }
+  }
+
+  "color for a ray on a shadowed point" should {
+    "equal the ambient light" in {
+      unsafeRun {
+        (for {
+          w        <- defaultWorld3
+          color <- w.colorAt(Ray(Pt(0, 0, 5), Vec(0, 0, 1)))
+          _        <- IO { color should ===(Color(0.1, 0.1, 0.1))  }
+        } yield ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with PhongReflection.Live with AffineTransformationOps.Live)
       }
     }
   }
@@ -125,23 +149,35 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
 object WorldTest {
   val defaultWorld = for {
     pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
-      mat1 <- UIO(Material(Color(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200))
-      tf1  <- AffineTransformation.id
-      s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
-      mat2 <- UIO(Material.default)
-      tf2  <- AffineTransformation.scale(0.5, 0.5, 0.5)
-      s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
-      w    <- UIO(World(pl, List(s1, s2)))
+    mat1 <- UIO(Material(Color(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200))
+    tf1  <- AffineTransformation.id
+    s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
+    mat2 <- UIO(Material.default)
+    tf2  <- AffineTransformation.scale(0.5, 0.5, 0.5)
+    s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
+    w    <- UIO(World(pl, List(s1, s2)))
   } yield w
 
   val defaultWorld2 = for {
     pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
-      mat1 <- UIO(Material(Color(0.8, 1.0, 0.6), 1, 0.7, 0.2, 200))
-      tf1  <- AffineTransformation.id
-      s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
-      mat2 <- UIO(Material.default.copy(ambient = 1.0))
-      tf2  <- AffineTransformation.scale(0.5, 0.5, 0.5)
-      s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
-      w    <- UIO(World(pl, List(s1, s2)))
+    mat1 <- UIO(Material(Color(0.8, 1.0, 0.6), 1, 0.7, 0.2, 200))
+    tf1  <- AffineTransformation.id
+    s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
+    mat2 <- UIO(Material.default.copy(ambient = 1.0))
+    tf2  <- AffineTransformation.scale(0.5, 0.5, 0.5)
+    s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
+    w    <- UIO(World(pl, List(s1, s2)))
   } yield w
+
+  val defaultWorld3 = for {
+    pl   <- UIO(PointLight(Pt(0, 0, -10), Color.white))
+    mat1 <- UIO(Material.default)
+    tf1  <- AffineTransformation.id
+    s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
+    mat2 <- UIO(Material.default)
+    tf2  <- AffineTransformation.translate(0, 0, 10)
+    s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
+    w    <- UIO(World(pl, List(s1, s2)))
+  } yield w
+
 }

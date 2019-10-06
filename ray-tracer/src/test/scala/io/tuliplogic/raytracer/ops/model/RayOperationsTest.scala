@@ -70,12 +70,11 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         (for {
           s   <- Sphere.unit
-          intersections <- UIO.succeed(
-            NonEmptyList.fromListUnsafe(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s)))
+          intersections <- UIO.succeed(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s))
           )
           hit <- rayOps.hit(intersections)
-          _   <- IO(hit.t shouldEqual 2)
-          _   <- IO(hit.sceneObject shouldEqual s)
+          _   <- IO(hit.get.t shouldEqual 2)
+          _   <- IO(hit.get.sceneObject shouldEqual s)
         } yield ()).provide(Live)
       }
     }

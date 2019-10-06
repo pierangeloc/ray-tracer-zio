@@ -25,7 +25,7 @@ object RayOperations {
       */
     def intersect(ray: Ray, s: Sphere): URIO[R, List[Intersection]]
 
-    def hit(intersections: NonEmptyList[Intersection]): URIO[R, Intersection]
+    def hit(intersections: List[Intersection]): URIO[R, Option[Intersection]]
 
     def transform(at: AffineTransformation, ray:Ray): URIO[R, Ray]
   }
@@ -62,10 +62,8 @@ object RayOperations {
         } yield intersectUnitSphere(tfRay)
       }
 
-      override def hit(intersections: NonEmptyList[Intersection]): URIO[Any, Intersection] = UIO {
-        intersections.foldLeft(intersections.head) { (oldInt, newInt) =>
-          if (newInt.t >= 0 && newInt.t <= oldInt.t) newInt else oldInt
-        }
+      override def hit(intersections: List[Intersection]): URIO[Any, Option[Intersection]] = UIO {
+        intersections.filter(_.t > 0).sortBy(_.t).headOption
       }
 
       override def transform(at: AffineTransformation, ray: Ray): URIO[Any, Ray] = (for {
@@ -88,7 +86,7 @@ object rayOps extends RayOperations.Service[RayOperations] {
   override def intersect(ray: Ray, s: Sphere): ZIO[RayOperations, Nothing, List[Intersection]] =
     ZIO.accessM(_.rayOpsService.intersect(ray, s))
 
-  override def hit(intersections: NonEmptyList[Intersection]): URIO[RayOperations, Intersection] =
+  override def hit(intersections: List[Intersection]): URIO[RayOperations, Option[Intersection]] =
     ZIO.accessM(_.rayOpsService.hit(intersections))
 
   override def transform(at: AffineTransformation, ray: Ray): URIO[RayOperations, Ray] =

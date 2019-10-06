@@ -74,7 +74,7 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
     for {
       ray           <- rayForPixel(canvasPx)
       intersections <- rayOps.intersect(ray, sphere)
-      maybeHit      <- NonEmptyList.fromList(intersections).map(ix => rayOps.hit(ix).map(Some(_))).getOrElse(UIO(None))
+      maybeHit      <- rayOps.hit(intersections)
       maybeComps    <- maybeHit.map(colorForHit(ray, _)).sequence
     } yield maybeComps
 

@@ -41,7 +41,7 @@ object Chapter5Sphere extends App {
   def intersectAndRender(px: Pt, sphere: Sphere, xn: Int, yn: Int, canvas: Canvas): ZIO[RayOperations, CanvasError.IndexExceedCanvasDimension, Unit] =
     for {
       intersections <- rayOps.intersect(rayForPixel(px), sphere)
-      maybeHit      <- NonEmptyList.fromList(intersections).map(ix => rayOps.hit(ix).map(Some(_))).getOrElse(UIO(None))
+      maybeHit      <- rayOps.hit(intersections)
       _             <- maybeHit.fold(canvas.update(xn, yn, Color.black))(_ => canvas.update(xn, yn, Color.red))
     } yield ()
 
