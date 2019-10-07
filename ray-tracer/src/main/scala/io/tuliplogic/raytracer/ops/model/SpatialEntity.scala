@@ -2,6 +2,7 @@ package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
+import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.Sphere.withTransformAndMaterial
 import zio.UIO
 
 case class Material(
@@ -18,7 +19,10 @@ object Material {
 
 sealed trait SpatialEntity
 object SpatialEntity {
-  sealed trait SceneObject
+  sealed trait SceneObject {
+    def transformation: AffineTransformation
+    def material: Material
+  }
   object SceneObject {
 
 //    case class Material(color: Color, )
@@ -26,13 +30,28 @@ object SpatialEntity {
     case class PointLight(position: Pt, intensity: Color)
 
     /**
-    * A unit sphere centered in (0, 0, 0) and a transformation on the sphere that puts it  into final position
+     * A unit sphere centered in (0, 0, 0) and a transformation on the sphere that puts it  into final position
      * This can be e.g. a chain of transate and shear
      */
     case class Sphere(transformation: AffineTransformation, material: Material) extends SceneObject
     object Sphere {
       def withTransformAndMaterial(tf: AffineTransformation, material: Material): UIO[Sphere] = UIO(tf).zipWith(UIO(material))(Sphere(_, _))
       def unit: UIO[Sphere] = for {
+        tf <- AffineTransformation.id
+        res <- withTransformAndMaterial(tf, Material.default)
+      } yield res
+    }
+
+    /**
+      * Canonical plane {y = 0}
+      */
+    case class Plane(transformation: AffineTransformation, material: Material) extends SceneObject
+    object Plane {
+      val horizEpsilon: Double = 1e-4
+
+      def withTransformAndMaterial(tf: AffineTransformation, material: Material): UIO[Plane] = UIO(tf).zipWith(UIO(material))(Plane(_, _))
+
+      def canonial: UIO[Plane] = for {
         tf <- AffineTransformation.id
         res <- withTransformAndMaterial(tf, Material.default)
       } yield res

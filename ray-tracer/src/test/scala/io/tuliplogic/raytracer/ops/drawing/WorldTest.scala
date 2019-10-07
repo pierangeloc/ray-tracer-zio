@@ -84,7 +84,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w     <- defaultWorld
           ray   <- UIO(Ray(Pt(0, 0, 0.75), Vec(0, 0, -1)))
           color <- w.colorAt(ray)
-          _     <- IO { color should ===(Color.white) }
+          _     <- IO { color should ===(Color(0.1, 0.1, 0.1)) }
         } yield color)
           .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
       }

@@ -15,15 +15,21 @@ trait RayOperations {
   def rayOpsService: RayOperations.Service[Any]
 }
 
+//TODO: make a separate operation for canonical intersect in a different module,and build the live version of this in terms of it
 object RayOperations {
   trait Service[R] {
 
     def positionAt(ray: Ray, t: Double): URIO[R, Pt]
 
     /**
+      * Calculates ALL the intersections (positive and negative t) between a ray and a canonical scene object
+      */
+    def canonicalIntersect(ray: Ray, s: SceneObject): URIO[R, List[Intersection]]
+
+    /**
       * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
       */
-    def intersect(ray: Ray, s: Sphere): URIO[R, List[Intersection]]
+    def intersect(ray: Ray, o: SceneObject): URIO[R, List[Intersection]]
 
     def hit(intersections: List[Intersection]): URIO[R, Option[Intersection]]
 
@@ -41,26 +47,36 @@ object RayOperations {
           res     <- colToPt(resCol).orDie
         } yield res
 
-      /**
-        * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
-        */
-      override def intersect(ray: Ray, s: Sphere): ZIO[Any, Nothing, List[Intersection]] = {
-        def intersectUnitSphere(ray: Ray): List[Intersection] = {
+      def canonicalIntersect(ray: Ray, o: SceneObject): URIO[Any, List[Intersection]] = o match {
+        case s@Sphere(_, _) =>
           val sphereToRay = ray.origin - Pt(0, 0, 0)
           val a           = ray.direction dot ray.direction
           val b           = 2 * (ray.direction dot sphereToRay)
           val c           = (sphereToRay dot sphereToRay) - 1
 
           val delta = b * b - 4 * a * c
-          if (delta < 0) List()
-          else List((-b - math.sqrt(delta)) / (2 * a), (-b + math.sqrt(delta)) / (2 * a)).map(Intersection(_, s))
-        }
+          if (delta < 0) UIO.succeed(List())
+          else UIO.succeed(List((-b - math.sqrt(delta)) / (2 * a), (-b + math.sqrt(delta)) / (2 * a)).map(Intersection(_, s)))
 
-        for {
-          inverseTf <- affineTfOps.invert(s.transformation).orDie
-          tfRay     <- transform(inverseTf, ray)
-        } yield intersectUnitSphere(tfRay)
+        case p@Plane(_, _) =>
+          if (math.abs(ray.direction.y)  < Plane.horizEpsilon)
+            UIO(List())
+          else {
+            val t = -ray.origin.y / ray.direction.y
+            UIO(List(Intersection(t, p)))
+          }
+
+
       }
+      /**
+        * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
+        */
+      override def intersect(ray: Ray, o: SceneObject): ZIO[Any, Nothing, List[Intersection]] =
+        for {
+          inverseTf <- affineTfOps.invert(o.transformation).orDie
+          tfRay     <- transform(inverseTf, ray)
+          intersections <- canonicalIntersect(tfRay, o)
+        } yield intersections
 
       override def hit(intersections: List[Intersection]): URIO[Any, Option[Intersection]] = UIO {
         intersections.filter(_.t > 0).sortBy(_.t).headOption
@@ -83,12 +99,15 @@ object rayOps extends RayOperations.Service[RayOperations] {
   /**
     * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
     */
-  override def intersect(ray: Ray, s: Sphere): ZIO[RayOperations, Nothing, List[Intersection]] =
-    ZIO.accessM(_.rayOpsService.intersect(ray, s))
+  override def intersect(ray: Ray, o: SceneObject): ZIO[RayOperations, Nothing, List[Intersection]] =
+    ZIO.accessM(_.rayOpsService.intersect(ray, o))
 
   override def hit(intersections: List[Intersection]): URIO[RayOperations, Option[Intersection]] =
     ZIO.accessM(_.rayOpsService.hit(intersections))
 
   override def transform(at: AffineTransformation, ray: Ray): URIO[RayOperations, Ray] =
     ZIO.accessM(_.rayOpsService.transform(at, ray))
+
+  override def canonicalIntersect(ray: Ray, o: SceneObject): URIO[RayOperations, List[Intersection]] =
+    ZIO.accessM(_.rayOpsService.canonicalIntersect(ray, o))
 }

@@ -1,12 +1,11 @@
 package io.tuliplogic.raytracer.ops.model
 
-import cats.data.NonEmptyList
 import io.tuliplogic.raytracer.geometry.matrix.matrixOperations
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
 import mouse.all._
 import io.tuliplogic.raytracer.ops.model.RayOperations.Live
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.Sphere
+import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, Sphere}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO, ZIO}
@@ -50,6 +49,39 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           s                  <- Sphere.unit
           intersectionPoints <- rayOps.intersect(ray, s)
           _                  <- IO(intersectionPoints shouldEqual List(4d, 6d).map(Intersection(_, s)))
+        } yield ()).provide(Live)
+      }
+    }
+
+    "calculate (empty) intersections ray-horizontal plane with a ray parallel to the plane" in {
+      unsafeRun {
+        val ray = Ray(Pt(0, 10, 0), Vec(0, 0, 1))
+        (for {
+           p                  <- Plane.canonial
+           intersectionPoints <- rayOps.intersect(ray, p)
+           _                  <- IO(intersectionPoints shouldEqual List())
+        } yield ()).provide(Live)
+      }
+    }
+
+    "calculate (empty) intersections ray-horizontal plane with a ray coplanar with the plane" in {
+      unsafeRun {
+        val ray = Ray(Pt.origin, Vec(0, 0, 1))
+        (for {
+          p                    <- Plane.canonial
+            intersectionPoints <- rayOps.intersect(ray, p)
+            _                  <- IO(intersectionPoints shouldEqual List())
+        } yield ()).provide(Live)
+      }
+    }
+
+    "calculate intersection ray-horizontal plane" in {
+      unsafeRun {
+        val ray = Ray(Pt(0, 1, 0), Vec(0, -1, 0))
+        (for {
+          p                    <- Plane.canonial
+          intersectionPoints <- rayOps.intersect(ray, p)
+          _                  <- IO(intersectionPoints shouldEqual List(Intersection(1, p)))
         } yield ()).provide(Live)
       }
     }
