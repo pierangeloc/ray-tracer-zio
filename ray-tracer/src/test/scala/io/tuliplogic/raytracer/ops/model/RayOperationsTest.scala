@@ -57,7 +57,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt(0, 10, 0), Vec(0, 0, 1))
         (for {
-           p                  <- Plane.canonial
+           p                  <- Plane.canonical
            intersectionPoints <- rayOps.intersect(ray, p)
            _                  <- IO(intersectionPoints shouldEqual List())
         } yield ()).provide(Live)
@@ -68,7 +68,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt.origin, Vec(0, 0, 1))
         (for {
-          p                    <- Plane.canonial
+          p                    <- Plane.canonical
             intersectionPoints <- rayOps.intersect(ray, p)
             _                  <- IO(intersectionPoints shouldEqual List())
         } yield ()).provide(Live)
@@ -79,7 +79,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt(0, 1, 0), Vec(0, -1, 0))
         (for {
-          p                    <- Plane.canonial
+          p                    <- Plane.canonical
           intersectionPoints <- rayOps.intersect(ray, p)
           _                  <- IO(intersectionPoints shouldEqual List(Intersection(1, p)))
         } yield ()).provide(Live)

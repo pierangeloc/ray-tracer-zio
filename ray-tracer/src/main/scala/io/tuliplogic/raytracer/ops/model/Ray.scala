@@ -66,7 +66,6 @@ object RayOperations {
             UIO(List(Intersection(t, p)))
           }
 
-
       }
       /**
         * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned

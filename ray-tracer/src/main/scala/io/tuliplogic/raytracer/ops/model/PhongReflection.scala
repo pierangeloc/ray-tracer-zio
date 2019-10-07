@@ -4,6 +4,7 @@ import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
+import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import zio.{UIO, URIO, ZIO}
 
@@ -13,7 +14,7 @@ trait PhongReflection {
 
 object PhongReflection {
 
-  case class HitComps(obj: Sphere, pt: Pt, normalV: Vec, eyeV: Vec) {
+  case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
     def overPoint: Pt = pt + normalV.scale(HitComps.epsilon)
   }

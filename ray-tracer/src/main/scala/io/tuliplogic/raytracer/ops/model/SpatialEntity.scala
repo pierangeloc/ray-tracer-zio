@@ -51,7 +51,7 @@ object SpatialEntity {
 
       def withTransformAndMaterial(tf: AffineTransformation, material: Material): UIO[Plane] = UIO(tf).zipWith(UIO(material))(Plane(_, _))
 
-      def canonial: UIO[Plane] = for {
+      def canonical: UIO[Plane] = for {
         tf <- AffineTransformation.id
         res <- withTransformAndMaterial(tf, Material.default)
       } yield res
