@@ -24,8 +24,8 @@ object Chapter10World extends App {
   val cameraTo      = Pt(0, 4, 12)
   val cameraUp      = Vec(0, 1, 0)
 
-//  val (hRes, vRes) = (640, 480)
-  val (hRes, vRes) = (100, 50)
+  val (hRes, vRes) = (640, 480)
+//  val (hRes, vRes) = (100, 50)
 
   override def run(args: List[String]): ZIO[Chapter10World.Environment, Nothing, Int] =
     program
@@ -43,17 +43,24 @@ object Chapter10World extends App {
     floorMat <- UIO(Material.default.copy(color = Pattern.Uniform(Color(1, 0.9, 0.9)), specular = 0))
     floorS   <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
 
+    leftWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
+    leftWallTf3 <- AffineTransformation.rotateY(-math.Pi / 2)
+    leftWallTf4 <- AffineTransformation.translate(-10, 0, 0)
+    leftWallTf  <- (leftWallTf2 >=> leftWallTf3).flatMap(_ >=> leftWallTf4)
+    leftWallS   <- UIO(Plane(leftWallTf, floorMat))
+
+
     s1Tf1 <- AffineTransformation.translate(5, 2, 5)
     s1Tf2 <- AffineTransformation.scale(2, 2, 2)
     s1Tf  <- s1Tf2 >=> s1Tf1
-    s1   <- UIO(Sphere(s1Tf, Material.default.copy(color = Pattern.Uniform(Color.red), diffuse = 0.7, specular = 0.3)))
+    s1   <- UIO(Sphere(s1Tf, Material.default.copy(color = Pattern.Striped(Color.black, Color.white), diffuse = 0.7, specular = 0.3)))
 
     s2Tf1 <- AffineTransformation.translate(10, 4, 8)
     s2Tf2 <- AffineTransformation.scale(3, 3, 3)
     s2Tf  <- s2Tf2 >=> s2Tf1
-    s2    <- UIO(Sphere(s2Tf, Material.default.copy(color = Pattern.Uniform(Color.blue), diffuse = 0.7, specular = 0.3)))
+    s2    <- UIO(Sphere(s2Tf, Material.default.copy(color = Pattern.Striped(Color.blue, Color.red), diffuse = 0.7, specular = 0.3)))
 
-  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, floorS))
+  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, floorS, leftWallS))
 
   val camera: ZIO[AffineTransformationOps, AlgebraicError, Camera] = for {
     cameraTf <- ViewTransform(cameraFrom, cameraTo, cameraUp).tf
