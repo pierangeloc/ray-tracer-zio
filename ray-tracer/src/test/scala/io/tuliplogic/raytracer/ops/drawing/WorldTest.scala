@@ -150,7 +150,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
 object WorldTest {
   val defaultWorld = for {
     pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
-    mat1 <- UIO(Material(Color(0.8, 1.0, 0.6), 0.1, 0.7, 0.2, 200))
+    mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6)), 0.1, 0.7, 0.2, 200))
     tf1  <- AffineTransformation.id
     s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
     mat2 <- UIO(Material.default)
@@ -161,7 +161,7 @@ object WorldTest {
 
   val defaultWorld2 = for {
     pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
-    mat1 <- UIO(Material(Color(0.8, 1.0, 0.6), 1, 0.7, 0.2, 200))
+    mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6)), 1, 0.7, 0.2, 200))
     tf1  <- AffineTransformation.id
     s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
     mat2 <- UIO(Material.default.copy(ambient = 1.0))

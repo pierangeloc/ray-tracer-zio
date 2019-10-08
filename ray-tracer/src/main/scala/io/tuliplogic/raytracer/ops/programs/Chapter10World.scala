@@ -17,16 +17,17 @@ import zio.clock.Clock
 import zio.console.Console
 import zio.{App, UIO, ZIO, console}
 
-object Chapter9World extends App {
-  val canvasFile    = "/tmp/nioexp/chapter-9-three-spheres-shadow-" + System.currentTimeMillis + ".ppm"
-  val lightPosition = Pt(-10, 5, -10)
-  val cameraFrom    = Pt(0, 1.5, -5)
-  val cameraTo      = Pt(0, 1, 0)
+object Chapter10World extends App {
+  val canvasFile    = "/tmp/nioexp/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".ppm"
+  val lightPosition = Pt(10, 4, 2)
+  val cameraFrom    = Pt(15, 4, 0)
+  val cameraTo      = Pt(0, 4, 12)
   val cameraUp      = Vec(0, 1, 0)
 
-  val (hRes, vRes) = (640, 480)
+//  val (hRes, vRes) = (640, 480)
+  val (hRes, vRes) = (100, 50)
 
-  override def run(args: List[String]): ZIO[Chapter9World.Environment, Nothing, Int] =
+  override def run(args: List[String]): ZIO[Chapter10World.Environment, Nothing, Int] =
     program
       .provide {
         new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live
@@ -42,35 +43,21 @@ object Chapter9World extends App {
     floorMat <- UIO(Material.default.copy(color = Pattern.Uniform(Color(1, 0.9, 0.9)), specular = 0))
     floorS   <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
 
-    leftWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
-    leftWallTf3 <- AffineTransformation.rotateY(-math.Pi / 4)
-    leftWallTf4 <- AffineTransformation.translate(0, 0, 5)
-    leftWallTf  <- (leftWallTf2 >=> leftWallTf3).flatMap(_ >=> leftWallTf4)
-    leftWallS   <- UIO(Plane(leftWallTf, floorMat))
+    s1Tf1 <- AffineTransformation.translate(5, 2, 5)
+    s1Tf2 <- AffineTransformation.scale(2, 2, 2)
+    s1Tf  <- s1Tf2 >=> s1Tf1
+    s1   <- UIO(Sphere(s1Tf, Material.default.copy(color = Pattern.Uniform(Color.red), diffuse = 0.7, specular = 0.3)))
 
-    rightWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
-    rightWallTf3 <- AffineTransformation.rotateY(math.Pi / 4)
-    rightWallTf4 <- AffineTransformation.translate(0, 0, 5)
-    rightWallTf  <- (rightWallTf2 >=> rightWallTf3).flatMap(_ >=> rightWallTf4)
-    rightWallS   <- UIO(Plane(rightWallTf, floorMat))
-
-    s1Tf <- AffineTransformation.translate(-0.5, 1.2, 0.5)
-    s1   <- UIO(Sphere(s1Tf, Material.default.copy(color = Pattern.Uniform(Color(0.1, 1, 0.5)), diffuse = 0.7, specular = 0.3)))
-
-    s2Tf1 <- AffineTransformation.scale(0.5, 0.5, 0.5)
-    s2Tf2 <- AffineTransformation.translate(1.5, 0.5, -0.5)
+    s2Tf1 <- AffineTransformation.translate(10, 4, 8)
+    s2Tf2 <- AffineTransformation.scale(3, 3, 3)
     s2Tf  <- s2Tf2 >=> s2Tf1
-    s2    <- UIO(Sphere(s2Tf, Material.default.copy(color = Pattern.Uniform(Color(0.5, 1, 0.1)), diffuse = 0.7, specular = 0.3)))
+    s2    <- UIO(Sphere(s2Tf, Material.default.copy(color = Pattern.Uniform(Color.blue), diffuse = 0.7, specular = 0.3)))
 
-    s3Tf1 <- AffineTransformation.scale(0.33, 0.33, 0.33)
-    s3Tf2 <- AffineTransformation.translate(-1.5, 0.33, -0.75)
-    s3Tf  <- s3Tf2 >=> s3Tf1
-    s3    <- UIO(Sphere(s3Tf, Material.default.copy(color = Pattern.Uniform(Color(1, 0.8, 0.1)), diffuse = 0.7, specular = 0.3)))
-  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, s3, floorS, rightWallS, leftWallS))
+  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, floorS))
 
   val camera: ZIO[AffineTransformationOps, AlgebraicError, Camera] = for {
     cameraTf <- ViewTransform(cameraFrom, cameraTo, cameraUp).tf
-  } yield Camera(hRes, vRes, math.Pi / 3, cameraTf)
+  } yield Camera(hRes, vRes, math.Pi / 2, cameraTf)
 
   val program: ZIO[PhongReflection with SpatialEntityOperations with RayOperations with AffineTransformationOps with CanvasRenderer, RayTracerError, Unit] =
     for {

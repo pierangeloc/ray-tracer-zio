@@ -1,7 +1,9 @@
 package io.tuliplogic.raytracer.ops.model
 
+import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
+import io.tuliplogic.raytracer.ops.drawing.Pattern
 import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import org.scalatest.WordSpec
@@ -79,6 +81,23 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           res        <- phongOps.lighting(pointLight, hitComps, true)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.black, Color.black)))
         } yield res).provide(PhongReflection.Live)
+      }
+    }
+
+    "give correct phong components when eye in LOS with source and material is striped" in {
+      unsafeRun {
+        (for {
+          tf         <- AffineTransformation.id
+          mat        <- UIO(Material(color = Pattern.Striped(Color.white, Color.black), ambient = 1, diffuse = 0, specular = 0, shininess = 0))
+          s         <- Sphere.withTransformAndMaterial(tf, mat)
+          pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
+          hitComps1   <- UIO(HitComps(s, Pt(0.9, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
+          res1        <- phongOps.lighting(pointLight, hitComps1, false)
+          _          <- IO(res1.toColor should ===(Color.white))
+          hitComps2   <- UIO(HitComps(s, Pt(1.1, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
+          res2        <- phongOps.lighting(pointLight, hitComps2, false)
+          _          <- IO(res2.toColor should ===(Color.black))
+        } yield res1).provide(PhongReflection.Live)
       }
     }
   }

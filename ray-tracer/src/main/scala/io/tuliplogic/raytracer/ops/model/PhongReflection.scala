@@ -71,7 +71,7 @@ object PhongReflection {
           } yield res
 
         for {
-          effectiveColor <- UIO.succeed(hitComps.obj.material.color * pointLight.intensity)
+          effectiveColor <- UIO.succeed(hitComps.obj.material.color(hitComps.pt) * pointLight.intensity)
           ambient        <- UIO(effectiveColor * hitComps.obj.material.ambient)
           res            <- if (inShadow) computeInShadow(ambient) else computeInLight(ambient, effectiveColor)
         } yield res

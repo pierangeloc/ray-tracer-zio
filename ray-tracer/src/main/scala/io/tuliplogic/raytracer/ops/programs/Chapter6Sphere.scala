@@ -7,17 +7,17 @@ import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
 import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, AffineTransformationOps}
 import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
-import io.tuliplogic.raytracer.ops.drawing.{SampledRect, Scene}
+import io.tuliplogic.raytracer.ops.drawing.{Pattern, SampledRect, Scene}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
+import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{clock, console, App, UIO, ZIO}
+import zio.{App, UIO, ZIO, clock, console}
 
 object Chapter6Sphere extends App {
-  val sphereMaterial   = Material(Color(1, 0.2, 1), ambient = 0.2, diffuse = 0.9, 0.9, 50d)
+  val sphereMaterial   = Material(Pattern.Uniform(Color(1, 0.2, 1)), ambient = 0.2, diffuse = 0.9, 0.9, 50d)
   val infinitePoint    = Pt(0, 0, -2.5)
   val pointLight       = PointLight(Pt(-10, 10, -10), Color.white)
   val canvasHalfWidth  = 7d
