@@ -7,7 +7,18 @@ import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{Canvas, Intersection, Material, PhongReflection, Ray, RayOperations, SpatialEntityOperations, phongOps, rayOps, spatialEntityOps}
+import io.tuliplogic.raytracer.ops.model.{
+  phongOps,
+  rayOps,
+  spatialEntityOps,
+  Canvas,
+  Intersection,
+  Material,
+  PhongReflection,
+  Ray,
+  RayOperations,
+  SpatialEntityOperations
+}
 import zio.interop.catz._
 import zio.stream._
 import zio.{Chunk, IO, UIO, ZIO}
@@ -22,17 +33,17 @@ case class SampledRect(halfWidth: Double, halfHeight: Double, z: Double, hres: I
 
   type UStreamC[A] = StreamChunk[Nothing, A]
 
-  def pixels(chunkSize: Int): ScalaStream[Chunk[(Pt, Int, Int)]] = (for {
-    xn <- ScalaStream.from(0).take(hres)
+  def pixels(chunkSize: Int): ScalaStream[Chunk[(Pt, Int, Int)]] =
+    (for {
+      xn <- ScalaStream.from(0).take(hres)
       yn <- ScalaStream.from(0).take(vres)
-  } yield {
-    val cX = xn * (halfWidth * 2) / hres
-    val cY = yn * (halfHeight * 2) / vres
-    (Pt(cX - halfWidth, -cY + halfHeight, z), xn, yn)
-  })
-    .grouped(chunkSize)
-    .map(str => Chunk.fromIterable(str))
-    .toStream
+    } yield {
+      val cX = xn * (halfWidth * 2) / hres
+      val cY = yn * (halfHeight * 2) / vres
+      (Pt(cX - halfWidth, -cY + halfHeight, z), xn, yn)
+    }).grouped(chunkSize)
+      .map(str => Chunk.fromIterable(str))
+      .toStream
 
   def pixelsChunkedStream: UStreamC[(Pt, Int, Int)] = StreamChunk(Stream.fromIterable(pixels(4096)))
 }
@@ -47,10 +58,9 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
       normalizedDirection <- (px - infinitePoint).normalized
     } yield Ray(origin = infinitePoint, direction = normalizedDirection)
 
-
   private def hitComps(
-    ray: Ray,
-    hit: Intersection
+      ray: Ray,
+      hit: Intersection
   ): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, HitComps] =
     hit.sceneObject match {
       case s @ Sphere(_, _) =>
@@ -63,8 +73,8 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
     }
 
   private def colorForHit(
-    ray: Ray,
-    hit: Intersection
+      ray: Ray,
+      hit: Intersection
   ): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, PhongReflection.PhongComponents] =
     hitComps(ray, hit).flatMap { hitComps =>
       phongOps.lighting(pointLight, hitComps, false)

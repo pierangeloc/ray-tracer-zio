@@ -39,13 +39,13 @@ class MatrixTest extends WordSpec with DefaultRuntime {
     "transpose successfully" in {
       unsafeRun {
         for {
-          m         <- factory.fromRows(3, 2, comp(comp(0d, 1d), comp(2d, 3d), comp(4d, 5d)))
+          m          <- factory.fromRows(3, 2, comp(comp(0d, 1d), comp(2d, 3d), comp(4d, 5d)))
           transposed <- m.transpose
           elems <- ZIO.sequence(for {
             i <- 0 to 1
             j <- 0 to 2
           } yield transposed.get(i, j))
-          _         <- IO.effect { elems shouldEqual List(0d, 2d, 4d, 1d, 3d, 5d) }
+          _ <- IO.effect { elems shouldEqual List(0d, 2d, 4d, 1d, 3d, 5d) }
         } yield ()
       }
     }

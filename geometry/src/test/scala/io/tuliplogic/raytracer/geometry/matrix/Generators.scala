@@ -32,7 +32,7 @@ trait Generators { self: DefaultRuntime =>
       point <- Gen.const(Pt(elems(0), elems(1), elems(2)))
     } yield point
 
-  val reasonableDouble = Gen.chooseNum[Double](-1000, 1000)
+  val reasonableDouble         = Gen.chooseNum[Double](-1000, 1000)
   val reasonablePositiveDouble = Gen.chooseNum[Double](-1000, 1000)
 
 }

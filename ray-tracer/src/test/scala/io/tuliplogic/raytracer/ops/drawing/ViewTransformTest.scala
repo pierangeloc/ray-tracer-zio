@@ -23,9 +23,9 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
       } { point =>
         unsafeRun(
           (for {
-            tf <- ViewTransform.default.tf
+            tf     <- ViewTransform.default.tf
             result <- affineTfOps.transform(tf, point)
-            _      <- IO.effect(result should === (point))
+            _      <- IO.effect(result should ===(point))
           } yield ()).provide(env)
         )
       }
@@ -37,9 +37,9 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
       } { point =>
         unsafeRun(
           (for {
-            tf <- ViewTransform(Pt.origin, Pt(0, 0, 1), Vec.uy).tf
+            tf     <- ViewTransform(Pt.origin, Pt(0, 0, 1), Vec.uy).tf
             result <- affineTfOps.transform(tf, point)
-            _      <- IO.effect(result should === (point.copy(-point.x, point.y, -point.z)))
+            _      <- IO.effect(result should ===(point.copy(-point.x, point.y, -point.z)))
           } yield ()).provide(env)
         )
       }
@@ -55,9 +55,9 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
         case (point, deltaZ) =>
           unsafeRun(
             (for {
-              tf <- ViewTransform(Pt.origin.copy(z = deltaZ), Pt(0, 0, deltaZ - 1), Vec.uy).tf
+              tf     <- ViewTransform(Pt.origin.copy(z = deltaZ), Pt(0, 0, deltaZ - 1), Vec.uy).tf
               result <- affineTfOps.transform(tf, point)
-              _      <- IO.effect(result should === (point.copy(point.x, point.y, point.z - deltaZ)))
+              _      <- IO.effect(result should ===(point.copy(point.x, point.y, point.z - deltaZ)))
             } yield ()).provide(env)
           )
       }
@@ -69,9 +69,11 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
       } { point =>
         unsafeRun(
           (for {
-            tf <- ViewTransform(Pt(1, 3, 2), Pt(4, -2, 8), Vec(1, 1, 0)).tf
+            tf     <- ViewTransform(Pt(1, 3, 2), Pt(4, -2, 8), Vec(1, 1, 0)).tf
             result <- affineTfOps.transform(tf, point)
-            expectedTfMatrix <- Types.factory.fromRows(4, 4,
+            expectedTfMatrix <- Types.factory.fromRows(
+              4,
+              4,
               Vector(
                 Vector(-0.50709, 0.50709, 0.67612, -2.36643),
                 Vector(0.76772, 0.60609, 0.12122, -2.82843),
@@ -80,7 +82,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
               )
             )
             expected <- affineTfOps.transform(AffineTransformation(expectedTfMatrix), point)
-            _        <- IO.effect(result should === (expected))
+            _        <- IO.effect(result should ===(expected))
           } yield ()).provide(env)
         )
 

@@ -10,30 +10,30 @@ import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.drawing.{Camera, Renderer, ViewTransform, World}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
+import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{App, UIO, ZIO, console}
+import zio.{console, App, UIO, ZIO}
 
 object Chapter7World extends App {
-  val canvasFile       = "/tmp/nioexp/chapter-7-three-spheres-shadow-" + System.currentTimeMillis +  ".ppm"
+  val canvasFile    = "/tmp/nioexp/chapter-7-three-spheres-shadow-" + System.currentTimeMillis + ".ppm"
   val lightPosition = Pt(-10, 5, -10)
-  val cameraFrom = Pt(0, 1.5, -5)
-  val cameraTo = Pt(0, 1, 0)
-  val cameraUp = Vec(0, 1, 0)
+  val cameraFrom    = Pt(0, 1.5, -5)
+  val cameraTo      = Pt(0, 1, 0)
+  val cameraUp      = Vec(0, 1, 0)
 
   val (hRes, vRes) = (640, 480)
 
   override def run(args: List[String]): ZIO[Chapter9World.Environment, Nothing, Int] =
-    program.provide {
-      new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live
+    program
+      .provide {
+        new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live
         with AffineTransformationOps.Live {
-        override def path: Path = Paths.get(canvasFile)
+          override def path: Path = Paths.get(canvasFile)
+        }
       }
-    }
-    .foldM(err => console.putStrLn(s"Execution failed with: $err").as(1), _ => UIO.succeed(0))
-
+      .foldM(err => console.putStrLn(s"Execution failed with: $err").as(1), _ => UIO.succeed(0))
 
   //TODO: make a DSL to build a world, this is too painful
 
@@ -65,19 +65,20 @@ object Chapter7World extends App {
     s3           <- UIO(Sphere(s3Tf, Material.default.copy(color = Color(1, 0.8, 0.1), diffuse = 0.7, specular = 0.3)))
   } yield World(PointLight(lightPosition, Color.white), List(s1, s2, s3, floorS, rightWallS, leftWallS))
 
-
   val camera: ZIO[AffineTransformationOps, AlgebraicError, Camera] = for {
     cameraTf <- ViewTransform(cameraFrom, cameraTo, cameraUp).tf
   } yield Camera(hRes, vRes, math.Pi / 3, cameraTf)
 
-  val program: ZIO[PhongReflection with SpatialEntityOperations with RayOperations with AffineTransformationOps with CanvasRenderer, RayTracerError, Unit] = for {
-    canvas <- Canvas.create(hRes, vRes)
-    wrld <- world
-    cam <- camera
-    _   <- Renderer.render(cam, wrld).flattenChunks.foreach { case (px, py, color) =>
-             canvas.update(px, py, color)
-           }
-    _        <- canvasRendering.render(canvas, 255)
-  } yield ()
+  val program: ZIO[PhongReflection with SpatialEntityOperations with RayOperations with AffineTransformationOps with CanvasRenderer, RayTracerError, Unit] =
+    for {
+      canvas <- Canvas.create(hRes, vRes)
+      wrld   <- world
+      cam    <- camera
+      _ <- Renderer.render(cam, wrld).flattenChunks.foreach {
+        case (px, py, color) =>
+          canvas.update(px, py, color)
+      }
+      _ <- canvasRendering.render(canvas, 255)
+    } yield ()
 
 }

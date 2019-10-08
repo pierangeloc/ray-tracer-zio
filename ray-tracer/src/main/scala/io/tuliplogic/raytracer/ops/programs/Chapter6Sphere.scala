@@ -10,11 +10,11 @@ import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.drawing.{SampledRect, Scene}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
+import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{App, UIO, ZIO, clock, console}
+import zio.{clock, console, App, UIO, ZIO}
 
 object Chapter6Sphere extends App {
   val sphereMaterial   = Material(Color(1, 0.2, 1), ambient = 0.2, diffuse = 0.9, 0.9, 50d)
@@ -39,7 +39,7 @@ object Chapter6Sphere extends App {
     _ <- sampledRect.pixelsChunkedStream.foreach {
       case (pt, xn, yn) =>
         scene.intersectAndComputePhong(pt, sphere).flatMap {
-          case None =>         canvas.update(xn, yn, Color.black)
+          case None             => canvas.update(xn, yn, Color.black)
           case Some(phongComps) => canvas.update(xn, yn, phongComps.toColor)
         }
     }

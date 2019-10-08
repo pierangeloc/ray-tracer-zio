@@ -11,9 +11,9 @@ trait OpsTestUtils extends TestUtils with Tolerance {
   implicit val colEq: Equality[Color] = new Equality[Color] {
     override def areEqual(a: Color, b: Any): Boolean = b match {
       case Color(r, g, b) =>
-        a.red   === r +- 0.001 &&
-        a.green === g +- 0.001 &&
-        a.blue  === b +- 0.001
+        a.red === r +- 0.001 &&
+          a.green === g +- 0.001 &&
+          a.blue === b +- 0.001
       case _ => false
     }
   }
@@ -21,7 +21,7 @@ trait OpsTestUtils extends TestUtils with Tolerance {
   implicit val rayEq: Equality[Ray] = new Equality[Ray] {
     override def areEqual(a: Ray, b: Any): Boolean = b match {
       case Ray(origin, direction) => origin === a.origin && direction === a.direction
-      case _ => false
+      case _                      => false
     }
   }
 

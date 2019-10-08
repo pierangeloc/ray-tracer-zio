@@ -2,9 +2,9 @@ package io.tuliplogic.raytracer.geometry.vectorspace
 
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
-import io.tuliplogic.raytracer.geometry.matrix.{MatrixOps, Types, matrixOperations}
+import io.tuliplogic.raytracer.geometry.matrix.{matrixOperations, MatrixOps, Types}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.matrix.{MatrixOps, matrixOperations}
+import io.tuliplogic.raytracer.geometry.matrix.{matrixOperations, MatrixOps}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import zio.{UIO, ZIO}
 

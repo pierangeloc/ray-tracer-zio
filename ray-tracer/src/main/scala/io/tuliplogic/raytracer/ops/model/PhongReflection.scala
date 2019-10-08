@@ -16,7 +16,7 @@ object PhongReflection {
 
   case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
-    def overPoint: Pt = pt + normalV.scale(HitComps.epsilon)
+    def overPoint: Pt   = pt + normalV.scale(HitComps.epsilon)
   }
 
   object HitComps {
@@ -62,17 +62,18 @@ object PhongReflection {
         def computeInShadow(ambient: Color) =
           UIO(PhongComponents(ambient, Color.black, Color.black))
 
-        def computeInLight(ambient: Color, effectiveColor: Color): UIO[PhongComponents] = for {
-          lightV         <- (pointLight.position - hitComps.pt).normalized.orDie
-          lightDotNormal <- UIO(lightV dot hitComps.normalV)
-          res <- if (lightDotNormal < 0) UIO(PhongComponents(ambient, Color.black, Color.black))
-          else diffuseAndReflect(lightV, effectiveColor, lightDotNormal, ambient)
-        } yield res
+        def computeInLight(ambient: Color, effectiveColor: Color): UIO[PhongComponents] =
+          for {
+            lightV         <- (pointLight.position - hitComps.pt).normalized.orDie
+            lightDotNormal <- UIO(lightV dot hitComps.normalV)
+            res <- if (lightDotNormal < 0) UIO(PhongComponents(ambient, Color.black, Color.black))
+            else diffuseAndReflect(lightV, effectiveColor, lightDotNormal, ambient)
+          } yield res
 
         for {
           effectiveColor <- UIO.succeed(hitComps.obj.material.color * pointLight.intensity)
           ambient        <- UIO(effectiveColor * hitComps.obj.material.ambient)
-          res <- if (inShadow) computeInShadow(ambient) else computeInLight(ambient, effectiveColor)
+          res            <- if (inShadow) computeInShadow(ambient) else computeInLight(ambient, effectiveColor)
         } yield res
       }
     }

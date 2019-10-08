@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.drawing
 
 import cats.data.NonEmptyList
-import io.tuliplogic.raytracer.ops.model.{Color, Intersection, PhongReflection, Ray, RayOperations, SpatialEntityOperations, phongOps, rayOps, spatialEntityOps}
+import io.tuliplogic.raytracer.ops.model.{phongOps, rayOps, spatialEntityOps, Color, Intersection, PhongReflection, Ray, RayOperations, SpatialEntityOperations}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, RayTracerError}
 import io.tuliplogic.raytracer.ops.model.PhongReflection.HitComps
@@ -20,10 +20,11 @@ case class World(pointLight: PointLight, objects: List[SceneObject]) {
       intersections <- intersect(ray)
       maybeHitComps <- intersections.find(_.t > 0).traverse(World.hitComps(ray, _))
       color <- maybeHitComps
-        .map(hc => isShadowed(hc.overPoint).flatMap { shadowed =>
-          phongOps.lighting(pointLight, hc, shadowed).map(_.toColor)
-        }
-      ).getOrElse(UIO(Color.black))
+        .map(hc =>
+          isShadowed(hc.overPoint).flatMap { shadowed =>
+            phongOps.lighting(pointLight, hc, shadowed).map(_.toColor)
+        })
+        .getOrElse(UIO(Color.black))
     } yield color
 
   def isShadowed(pt: Pt): ZIO[RayOperations, AlgebraicError, Boolean] =
@@ -41,10 +42,10 @@ object World {
       ray: Ray,
       hit: Intersection
   ): ZIO[SpatialEntityOperations with RayOperations, BusinessError.GenericError, HitComps] =
-      for {
-        pt      <- rayOps.positionAt(ray, hit.t)
-        normalV <- spatialEntityOps.normal(pt, hit.sceneObject)
-        eyeV    <- UIO(-ray.direction)
-      } yield HitComps(hit.sceneObject, pt, normalV, eyeV)
+    for {
+      pt      <- rayOps.positionAt(ray, hit.t)
+      normalV <- spatialEntityOps.normal(pt, hit.sceneObject)
+      eyeV    <- UIO(-ray.direction)
+    } yield HitComps(hit.sceneObject, pt, normalV, eyeV)
 
 }

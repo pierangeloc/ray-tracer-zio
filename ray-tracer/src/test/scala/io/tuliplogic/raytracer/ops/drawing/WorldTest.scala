@@ -137,10 +137,11 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     "equal the ambient light" in {
       unsafeRun {
         (for {
-          w        <- defaultWorld3
+          w     <- defaultWorld3
           color <- w.colorAt(Ray(Pt(0, 0, 5), Vec(0, 0, 1)))
-          _        <- IO { color should ===(Color(0.1, 0.1, 0.1))  }
-        } yield ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with PhongReflection.Live with AffineTransformationOps.Live)
+          _     <- IO { color should ===(Color(0.1, 0.1, 0.1)) }
+        } yield
+          ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with PhongReflection.Live with AffineTransformationOps.Live)
       }
     }
   }

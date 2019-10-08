@@ -33,7 +33,7 @@ object RayOperations {
 
     def hit(intersections: List[Intersection]): URIO[R, Option[Intersection]]
 
-    def transform(at: AffineTransformation, ray:Ray): URIO[R, Ray]
+    def transform(at: AffineTransformation, ray: Ray): URIO[R, Ray]
   }
 
   trait Live extends RayOperations with MatrixOps with AffineTransformationOps { self =>
@@ -48,7 +48,7 @@ object RayOperations {
         } yield res
 
       def canonicalIntersect(ray: Ray, o: SceneObject): URIO[Any, List[Intersection]] = o match {
-        case s@Sphere(_, _) =>
+        case s @ Sphere(_, _) =>
           val sphereToRay = ray.origin - Pt(0, 0, 0)
           val a           = ray.direction dot ray.direction
           val b           = 2 * (ray.direction dot sphereToRay)
@@ -58,8 +58,8 @@ object RayOperations {
           if (delta < 0) UIO.succeed(List())
           else UIO.succeed(List((-b - math.sqrt(delta)) / (2 * a), (-b + math.sqrt(delta)) / (2 * a)).map(Intersection(_, s)))
 
-        case p@Plane(_, _) =>
-          if (math.abs(ray.direction.y)  < Plane.horizEpsilon)
+        case p @ Plane(_, _) =>
+          if (math.abs(ray.direction.y) < Plane.horizEpsilon)
             UIO(List())
           else {
             val t = -ray.origin.y / ray.direction.y
@@ -67,13 +67,14 @@ object RayOperations {
           }
 
       }
+
       /**
         * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
         */
       override def intersect(ray: Ray, o: SceneObject): ZIO[Any, Nothing, List[Intersection]] =
         for {
-          inverseTf <- affineTfOps.invert(o.transformation).orDie
-          tfRay     <- transform(inverseTf, ray)
+          inverseTf     <- affineTfOps.invert(o.transformation).orDie
+          tfRay         <- transform(inverseTf, ray)
           intersections <- canonicalIntersect(tfRay, o)
         } yield intersections
 
@@ -81,10 +82,11 @@ object RayOperations {
         intersections.filter(_.t > 0).sortBy(_.t).headOption
       }
 
-      override def transform(at: AffineTransformation, ray: Ray): URIO[Any, Ray] = (for {
-        tfPt <- affineTfOps.transform(at, ray.origin)
-        tfVec <- affineTfOps.transform(at, ray.direction)
-      } yield Ray(tfPt, tfVec)).provide(self).orDie
+      override def transform(at: AffineTransformation, ray: Ray): URIO[Any, Ray] =
+        (for {
+          tfPt  <- affineTfOps.transform(at, ray.origin)
+          tfVec <- affineTfOps.transform(at, ray.direction)
+        } yield Ray(tfPt, tfVec)).provide(self).orDie
     }
   }
 

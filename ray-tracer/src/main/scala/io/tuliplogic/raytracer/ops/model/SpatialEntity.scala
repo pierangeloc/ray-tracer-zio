@@ -6,11 +6,11 @@ import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.Sphere.withTr
 import zio.UIO
 
 case class Material(
-  color: Color,
-  ambient: Double,  //TODO refine Double > 0 && < 1
-  diffuse: Double,  //TODO refine Double > 0 && < 1
-  specular: Double, //TODO refine Double > 0 && < 1
-  shininess: Double //TODO refine Double > 10 && < 200
+    color: Color,
+    ambient: Double, //TODO refine Double > 0 && < 1
+    diffuse: Double, //TODO refine Double > 0 && < 1
+    specular: Double, //TODO refine Double > 0 && < 1
+    shininess: Double //TODO refine Double > 10 && < 200
 )
 
 object Material {
@@ -30,16 +30,17 @@ object SpatialEntity {
     case class PointLight(position: Pt, intensity: Color)
 
     /**
-     * A unit sphere centered in (0, 0, 0) and a transformation on the sphere that puts it  into final position
-     * This can be e.g. a chain of transate and shear
-     */
+      * A unit sphere centered in (0, 0, 0) and a transformation on the sphere that puts it  into final position
+      * This can be e.g. a chain of transate and shear
+      */
     case class Sphere(transformation: AffineTransformation, material: Material) extends SceneObject
     object Sphere {
       def withTransformAndMaterial(tf: AffineTransformation, material: Material): UIO[Sphere] = UIO(tf).zipWith(UIO(material))(Sphere(_, _))
-      def unit: UIO[Sphere] = for {
-        tf <- AffineTransformation.id
-        res <- withTransformAndMaterial(tf, Material.default)
-      } yield res
+      def unit: UIO[Sphere] =
+        for {
+          tf  <- AffineTransformation.id
+          res <- withTransformAndMaterial(tf, Material.default)
+        } yield res
     }
 
     /**
@@ -51,13 +52,12 @@ object SpatialEntity {
 
       def withTransformAndMaterial(tf: AffineTransformation, material: Material): UIO[Plane] = UIO(tf).zipWith(UIO(material))(Plane(_, _))
 
-      def canonical: UIO[Plane] = for {
-        tf <- AffineTransformation.id
-        res <- withTransformAndMaterial(tf, Material.default)
-      } yield res
+      def canonical: UIO[Plane] =
+        for {
+          tf  <- AffineTransformation.id
+          res <- withTransformAndMaterial(tf, Material.default)
+        } yield res
     }
   }
-
-
 
 }

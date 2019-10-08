@@ -11,7 +11,7 @@ sealed trait PointVec
 object PointVec {
   case class Pt(x: Double, y: Double, z: Double) extends PointVec {
     def -(otherPt: Pt): Vec = Vec(x - otherPt.x, y - otherPt.y, z - otherPt.z)
-    def +(vec: Vec) = Pt(x + vec.x, y + vec.y, z + vec.z)
+    def +(vec: Vec)         = Pt(x + vec.x, y + vec.y, z + vec.z)
   }
 
   object Pt {
@@ -32,9 +32,10 @@ object PointVec {
 
     def norm = UIO.succeed(math.sqrt(x * x + y * y + z * z))
 
-    def normalized: IO[AlgebraicError, Vec] = for {
+    def normalized: IO[AlgebraicError, Vec] =
+      for {
         length <- norm
-        res  <- if (length == 0) IO.fail(AlgebraicError.VectorNonNormalizable(this.toString)) else IO.succeed(Vec(x / length, y / length, z / length))
+        res    <- if (length == 0) IO.fail(AlgebraicError.VectorNonNormalizable(this.toString)) else IO.succeed(Vec(x / length, y / length, z / length))
       } yield res
 
     def unary_- : Vec = Vec(-x, -y, -z)

@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.geometry.matrix
 
-import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, affineTfOps}
+import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformation}
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation._
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps.Live
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
@@ -24,9 +24,9 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
       } { point =>
         unsafeRun(
           (for {
-            tf <- AffineTransformation.id
+            tf     <- AffineTransformation.id
             result <- affineTfOps.transform(tf, point)
-            _ <- IO.effect(result === point)
+            _      <- IO.effect(result === point)
           } yield ()).provide(env)
         )
       }

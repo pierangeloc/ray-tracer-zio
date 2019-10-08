@@ -57,9 +57,9 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt(0, 10, 0), Vec(0, 0, 1))
         (for {
-           p                  <- Plane.canonical
-           intersectionPoints <- rayOps.intersect(ray, p)
-           _                  <- IO(intersectionPoints shouldEqual List())
+          p                  <- Plane.canonical
+          intersectionPoints <- rayOps.intersect(ray, p)
+          _                  <- IO(intersectionPoints shouldEqual List())
         } yield ()).provide(Live)
       }
     }
@@ -68,9 +68,9 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt.origin, Vec(0, 0, 1))
         (for {
-          p                    <- Plane.canonical
-            intersectionPoints <- rayOps.intersect(ray, p)
-            _                  <- IO(intersectionPoints shouldEqual List())
+          p                  <- Plane.canonical
+          intersectionPoints <- rayOps.intersect(ray, p)
+          _                  <- IO(intersectionPoints shouldEqual List())
         } yield ()).provide(Live)
       }
     }
@@ -79,7 +79,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt(0, 1, 0), Vec(0, -1, 0))
         (for {
-          p                    <- Plane.canonical
+          p                  <- Plane.canonical
           intersectionPoints <- rayOps.intersect(ray, p)
           _                  <- IO(intersectionPoints shouldEqual List(Intersection(1, p)))
         } yield ()).provide(Live)
@@ -90,10 +90,10 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt(0, 0, -5), Vec(0, 0, 1))
         (for {
-           tf <- AffineTransformation.scale(2, 2, 2)
-           s                  <- UIO(Sphere(tf, Material.default))
-           intersectionPoints <- rayOps.intersect(ray, s)
-           _                  <- IO(intersectionPoints shouldEqual List(3d, 7d).map(Intersection(_, s)))
+          tf                 <- AffineTransformation.scale(2, 2, 2)
+          s                  <- UIO(Sphere(tf, Material.default))
+          intersectionPoints <- rayOps.intersect(ray, s)
+          _                  <- IO(intersectionPoints shouldEqual List(3d, 7d).map(Intersection(_, s)))
         } yield ()).provide(Live)
       }
     }
@@ -101,12 +101,11 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
     "calculate hit from list of intersections" in {
       unsafeRun {
         (for {
-          s   <- Sphere.unit
-          intersections <- UIO.succeed(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s))
-          )
-          hit <- rayOps.hit(intersections)
-          _   <- IO(hit.get.t shouldEqual 2)
-          _   <- IO(hit.get.sceneObject shouldEqual s)
+          s             <- Sphere.unit
+          intersections <- UIO.succeed(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s)))
+          hit           <- rayOps.hit(intersections)
+          _             <- IO(hit.get.t shouldEqual 2)
+          _             <- IO(hit.get.sceneObject shouldEqual s)
         } yield ()).provide(Live)
       }
     }

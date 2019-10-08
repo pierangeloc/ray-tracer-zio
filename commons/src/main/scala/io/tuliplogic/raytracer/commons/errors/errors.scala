@@ -7,8 +7,8 @@ sealed trait RayTracerError extends Exception
   */
 sealed trait AlgebraicError extends RayTracerError
 object AlgebraicError {
-  case class MatrixDimError(override val getMessage: String) extends AlgebraicError
-  case object MatrixNotInvertible        extends AlgebraicError
+  case class MatrixDimError(override val getMessage: String)        extends AlgebraicError
+  case object MatrixNotInvertible                                   extends AlgebraicError
   case class VectorNonNormalizable(override val getMessage: String) extends AlgebraicError
 
   case class IndexExceedMatrixDimension(row: Int, col: Int, m: Int, n: Int) extends AlgebraicError {
@@ -17,8 +17,6 @@ object AlgebraicError {
 
   case class MatrixConstructionError(override val getMessage: String) extends AlgebraicError
 }
-
-
 
 /**
   * Errors for Canvas handling

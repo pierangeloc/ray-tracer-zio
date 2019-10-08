@@ -8,12 +8,12 @@ import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
 import io.tuliplogic.raytracer.commons.errors.{CanvasError, RayTracerError}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.Sphere
-import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
-import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Ray, RayOperations, rayOps}
+import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
+import io.tuliplogic.raytracer.ops.model.{rayOps, Canvas, Color, Ray, RayOperations}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{App, Chunk, UIO, ZIO, clock, console}
+import zio.{clock, console, App, Chunk, UIO, ZIO}
 
 import scala.{Stream => ScalaStream}
 import zio.stream._
@@ -27,11 +27,14 @@ object Chapter5Sphere extends App {
   val canvasVRes       = 500
   val canvasFile       = "/tmp/nioexp/sphere-on-canvas.ppm"
 
-  def pixelsChunked(chunkSize: Int): ScalaStream[Chunk[(Pt, Int, Int)]] = (for {
-    xn <- ScalaStream.from(0).take(canvasHRes)
-    yn <- ScalaStream.from(0).take(canvasVRes)
-  } yield (Pt(xn * (canvasHalfWidth * 2) / canvasHRes - canvasHalfWidth, yn * (canvasHalfHeight * 2) / canvasVRes - canvasHalfHeight, canvasZCoord), xn, yn)
-    ).grouped(chunkSize).map(str => Chunk.fromIterable(str)).toStream
+  def pixelsChunked(chunkSize: Int): ScalaStream[Chunk[(Pt, Int, Int)]] =
+    (for {
+      xn <- ScalaStream.from(0).take(canvasHRes)
+      yn <- ScalaStream.from(0).take(canvasVRes)
+    } yield (Pt(xn * (canvasHalfWidth * 2) / canvasHRes - canvasHalfWidth, yn * (canvasHalfHeight * 2) / canvasVRes - canvasHalfHeight, canvasZCoord), xn, yn))
+      .grouped(chunkSize)
+      .map(str => Chunk.fromIterable(str))
+      .toStream
 
   def canvasPixelsAsPoints: StreamChunk[Nothing, (Pt, Int, Int)] =
     StreamChunk(Stream.fromIterable(pixelsChunked(4096)))
@@ -54,10 +57,10 @@ object Chapter5Sphere extends App {
         intersectAndRender(pt, sphere, xn, yn, canvas)
     }
     calcTime <- clock.nanoTime
-    _       <-  console.putStr(s"computation time: ${(calcTime - startTime) / 1000} us")
-    _       <- canvasRendering.render(canvas, 255)
-    endTime <- clock.nanoTime
-    _       <- console.putStrLn(s"total time taken: ${(endTime - startTime) / 1000} us")
+    _        <- console.putStr(s"computation time: ${(calcTime - startTime) / 1000} us")
+    _        <- canvasRendering.render(canvas, 255)
+    endTime  <- clock.nanoTime
+    _        <- console.putStrLn(s"total time taken: ${(endTime - startTime) / 1000} us")
   } yield ()
 
   override def run(args: List[String]): ZIO[Chapter5Sphere.Environment, Nothing, Int] =

@@ -17,7 +17,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
-          _          <- IO(res should === (PhongComponents(Color.white * 0.1, Color.white * 0.9, Color.white * 0.9)))
+          _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * 0.9, Color.white * 0.9)))
         } yield res).provide(PhongReflection.Live)
       }
     }
@@ -29,7 +29,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), eyeV = Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), normalV = Vec(0, 0, -1)))
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
-          _          <- IO(res should === (PhongComponents(Color.white * 0.1, Color.white * 0.9, Color.black)))
+          _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * 0.9, Color.black)))
         } yield res).provide(PhongReflection.Live)
       }
     }
@@ -41,7 +41,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           hitComps   <- UIO(HitComps(s, pt = Pt(0, 0, 0), normalV = Vec(0, 0, -1), eyeV = Vec(0, 0, -1)))
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
-          _          <- IO(res should === (PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.black)))
+          _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.black)))
         } yield res).provide(PhongReflection.Live)
       }
     }
@@ -53,7 +53,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, -math.sqrt(2) / 2, -math.sqrt(2) / 2)))
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
-          _          <- IO(res should === (PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.white * 0.9)))
+          _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.white * 0.9)))
         } yield res).provide(PhongReflection.Live)
       }
     }
@@ -65,7 +65,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
           pointLight <- UIO(PointLight(Pt(0, 0, 10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
-          _          <- IO(res should === (PhongComponents(Color.white * 0.1, Color.black, Color.black)))
+          _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.black, Color.black)))
         } yield res).provide(PhongReflection.Live)
       }
     }
@@ -74,10 +74,10 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           s          <- Sphere.unit
-            hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
-            pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
-            res        <- phongOps.lighting(pointLight, hitComps, true)
-            _          <- IO(res should === (PhongComponents(Color.white * 0.1, Color.black, Color.black)))
+          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
+          pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
+          res        <- phongOps.lighting(pointLight, hitComps, true)
+          _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.black, Color.black)))
         } yield res).provide(PhongReflection.Live)
       }
     }

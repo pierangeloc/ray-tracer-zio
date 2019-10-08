@@ -4,11 +4,11 @@ import java.nio.file.{Path, Paths}
 
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color}
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation._
-import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformationOps, affineTfOps}
+import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformationOps}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
 import org.scalatest.WordSpec
-import zio.{DefaultRuntime, IO, console}
+import zio.{console, DefaultRuntime, IO}
 import zio.blocking.Blocking
 import zio.stream.{Sink, Stream, ZStream}
 

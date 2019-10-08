@@ -10,8 +10,8 @@ trait TestUtils extends Tolerance {
     override def areEqual(a: Vec, b: Any): Boolean = b match {
       case Vec(x, y, z) =>
         a.x === x +- 0.01 &&
-        a.y === y +- 0.01 &&
-        a.z === z +- 0.01
+          a.y === y +- 0.01 &&
+          a.z === z +- 0.01
       case _ => false
     }
   }
@@ -20,8 +20,8 @@ trait TestUtils extends Tolerance {
     override def areEqual(a: Pt, b: Any): Boolean = b match {
       case Pt(x, y, z) =>
         a.x === x +- 0.01 &&
-        a.y === y +- 0.01 &&
-        a.z === z +- 0.01
+          a.y === y +- 0.01 &&
+          a.z === z +- 0.01
       case _ => false
     }
   }

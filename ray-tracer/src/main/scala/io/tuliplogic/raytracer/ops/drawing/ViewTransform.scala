@@ -26,12 +26,12 @@ case class ViewTransform(from: Pt, to: Pt, up: Vec) {
         4,
         4,
         Vector(
-          Vector(left.x,    left.y,   left.z,   0d),
-          Vector(trueUp.x,  trueUp.y, trueUp.z, 0d),
-          Vector(-fwd.x,    -fwd.y,   -fwd.z,   0d),
-          Vector(0d,        0d,       0d,       1d)
+          Vector(left.x, left.y, left.z, 0d),
+          Vector(trueUp.x, trueUp.y, trueUp.z, 0d),
+          Vector(-fwd.x, -fwd.y, -fwd.z, 0d),
+          Vector(0d, 0d, 0d, 1d)
         ))
-      translateTf <- AffineTransformation.translate(-from.x, -from.y, - from.z)
+      translateTf <- AffineTransformation.translate(-from.x, -from.y, -from.z)
       composed    <- translateTf >=> AffineTransformation(orientationMatrix)
     } yield composed
   }
