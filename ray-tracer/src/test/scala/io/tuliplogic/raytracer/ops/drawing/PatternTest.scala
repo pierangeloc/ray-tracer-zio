@@ -24,4 +24,14 @@ class PatternTest extends WordSpec with DefaultRuntime {
       (0 to 100).toList.map(x => Pt(x + 0.1, 0, 0)).map(p) shouldEqual (0 to 100).toList.map(n => if (n % 2 == 0) Color.white else Color.black)
     }
   }
+
+  "Gradient pattern" should {
+    val p = unsafeRun(AffineTransformation.id.map(Pattern.GradientX(Color.white, Color.black, _)))
+    "determine correctly the colors" in {
+      p(Pt.origin) shouldEqual Color.white
+      p(Pt(0.25, 0, 0)) shouldEqual Color(0.75, 0.75, 0.75)
+      p(Pt(0.5, 0, 0)) shouldEqual Color(0.5, 0.5, 0.5)
+      p(Pt(0.75, 0, 0)) shouldEqual Color(0.25, 0.25, 0.25)
+    }
+  }
 }

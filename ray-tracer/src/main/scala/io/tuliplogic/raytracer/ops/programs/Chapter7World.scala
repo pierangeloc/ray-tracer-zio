@@ -40,7 +40,7 @@ object Chapter7World extends App {
   val world: ZIO[AffineTransformationOps, AlgebraicError, World] = for {
     defaultMat   <- Material.default
     idTf         <- AffineTransformation.id
-    mat          <- UIO(defaultMat.copy(color = Pattern.Uniform(Color(1, 0.9, 0.9), idTf), specular = 0))
+    mat          <- UIO(defaultMat.copy(pattern = Pattern.Uniform(Color(1, 0.9, 0.9), idTf), specular = 0))
     floorTf      <- AffineTransformation.scale(10, 0.01, 10) //very flat ellipsoid
     floorS       <- UIO(Sphere(floorTf, mat)) //grey, matte
     leftWallTf1  <- AffineTransformation.scale(10, 0.01, 10)
@@ -56,15 +56,15 @@ object Chapter7World extends App {
     rightWallTf  <- (rightWallTf1 >=> rightWallTf2).flatMap(_ >=> rightWallTf3).flatMap(_ >=> rightWallTf4)
     rightWallS   <- UIO(Sphere(rightWallTf, mat))
     s1Tf         <- AffineTransformation.translate(-0.5, 1.2, 0.5)
-    s1           <- UIO(Sphere(s1Tf, defaultMat.copy(color = Pattern.Uniform(Color(0.1, 1, 0.5), idTf), diffuse = 0.7, specular = 0.3)))
+    s1           <- UIO(Sphere(s1Tf, defaultMat.copy(pattern = Pattern.Uniform(Color(0.1, 1, 0.5), idTf), diffuse = 0.7, specular = 0.3)))
     s2Tf1        <- AffineTransformation.scale(0.5, 0.5, 0.5)
     s2Tf2        <- AffineTransformation.translate(1.5, 0.5, -0.5)
     s2Tf         <- s2Tf2 >=> s2Tf1
-    s2           <- UIO(Sphere(s2Tf, defaultMat.copy(color = Pattern.Uniform(Color(0.5, 1, 0.1), idTf), diffuse = 0.7, specular = 0.3)))
+    s2           <- UIO(Sphere(s2Tf, defaultMat.copy(pattern = Pattern.Uniform(Color(0.5, 1, 0.1), idTf), diffuse = 0.7, specular = 0.3)))
     s3Tf1        <- AffineTransformation.scale(0.33, 0.33, 0.33)
     s3Tf2        <- AffineTransformation.translate(-1.5, 0.33, -0.75)
     s3Tf         <- s3Tf2 >=> s3Tf1
-    s3           <- UIO(Sphere(s3Tf, defaultMat.copy(color = Pattern.Uniform(Color(1, 0.8, 0.1), idTf), diffuse = 0.7, specular = 0.3)))
+    s3           <- UIO(Sphere(s3Tf, defaultMat.copy(pattern = Pattern.Uniform(Color(1, 0.8, 0.1), idTf), diffuse = 0.7, specular = 0.3)))
   } yield World(PointLight(lightPosition, Color.white), List(s1, s2, s3, floorS, rightWallS, leftWallS))
 
   val camera: ZIO[AffineTransformationOps, AlgebraicError, Camera] = for {

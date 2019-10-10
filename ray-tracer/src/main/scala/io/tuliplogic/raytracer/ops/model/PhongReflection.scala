@@ -1,12 +1,13 @@
 package io.tuliplogic.raytracer.ops.model
 
+import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
-import zio.{UIO, URIO, ZIO}
+import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.PointLight
+import zio.{IO, UIO, URIO, ZIO}
 
 trait PhongReflection {
   def phongReflectionService: PhongReflection.Service[Any]
@@ -39,7 +40,8 @@ object PhongReflection {
     def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[R, PhongComponents]
   }
 
-  trait Live extends PhongReflection with SpatialEntityOperations {
+  //TODO test the phongReflection in terms of the underlying dependencies
+  trait Live extends PhongReflection with SpatialEntityOperations with AffineTransformationOps { self =>
     override def phongReflectionService: Service[Any] = new Service[Any] {
 
       override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
@@ -70,8 +72,19 @@ object PhongReflection {
             else diffuseAndReflect(lightV, effectiveColor, lightDotNormal, ambient)
           } yield res
 
+        def computeColor: IO[AlgebraicError, Color] = for {
+          objectTf <- UIO(hitComps.obj.transformation)
+          objectTfInv <- affineTfOps.invert(objectTf)
+          patternTf <- UIO(hitComps.obj.material.pattern.transformation)
+          patternTfInv <- affineTfOps.invert(patternTf)
+          composed     <- (objectTfInv >=> patternTfInv).provide(self)
+          effectivePt  <- affineTfOps.transform(composed, hitComps.pt)
+        } yield hitComps.obj.material.pattern(effectivePt)
+
+
         for {
-          effectiveColor <- UIO.succeed(hitComps.obj.material.color(hitComps.pt) * pointLight.intensity)
+          color          <- computeColor.orDie
+          effectiveColor <- UIO.succeed(color * pointLight.intensity)
           ambient        <- UIO(effectiveColor * hitComps.obj.material.ambient)
           res            <- if (inShadow) computeInShadow(ambient) else computeInLight(ambient, effectiveColor)
         } yield res

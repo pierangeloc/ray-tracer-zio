@@ -6,7 +6,7 @@ import io.tuliplogic.raytracer.ops.drawing.Pattern
 import zio.UIO
 
 case class Material(
-    color: Pattern,
+    pattern: Pattern,
     ambient: Double, //TODO refine Double > 0 && < 1
     diffuse: Double, //TODO refine Double > 0 && < 1
     specular: Double, //TODO refine Double > 0 && < 1

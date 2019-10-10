@@ -42,7 +42,7 @@ object Chapter10World extends App {
   val world: ZIO[AffineTransformationOps, AlgebraicError, World] = for {
     mat      <- Material.default
     idTf     <- AffineTransformation.id
-    floorMat <- UIO(mat.copy(color = Pattern.Uniform(Color(1, 0.9, 0.9), idTf), specular = 0))
+    floorMat <- UIO(mat.copy(pattern = Pattern.Uniform(Color(1, 0.9, 0.9), idTf), specular = 0))
     floorS   <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
 
     leftWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
@@ -54,12 +54,12 @@ object Chapter10World extends App {
     s1Tf1 <- AffineTransformation.translate(5, 2, 5)
     s1Tf2 <- AffineTransformation.scale(2, 2, 2)
     s1Tf  <- s1Tf2 >=> s1Tf1
-    s1    <- UIO(Sphere(s1Tf, mat.copy(color = Pattern.Striped(Color.black, Color.white, idTf), diffuse = 0.7, specular = 0.3)))
+    s1    <- UIO(Sphere(s1Tf, mat.copy(pattern = Pattern.Striped(Color.black, Color.white, idTf), diffuse = 0.7, specular = 0.3)))
 
     s2Tf1 <- AffineTransformation.translate(10, 4, 8)
     s2Tf2 <- AffineTransformation.scale(3, 3, 3)
     s2Tf  <- s2Tf2 >=> s2Tf1
-    s2    <- UIO(Sphere(s2Tf, mat.copy(color = Pattern.Striped(Color.blue, Color.red, idTf), diffuse = 0.7, specular = 0.3)))
+    s2    <- UIO(Sphere(s2Tf, mat.copy(pattern = Pattern.Striped(Color.blue, Color.red, idTf), diffuse = 0.7, specular = 0.3)))
 
   } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, floorS, leftWallS))
 

@@ -4,6 +4,7 @@ case class Pixel(x: Int, y: Int)
 case class Color(red: Double, green: Double, blue: Double) { //TODO: use refined types to enforce something on these colors, and on alpha
   def *(alpha: Double) = Color(red * alpha, green * alpha, blue * alpha)
   def +(other: Color)  = Color(red + other.red, green + other.green, blue + other.blue)
+  def -(other: Color)  = Color(red - other.red, green - other.green, blue - other.blue)
   def *(other: Color)  = Color(red * other.red, green * other.green, blue * other.blue)
 }
 
