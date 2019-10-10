@@ -34,4 +34,35 @@ class PatternTest extends WordSpec with DefaultRuntime {
       p(Pt(0.75, 0, 0)) shouldEqual Color(0.25, 0.25, 0.25)
     }
   }
+
+  "Ring pattern" should {
+    val p = unsafeRun(AffineTransformation.id.map(Pattern.Ring(Color.white, Color.black, _)))
+    "determine correctly the colors" in {
+      p(Pt.origin) shouldEqual Color.white
+      p(Pt(1, 0, 0)) shouldEqual Color.black
+      p(Pt(0, 0, 1)) shouldEqual Color.black
+      p(Pt(math.sqrt(2) / 2, 0, math.sqrt(2) / 2)) shouldEqual Color.black
+    }
+  }
+
+  "Checker pattern" should {
+    val p = unsafeRun(AffineTransformation.id.map(Pattern.Checker(Color.white, Color.black, _)))
+    "be periodic of 2 in x" in {
+      p(Pt.origin) shouldEqual Color.white
+      p(Pt(0.99, 0, 0)) shouldEqual Color.white
+      p(Pt(1.01, 0, 0)) shouldEqual Color.black
+    }
+
+    "be periodic of 2 in y" in {
+      p(Pt.origin) shouldEqual Color.white
+      p(Pt(0, 0.99, 0)) shouldEqual Color.white
+      p(Pt(0, 1.01, 0)) shouldEqual Color.black
+    }
+
+    "be periodic of 2 in z" in {
+      p(Pt.origin) shouldEqual Color.white
+      p(Pt(0, 0, 0.99)) shouldEqual Color.white
+      p(Pt(0, 0, 1.01)) shouldEqual Color.black
+    }
+  }
 }
