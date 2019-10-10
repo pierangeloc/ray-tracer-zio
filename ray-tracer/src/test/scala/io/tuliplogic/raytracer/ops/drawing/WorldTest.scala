@@ -150,34 +150,36 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
 object WorldTest {
   val defaultWorld = for {
     pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
-    mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6)), 0.1, 0.7, 0.2, 200))
+    idTf <- AffineTransformation.id
+    mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.1, 0.7, 0.2, 200))
     tf1  <- AffineTransformation.id
     s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
-    mat2 <- UIO(Material.default)
+    mat2 <- Material.default
     tf2  <- AffineTransformation.scale(0.5, 0.5, 0.5)
     s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
     w    <- UIO(World(pl, List(s1, s2)))
   } yield w
 
   val defaultWorld2 = for {
-    pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
-    mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6)), 1, 0.7, 0.2, 200))
-    tf1  <- AffineTransformation.id
-    s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
-    mat2 <- UIO(Material.default.copy(ambient = 1.0))
-    tf2  <- AffineTransformation.scale(0.5, 0.5, 0.5)
-    s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
-    w    <- UIO(World(pl, List(s1, s2)))
+    pl     <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
+    idTf   <- AffineTransformation.id
+    defMat <- Material.default
+    mat1   <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 1, 0.7, 0.2, 200))
+    tf1    <- AffineTransformation.id
+    s1     <- Sphere.withTransformAndMaterial(tf1, mat1)
+    mat2   <- UIO(defMat.copy(ambient = 1.0))
+    tf2    <- AffineTransformation.scale(0.5, 0.5, 0.5)
+    s2     <- Sphere.withTransformAndMaterial(tf2, mat2)
+    w      <- UIO(World(pl, List(s1, s2)))
   } yield w
 
   val defaultWorld3 = for {
     pl   <- UIO(PointLight(Pt(0, 0, -10), Color.white))
-    mat1 <- UIO(Material.default)
+    mat1 <- Material.default
     tf1  <- AffineTransformation.id
     s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
-    mat2 <- UIO(Material.default)
     tf2  <- AffineTransformation.translate(0, 0, 10)
-    s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
+    s2   <- Sphere.withTransformAndMaterial(tf2, mat1)
     w    <- UIO(World(pl, List(s1, s2)))
   } yield w
 

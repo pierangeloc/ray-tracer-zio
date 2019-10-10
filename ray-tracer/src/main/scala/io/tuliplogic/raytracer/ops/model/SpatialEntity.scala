@@ -14,7 +14,7 @@ case class Material(
 )
 
 object Material {
-  def default: Material = Material(Pattern.Uniform(Color.white), 0.1, 0.9, 0.9, 200d)
+  def default: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_, 0.1, 0.9, 0.9, 200d))
 }
 
 sealed trait SpatialEntity
@@ -25,7 +25,6 @@ object SpatialEntity {
   }
   object SceneObject {
 
-//    case class Material(color: Color, )
     //TODO refine Double > 0
     case class PointLight(position: Pt, intensity: Color)
 
@@ -39,7 +38,8 @@ object SpatialEntity {
       def unit: UIO[Sphere] =
         for {
           tf  <- AffineTransformation.id
-          res <- withTransformAndMaterial(tf, Material.default)
+          mat <- Material.default
+          res <- withTransformAndMaterial(tf, mat)
         } yield res
     }
 
@@ -55,7 +55,8 @@ object SpatialEntity {
       def canonical: UIO[Plane] =
         for {
           tf  <- AffineTransformation.id
-          res <- withTransformAndMaterial(tf, Material.default)
+          mat <- Material.default
+          res <- withTransformAndMaterial(tf, mat)
         } yield res
     }
   }

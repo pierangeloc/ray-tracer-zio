@@ -10,14 +10,13 @@ import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.drawing.{Pattern, SampledRect, Scene}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
+import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{App, UIO, ZIO, clock, console}
+import zio.{clock, console, App, UIO, ZIO}
 
 object Chapter6Sphere extends App {
-  val sphereMaterial   = Material(Pattern.Uniform(Color(1, 0.2, 1)), ambient = 0.2, diffuse = 0.9, 0.9, 50d)
   val infinitePoint    = Pt(0, 0, -2.5)
   val pointLight       = PointLight(Pt(-10, 10, -10), Color.white)
   val canvasHalfWidth  = 7d
@@ -32,10 +31,13 @@ object Chapter6Sphere extends App {
   val program: ZIO[CanvasRenderer with RichRayOperations with Clock with Console, RayTracerError, Unit] = for {
     startTime    <- clock.nanoTime
     canvas       <- Canvas.create(canvasHRes, canvasVRes)
+    idTf         <- AffineTransformation.id
+    pat          <- Pattern.uniform(Color(1, 0.2, 1)).provide(idTf)
+    mat          <- UIO(Material(pat, ambient = 0.2, diffuse = 0.9, 0.9, 50d))
     sampledRect  <- UIO.succeed(SampledRect(canvasHalfWidth, canvasHalfHeight, canvasZCoord, canvasHRes, canvasVRes))
     scene        <- UIO.succeed(Scene(infinitePoint, pointLight))
     sphereTransf <- AffineTransformation.id
-    sphere       <- UIO(Sphere(sphereTransf, sphereMaterial))
+    sphere       <- UIO(Sphere(sphereTransf, mat))
     _ <- sampledRect.pixelsChunkedStream.foreach {
       case (pt, xn, yn) =>
         scene.intersectAndComputePhong(pt, sphere).flatMap {

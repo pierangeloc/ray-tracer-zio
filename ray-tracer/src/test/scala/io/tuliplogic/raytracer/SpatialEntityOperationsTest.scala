@@ -29,7 +29,8 @@ class SpatialEntityOperationsTest extends WordSpec with DefaultRuntime with Test
       unsafeRun {
         (for {
           tf     <- AffineTransformation.translate(0, 1, 0)
-          s      <- UIO.succeed(Sphere(tf, Material.default))
+          mat    <- Material.default
+          s      <- UIO.succeed(Sphere(tf, mat))
           normal <- spatialEntityOps.normal(Pt(0, 1.70711, -0.70711), s)
           _      <- ZIO.effect { normal === Vec(0, 0.70711, -0.70711) }
         } yield ()).provide(SpatialEntityOperations.Live)

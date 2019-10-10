@@ -11,11 +11,11 @@ import io.tuliplogic.raytracer.ops.drawing.{Camera, Pattern, Renderer, ViewTrans
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
+import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{App, UIO, ZIO, console}
+import zio.{console, App, UIO, ZIO}
 
 object Chapter9World extends App {
   val canvasFile    = "/tmp/nioexp/chapter-9-three-spheres-shadow-" + System.currentTimeMillis + ".ppm"
@@ -39,8 +39,10 @@ object Chapter9World extends App {
   //TODO: make a DSL to build a world, this is too painful
 
   val world: ZIO[AffineTransformationOps, AlgebraicError, World] = for {
-    floorMat <- UIO(Material.default.copy(color = Pattern.Uniform(Color(1, 0.9, 0.9)), specular = 0))
-    floorS   <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
+    defaultMat <- Material.default
+    idTf       <- AffineTransformation.id
+    floorMat   <- UIO(defaultMat.copy(color = Pattern.Uniform(Color(1, 0.9, 0.9), idTf), specular = 0))
+    floorS     <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
 
     leftWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
     leftWallTf3 <- AffineTransformation.rotateY(-math.Pi / 4)
@@ -55,17 +57,17 @@ object Chapter9World extends App {
     rightWallS   <- UIO(Plane(rightWallTf, floorMat))
 
     s1Tf <- AffineTransformation.translate(-0.5, 1.2, 0.5)
-    s1   <- UIO(Sphere(s1Tf, Material.default.copy(color = Pattern.Uniform(Color(0.1, 1, 0.5)), diffuse = 0.7, specular = 0.3)))
+    s1   <- UIO(Sphere(s1Tf, defaultMat.copy(color = Pattern.Uniform(Color(0.1, 1, 0.5), idTf), diffuse = 0.7, specular = 0.3)))
 
     s2Tf1 <- AffineTransformation.scale(0.5, 0.5, 0.5)
     s2Tf2 <- AffineTransformation.translate(1.5, 0.5, -0.5)
     s2Tf  <- s2Tf2 >=> s2Tf1
-    s2    <- UIO(Sphere(s2Tf, Material.default.copy(color = Pattern.Uniform(Color(0.5, 1, 0.1)), diffuse = 0.7, specular = 0.3)))
+    s2    <- UIO(Sphere(s2Tf, defaultMat.copy(color = Pattern.Uniform(Color(0.5, 1, 0.1), idTf), diffuse = 0.7, specular = 0.3)))
 
     s3Tf1 <- AffineTransformation.scale(0.33, 0.33, 0.33)
     s3Tf2 <- AffineTransformation.translate(-1.5, 0.33, -0.75)
     s3Tf  <- s3Tf2 >=> s3Tf1
-    s3    <- UIO(Sphere(s3Tf, Material.default.copy(color = Pattern.Uniform(Color(1, 0.8, 0.1)), diffuse = 0.7, specular = 0.3)))
+    s3    <- UIO(Sphere(s3Tf, defaultMat.copy(color = Pattern.Uniform(Color(1, 0.8, 0.1), idTf), diffuse = 0.7, specular = 0.3)))
   } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, s3, floorS, rightWallS, leftWallS))
 
   val camera: ZIO[AffineTransformationOps, AlgebraicError, Camera] = for {

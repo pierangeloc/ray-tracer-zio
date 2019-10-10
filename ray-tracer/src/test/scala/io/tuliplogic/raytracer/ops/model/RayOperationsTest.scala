@@ -91,7 +91,8 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
         val ray = Ray(Pt(0, 0, -5), Vec(0, 0, 1))
         (for {
           tf                 <- AffineTransformation.scale(2, 2, 2)
-          s                  <- UIO(Sphere(tf, Material.default))
+          mat                <- Material.default
+          s                  <- UIO(Sphere(tf, mat))
           intersectionPoints <- rayOps.intersect(ray, s)
           _                  <- IO(intersectionPoints shouldEqual List(3d, 7d).map(Intersection(_, s)))
         } yield ()).provide(Live)
