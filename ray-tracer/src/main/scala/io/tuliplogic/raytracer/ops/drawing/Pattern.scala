@@ -37,7 +37,7 @@ object Pattern {
 
   case class Checker(c1: Color, c2: Color, transformation: AffineTransformation) extends Pattern {
     override def apply(pt: Pt): Color = {
-      val edgesSum = math.abs(pt.x) + math.abs(pt.y) + math.abs(pt.z)
+      val edgesSum = math.floor(pt.x) + math.floor(pt.y) + math.floor(pt.z)
       if (math.floor(edgesSum) % 2 == 0) c1 else c2
     }
   }
