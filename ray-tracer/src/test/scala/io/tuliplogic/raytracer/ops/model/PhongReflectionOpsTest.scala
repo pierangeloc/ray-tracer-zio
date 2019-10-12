@@ -16,7 +16,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           s          <- Sphere.unit
-          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
+          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * 0.9, Color.white * 0.9)))
@@ -28,7 +28,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           s          <- Sphere.unit
-          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), eyeV = Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), normalV = Vec(0, 0, -1)))
+          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), eyeV = Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), normalV = Vec(0, 0, -1), rayReflectV = Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * 0.9, Color.black)))
@@ -40,7 +40,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           s          <- Sphere.unit
-          hitComps   <- UIO(HitComps(s, pt = Pt(0, 0, 0), normalV = Vec(0, 0, -1), eyeV = Vec(0, 0, -1)))
+          hitComps   <- UIO(HitComps(s, pt = Pt(0, 0, 0), normalV = Vec(0, 0, -1), eyeV = Vec(0, 0, -1), rayReflectV = Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.black)))
@@ -52,7 +52,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           s          <- Sphere.unit
-          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, -math.sqrt(2) / 2, -math.sqrt(2) / 2)))
+          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, -math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.white * 0.9)))
@@ -64,7 +64,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           s          <- Sphere.unit
-          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
+          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 0, 10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.black, Color.black)))
@@ -76,7 +76,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           s          <- Sphere.unit
-          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
+          hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, true)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.black, Color.black)))
@@ -88,13 +88,13 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           tf         <- AffineTransformation.id
-          mat        <- UIO(Material(pattern = Pattern.Striped(Color.white, Color.black, tf), ambient = 1, diffuse = 0, specular = 0, shininess = 0))
+          mat        <- UIO(Material(pattern = Pattern.Striped(Color.white, Color.black, tf), ambient = 1, diffuse = 0, specular = 0, shininess = 0, reflective = 0))
           s          <- Sphere.withTransformAndMaterial(tf, mat)
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
-          hitComps1  <- UIO(HitComps(s, Pt(0.9, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
+          hitComps1  <- UIO(HitComps(s, Pt(0.9, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           res1       <- phongOps.lighting(pointLight, hitComps1, false)
           _          <- IO(res1.toColor should ===(Color.white))
-          hitComps2  <- UIO(HitComps(s, Pt(1.1, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1)))
+          hitComps2  <- UIO(HitComps(s, Pt(1.1, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           res2       <- phongOps.lighting(pointLight, hitComps2, false)
           _          <- IO(res2.toColor should ===(Color.black))
         } yield res1).provide(PhongReflection.Live)

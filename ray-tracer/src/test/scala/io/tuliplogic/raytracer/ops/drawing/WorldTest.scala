@@ -6,7 +6,7 @@ import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
 import io.tuliplogic.raytracer.ops.model.PhongReflection.HitComps
 import io.tuliplogic.raytracer.ops.model.{Color, Intersection, Material, PhongReflection, Ray, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
+import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, PointLight, Sphere}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO}
@@ -35,7 +35,21 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           i   <- UIO(Intersection(4, s))
           ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           hc  <- World.hitComps(ray, i)
-          _   <- IO { hc shouldEqual HitComps(s, Pt(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1)) }
+          _   <- IO { hc shouldEqual HitComps(s, Pt(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1)) }
+        } yield ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live)
+      }
+    }
+
+    "compute the components of a ray hitting a plane at 45 degrees, especially the rayReflectV" in {
+      unsafeRun {
+        (for {
+          s   <- Plane.canonical
+          ray <- UIO(Ray(Pt(0, 1, -1), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
+          i   <- UIO(Intersection(math.sqrt(2), s))
+          hc  <- World.hitComps(ray, i)
+          _ <- IO {
+            hc should ===(HitComps(s, Pt.origin, Vec(0, 1, 0), Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, math.sqrt(2) / 2, math.sqrt(2) / 2)))
+          }
         } yield ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live)
       }
     }
@@ -151,7 +165,7 @@ object WorldTest {
   val defaultWorld = for {
     pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
     idTf <- AffineTransformation.id
-    mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.1, 0.7, 0.2, 200))
+    mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.1, 0.7, 0.2, 200, 0))
     tf1  <- AffineTransformation.id
     s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
     mat2 <- Material.default
@@ -164,7 +178,7 @@ object WorldTest {
     pl     <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
     idTf   <- AffineTransformation.id
     defMat <- Material.default
-    mat1   <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 1, 0.7, 0.2, 200))
+    mat1   <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 1, 0.7, 0.2, 200, 0))
     tf1    <- AffineTransformation.id
     s1     <- Sphere.withTransformAndMaterial(tf1, mat1)
     mat2   <- UIO(defMat.copy(ambient = 1.0))

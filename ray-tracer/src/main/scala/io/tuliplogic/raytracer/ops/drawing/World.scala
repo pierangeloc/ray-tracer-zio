@@ -43,9 +43,10 @@ object World {
       hit: Intersection
   ): ZIO[SpatialEntityOperations with RayOperations, BusinessError.GenericError, HitComps] =
     for {
-      pt      <- rayOps.positionAt(ray, hit.t)
-      normalV <- spatialEntityOps.normal(pt, hit.sceneObject)
-      eyeV    <- UIO(-ray.direction)
-    } yield HitComps(hit.sceneObject, pt, normalV, eyeV)
+      pt       <- rayOps.positionAt(ray, hit.t)
+      normalV  <- spatialEntityOps.normal(pt, hit.sceneObject)
+      eyeV     <- UIO(-ray.direction)
+      reflectV <- spatialEntityOps.reflect(ray.direction, normalV)
+    } yield HitComps(hit.sceneObject, pt, normalV, eyeV, reflectV)
 
 }

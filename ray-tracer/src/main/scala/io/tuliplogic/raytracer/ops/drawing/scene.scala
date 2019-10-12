@@ -26,6 +26,7 @@ import zio.{Chunk, IO, UIO, ZIO}
 import scala.{Stream => ScalaStream}
 
 /**
+  * @deprecated stuff, use World
   * This represents a rectangle where our scene gets projected, if you want it's the camera, lying centered on the z axis, defined by its (half) w, h
   * and sampled with a given resolution. We are interested in producing the 3d position of every pixel in order to calculate the ray
   */
@@ -68,7 +69,7 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
           pt      <- rayOps.positionAt(ray, hit.t)
           normalV <- spatialEntityOps.normal(pt, s)
           eyeV    <- UIO(-ray.direction)
-        } yield HitComps(s, pt, normalV, eyeV)
+        } yield HitComps(s, pt, normalV, eyeV, eyeV)
       case _ => IO.fail(BusinessError.GenericError("can't handle anything but spheres"))
     }
 

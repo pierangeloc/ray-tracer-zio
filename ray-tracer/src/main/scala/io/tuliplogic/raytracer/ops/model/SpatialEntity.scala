@@ -9,12 +9,13 @@ case class Material(
     pattern: Pattern,
     ambient: Double, //TODO refine Double > 0 && < 1
     diffuse: Double, //TODO refine Double > 0 && < 1
-    specular: Double, //TODO refine Double > 0 && < 1
-    shininess: Double //TODO refine Double > 10 && < 200
+    specular: Double, //TODO refine Double > 0 && < 1 specularity of the surface to the light source
+    shininess: Double, //TODO refine Double > 10 && < 200 shininess of the surface to the light source
+    reflective: Double //TODO refine Double [0, 1] generic reflectiveness of the surface, of generic rays not only coming from the light sourcex
 )
 
 object Material {
-  def default: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_, 0.1, 0.9, 0.9, 200d))
+  def default: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_, 0.1, 0.9, 0.9, 200d, 0))
 }
 
 sealed trait SpatialEntity

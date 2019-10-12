@@ -15,7 +15,15 @@ trait PhongReflection {
 
 object PhongReflection {
 
-  case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec) {
+  /**
+    *
+    * @param obj
+    * @param pt
+    * @param normalV normal vector to the surface of $obj at $pt
+    * @param eyeV the eye vector, going from the eye to the surface point
+    * @param rayReflectV the reflection vector of the RAY
+    */
+  case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
     def overPoint: Pt   = pt + normalV.scale(HitComps.epsilon)
   }
@@ -72,15 +80,15 @@ object PhongReflection {
             else diffuseAndReflect(lightV, effectiveColor, lightDotNormal, ambient)
           } yield res
 
-        def computeColor: IO[AlgebraicError, Color] = for {
-          objectTf <- UIO(hitComps.obj.transformation)
-          objectTfInv <- affineTfOps.invert(objectTf)
-          patternTf <- UIO(hitComps.obj.material.pattern.transformation)
-          patternTfInv <- affineTfOps.invert(patternTf)
-          composed     <- (objectTfInv >=> patternTfInv).provide(self)
-          effectivePt  <- affineTfOps.transform(composed, hitComps.pt)
-        } yield hitComps.obj.material.pattern(effectivePt)
-
+        def computeColor: IO[AlgebraicError, Color] =
+          for {
+            objectTf     <- UIO(hitComps.obj.transformation)
+            objectTfInv  <- affineTfOps.invert(objectTf)
+            patternTf    <- UIO(hitComps.obj.material.pattern.transformation)
+            patternTfInv <- affineTfOps.invert(patternTf)
+            composed     <- (objectTfInv >=> patternTfInv).provide(self)
+            effectivePt  <- affineTfOps.transform(composed, hitComps.pt)
+          } yield hitComps.obj.material.pattern(effectivePt)
 
         for {
           color          <- computeColor.orDie

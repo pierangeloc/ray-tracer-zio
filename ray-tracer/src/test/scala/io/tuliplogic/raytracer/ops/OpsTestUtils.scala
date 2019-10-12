@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops
 
 import io.tuliplogic.raytracer.geometry.TestUtils
-import io.tuliplogic.raytracer.ops.model.PhongReflection.PhongComponents
+import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.{Color, Ray}
 import org.scalactic.TripleEquals._
 import org.scalactic.{Equality, Tolerance}
@@ -29,6 +29,14 @@ trait OpsTestUtils extends TestUtils with Tolerance {
     override def areEqual(a: PhongComponents, b: Any): Boolean = b match {
       case PhongComponents(ambient, diffuse, reflective) =>
         ambient === a.ambient && diffuse === a.diffuse && reflective === a.reflective
+      case _ => false
+    }
+  }
+
+  implicit val hitComponentsEq: Equality[HitComps] = new Equality[HitComps] {
+    override def areEqual(a: HitComps, b: Any): Boolean = b match {
+      case HitComps(obj, pt, normalV, eyeV, rayReflectV) =>
+        obj == a.obj && pt === a.pt && normalV === a.normalV && eyeV === a.eyeV && rayReflectV === a.rayReflectV
       case _ => false
     }
   }
