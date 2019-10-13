@@ -103,6 +103,37 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
       }
     }
+
+    "compute the correct color as a sum of the color of the plane plus the color of the reflected sphere" in {
+      unsafeRun {
+        (for {
+          w         <- defaultWorld4_1
+          ray       <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
+          plane     <- UIO(w.objects(2)) //TODO make a method to access objects by index in a World
+          hit       <- UIO(Intersection(math.sqrt(2), plane))
+          hitComps  <- World.hitComps(ray, hit)
+          fullColor <- w.colorAt(ray)
+          _ <- IO {
+            fullColor should ===(Color(0.87677, 0.92436, 0.82918))
+          }
+        } yield
+          ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
+
+    "terminate also in case of infinite reflection" in {
+      unsafeRun {
+        (for {
+          w         <- defaultWorld5
+          ray       <- UIO(Ray(Pt.origin, Vec(0, 1, 0)))
+          fullColor <- w.colorAt(ray)
+          _ <- IO {
+            fullColor should not equal Color.black
+          }
+        } yield
+          ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
   }
 
   "isShadowed, with sphere of ray=1 around the origin and light at (-10, 10, -10)" should {
@@ -159,6 +190,42 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       }
     }
   }
+
+  "reflectedColor" should {
+    "return black for a material with reflective = 0 and ambient = 1" in {
+      unsafeRun {
+        (for {
+          w              <- defaultWorld4
+          ray            <- UIO(Ray(Pt(0, 0, 0), Vec(0, 0, 1)))
+          s              <- UIO(w.objects(1))
+          hit            <- UIO(Intersection(1, s))
+          hitComps       <- World.hitComps(ray, hit)
+          reflectedColor <- World.reflectedColor(w, hitComps)
+          _ <- IO {
+            reflectedColor shouldEqual Color.black
+          }
+        } yield ())
+          .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
+
+    "return expected color for a material with reflective = 0.5 and default ambient" in {
+      unsafeRun {
+        (for {
+          w              <- defaultWorld4_1
+          ray            <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
+          plane          <- UIO(w.objects(2)) //TODO make a method to access objects by index in a World
+          hit            <- UIO(Intersection(math.sqrt(2), plane))
+          hitComps       <- World.hitComps(ray, hit)
+          reflectedColor <- World.reflectedColor(w, hitComps)
+          _ <- IO {
+            reflectedColor should ===(Color(0.19032, 0.2379, 0.14274)) //it shoudl return these according to the book. they are actually proportional by 2.891
+          }
+        } yield
+          ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
+  }
 }
 
 object WorldTest {
@@ -195,6 +262,46 @@ object WorldTest {
     tf2  <- AffineTransformation.translate(0, 0, 10)
     s2   <- Sphere.withTransformAndMaterial(tf2, mat1)
     w    <- UIO(World(pl, List(s1, s2)))
+  } yield w
+
+  val defaultWorld4 = for {
+    pl       <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
+    idTf     <- AffineTransformation.id
+    mat1     <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 1, 0.7, 0.2, 200, 0))
+    tf1      <- AffineTransformation.id
+    s1       <- Sphere.withTransformAndMaterial(tf1, mat1)
+    mat2     <- Material.default
+    tf2      <- AffineTransformation.scale(0.5, 0.5, 0.5)
+    s2       <- Sphere.withTransformAndMaterial(tf2, mat2)
+    planeTf  <- AffineTransformation.translate(0, -1, 0)
+    planeMat <- Material.default.map(_.copy(reflective = 0.5))
+    plane    <- UIO(Plane(planeTf, planeMat))
+    w        <- UIO(World(pl, List(s1, s2, plane)))
+  } yield w
+
+  val defaultWorld4_1 = for {
+    pl       <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
+      idTf     <- AffineTransformation.id
+      mat1     <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.1, 0.7, 0.2, 200, 0))
+      tf1      <- AffineTransformation.id
+      s1       <- Sphere.withTransformAndMaterial(tf1, mat1)
+      mat2     <- Material.default
+      tf2      <- AffineTransformation.scale(0.5, 0.5, 0.5)
+      s2       <- Sphere.withTransformAndMaterial(tf2, mat2)
+      planeTf  <- AffineTransformation.translate(0, -1, 0)
+      planeMat <- Material.default.map(_.copy(reflective = 0.5))
+      plane    <- UIO(Plane(planeTf, planeMat))
+      w        <- UIO(World(pl, List(s1, s2, plane)))
+  } yield w
+
+  val defaultWorld5 = for {
+    pl       <- UIO(PointLight(Pt.origin, Color.white))
+    mat      <- Material.default.map(_.copy(reflective = 0.5))
+    tf1      <- AffineTransformation.translate(0, -1, 0)
+    plane1   <- UIO(Plane(tf1, mat))
+    tf2      <- AffineTransformation.translate(0, 1, 0)
+    plane2   <- UIO(Plane(tf2, mat))
+    w        <- UIO(World(pl, List(plane1, plane2)))
   } yield w
 
 }

@@ -27,7 +27,7 @@ object Chapter10World extends App {
   val (hRes, vRes) = (640, 480)
 //  val (hRes, vRes) = (100, 50)
 
-  override def run(args: List[String]): ZIO[Chapter10World2.Environment, Nothing, Int] =
+  override def run(args: List[String]): ZIO[Chapter11World.Environment, Nothing, Int] =
     program
       .provide {
         new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live

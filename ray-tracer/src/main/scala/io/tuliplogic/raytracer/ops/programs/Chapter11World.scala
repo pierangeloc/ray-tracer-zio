@@ -11,14 +11,14 @@ import io.tuliplogic.raytracer.ops.drawing.{Camera, Pattern, Renderer, ViewTrans
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
+import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{console, App, UIO, ZIO}
+import zio.{App, UIO, ZIO, console}
 
-object Chapter10World2 extends App {
-  val canvasFile    = "/tmp/nioexp/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".ppm"
+object Chapter11World extends App {
+  val canvasFile    = "/tmp/nioexp/chapter-11-reflective-spheres" + System.currentTimeMillis + ".ppm"
   val lightPosition = Pt(10, 10, 2)
   val cameraFrom    = Pt(12, 4, 0)
   val cameraTo      = Pt(0, 4, 16)
@@ -42,27 +42,26 @@ object Chapter10World2 extends App {
   val world: ZIO[AffineTransformationOps, AlgebraicError, World] = for {
     mat      <- Material.default
     idTf     <- AffineTransformation.id
-    floorMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(1, 0.9, 0.9), Color(0.9, 1, 0.9), idTf), specular = 0))
-//    floorMat <- UIO(mat.copy(pattern = Pattern.Ring(Color(1, 0.9, 0.9), Color(0.9, 1, 0.9), idTf), specular = 0))
-    floorS <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
+    planeMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(0.1, 0.1, 0.1), Color(0.3, 0.3, 0.3), idTf), specular = 0, reflective = 0.1))
+    floorS <- Plane.canonical.map(_.copy(material = planeMat)) //grey, matte
 
     leftWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
     leftWallTf3 <- AffineTransformation.rotateY(-math.Pi / 2)
     leftWallTf4 <- AffineTransformation.translate(-10, 0, 0)
     leftWallTf  <- (leftWallTf2 >=> leftWallTf3).flatMap(_ >=> leftWallTf4)
-    leftWallS   <- UIO(Plane(leftWallTf, floorMat))
+    leftWallS   <- UIO(Plane(leftWallTf, planeMat))
 
     s1Tf1 <- AffineTransformation.translate(5, 2, 5)
     s1Tf2 <- AffineTransformation.scale(2, 2, 2)
-//    p1Tf <- AffineTransformation.scale(0.2, 0.2, 0.2)
     s1Tf <- s1Tf2 >=> s1Tf1
     s1 <- UIO(
       Sphere(
         s1Tf,
         mat.copy(
-          pattern = Pattern.GradientX(Color(240 / 256.0, 121 / 256.0, 49 / 256.0), Color(145 / 256.0, 179 / 256.0, 87 / 256.0), idTf),
+          pattern = Pattern.Uniform(Color(240 / 256.0, 121 / 256.0, 49 / 256.0), idTf),
           diffuse = 0.7,
-          specular = 0.3)))
+          specular = 0.3,
+          reflective = 0.9)))
 
     s2Tf1 <- AffineTransformation.translate(10, 4, 8)
     s2Tf2 <- AffineTransformation.scale(3, 3, 3)
@@ -70,7 +69,17 @@ object Chapter10World2 extends App {
     p2Tf1 <- AffineTransformation.scale(0.3, 0.3, 0.3)
     p2Tf2 <- AffineTransformation.rotateZ(math.Pi / 4)
     p2Tf  <- p2Tf1 >=> p2Tf2
-    s2    <- UIO(Sphere(s2Tf, mat.copy(pattern = Pattern.Striped(Color.blue, Color.red, p2Tf), diffuse = 0.7, specular = 0.3)))
+    s2    <- UIO(
+      Sphere(
+        s2Tf,
+        mat.copy(
+          pattern = Pattern.Striped(Color.blue, Color.red, p2Tf),
+          diffuse = 0.7,
+          specular = 0.3,
+          reflective = 0.1
+        )
+      )
+    )
 
   } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, floorS, leftWallS))
 

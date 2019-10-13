@@ -25,11 +25,11 @@ object PhongReflection {
     */
   case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
-    def overPoint: Pt   = pt + normalV.scale(HitComps.epsilon)
+    def overPoint: Pt   = pt + normalV.scale(HitComps.epsilon * (if(inside) -1 else 1))
   }
 
   object HitComps {
-    val epsilon: Double = 1e-6
+    val epsilon: Double = 1e-3
   }
 
   case class PhongComponents(ambient: Color, diffuse: Color, reflective: Color) {
