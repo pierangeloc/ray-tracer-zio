@@ -20,7 +20,7 @@ import zio.{App, UIO, ZIO, console}
 object Chapter11World extends App {
   val canvasFile    = "/tmp/nioexp/chapter-11-reflective-spheres" + System.currentTimeMillis + ".ppm"
   val lightPosition = Pt(10, 10, 2)
-  val cameraFrom    = Pt(12, 4, 0)
+  val cameraFrom    = Pt(9, 4, -4)
   val cameraTo      = Pt(0, 4, 16)
   val cameraUp      = Vec(0, 1, 0)
 
@@ -42,7 +42,8 @@ object Chapter11World extends App {
   val world: ZIO[AffineTransformationOps, AlgebraicError, World] = for {
     mat      <- Material.default
     idTf     <- AffineTransformation.id
-    planeMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(0.1, 0.1, 0.1), Color(0.3, 0.3, 0.3), idTf), specular = 0, reflective = 0.1))
+    scale4Tf <- AffineTransformation.scale(4, 4, 4)
+    planeMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(0.1, 0.1, 0.1), Color(0.3, 0.3, 0.3), scale4Tf), specular = 0, reflective = 0.1))
     floorS <- Plane.canonical.map(_.copy(material = planeMat)) //grey, matte
 
     leftWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
