@@ -35,8 +35,14 @@ trait OpsTestUtils extends TestUtils with Tolerance {
 
   implicit val hitComponentsEq: Equality[HitComps] = new Equality[HitComps] {
     override def areEqual(a: HitComps, b: Any): Boolean = b match {
-      case HitComps(obj, pt, normalV, eyeV, rayReflectV) =>
-        obj == a.obj && pt === a.pt && normalV === a.normalV && eyeV === a.eyeV && rayReflectV === a.rayReflectV
+      case HitComps(obj, pt, normalV, eyeV, rayReflectV, n1, n2) =>
+        obj == a.obj &&
+          pt === a.pt &&
+          normalV === a.normalV &&
+          eyeV === a.eyeV &&
+          rayReflectV === a.rayReflectV &&
+          n1 === a.n1 &&
+          n2 === a.n2
       case _ => false
     }
   }

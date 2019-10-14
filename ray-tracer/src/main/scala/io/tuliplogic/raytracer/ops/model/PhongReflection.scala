@@ -23,7 +23,7 @@ object PhongReflection {
     * @param eyeV the eye vector, going from the eye to the surface point
     * @param rayReflectV the reflection vector of the RAY
     */
-  case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec) {
+  case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec, n1: Double = 1, n2: Double = 1) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
     def overPoint: Pt   = pt + normalV.scale(HitComps.epsilon * (if(inside) -1 else 1))
   }

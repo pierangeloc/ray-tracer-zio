@@ -11,11 +11,13 @@ case class Material(
     diffuse: Double, //TODO refine Double > 0 && < 1
     specular: Double, //TODO refine Double > 0 && < 1 specularity of the surface to the light source
     shininess: Double, //TODO refine Double > 10 && < 200 shininess of the surface to the light source
-    reflective: Double //TODO refine Double [0, 1] generic reflectiveness of the surface, of generic rays not only coming from the light sourcex
+    reflective: Double, //TODO refine Double [0, 1] generic reflectiveness of the surface, of generic rays not only coming from the light sourcex
+    transparency: Double, //TODO refine Double [0, 1] how transparent the material is
+    refractionIndex: Double //TODO refine Double [0, 1] the material refraction index (for vacuum it's 1)
 )
 
 object Material {
-  def default: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_, 0.1, 0.9, 0.9, 200d, 0))
+  def default: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_, 0.1, 0.9, 0.9, 200d, 0, 0, 1))
 }
 
 sealed trait SpatialEntity
@@ -42,6 +44,15 @@ object SpatialEntity {
           mat <- Material.default
           res <- withTransformAndMaterial(tf, mat)
         } yield res
+
+      def unitGlass: UIO[Sphere] =
+        for {
+          tf  <- AffineTransformation.id
+          defMat <- Material.default
+          mat <- UIO(defMat.copy(transparency = 1.0, refractionIndex = 1.5))
+          res <- withTransformAndMaterial(tf, mat)
+        } yield res
+
     }
 
     /**

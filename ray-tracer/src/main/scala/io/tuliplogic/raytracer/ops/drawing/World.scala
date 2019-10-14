@@ -17,7 +17,7 @@ case class World(pointLight: PointLight, objects: List[SceneObject]) {
   def colorAt(ray: Ray, remaining: Int = 5): ZIO[PhongReflection with RayOperations with SpatialEntityOperations, RayTracerError, Color] =
     for {
       intersections <- intersect(ray)
-      maybeHitComps <- intersections.find(_.t > 0).traverse(World.hitComps(ray, _))
+      maybeHitComps <- intersections.find(_.t > 0).traverse(World.hitComps(ray, _, intersections))
       color <- maybeHitComps
         .map(hc =>
           for {
@@ -44,14 +44,54 @@ object World {
 
   def hitComps(
       ray: Ray,
-      hit: Intersection
-  ): ZIO[SpatialEntityOperations with RayOperations, BusinessError.GenericError, HitComps] =
+      hit: Intersection,
+      intersections: List[Intersection]
+  ): ZIO[SpatialEntityOperations with RayOperations, BusinessError.GenericError, HitComps] = {
+
+    type Z = (List[SceneObject], Option[Double], Option[Double])
+
+    /**
+      * We can calculate the n1, n2 for the hit, given the list of intersections. Each intersection carries the object, together with its material
+      * @return
+      */
+    def n1n2: UIO[(Double, Double)] = {
+
+      val maybeN1N2: (List[SceneObject], Option[Double], Option[Double]) = intersections.foldLeft[Z]((Nil, None, None)) {
+        case (in@(xs, Some(n1), Some(n2)), _) =>
+          in
+        case ((conts, None, None), `hit`) =>
+          val n1: Double = conts.lastOption.map(_.material.refractionIndex).getOrElse(1)
+          val contss =
+            if (conts.contains(hit.sceneObject))
+            conts.filter(_ != hit.sceneObject)
+              else
+            conts :+ hit.sceneObject
+          val n2: Double = contss.lastOption.map(_.material.refractionIndex).getOrElse(1)
+          (contss, Some(n1), Some(n2))
+
+        case ((conts, None, None), i) =>
+          val contss = if (conts.contains(i.sceneObject)) conts.filter(_ != i.sceneObject)
+          else conts :+ i.sceneObject
+          (contss, None, None)
+
+        case _ => (Nil, None, None)
+      }
+
+      maybeN1N2 match {
+        case (_, Some(n1), Some(n2)) => UIO.succeed((n1, n2))
+        case _ => ZIO.die(new IllegalArgumentException("can't determine refraction indexes")) //TODO: proper error mgmgt
+      }
+
+    }
+
     for {
       pt       <- rayOps.positionAt(ray, hit.t)
       normalV  <- spatialEntityOps.normal(pt, hit.sceneObject)
       eyeV     <- UIO(-ray.direction)
       reflectV <- spatialEntityOps.reflect(ray.direction, normalV)
-    } yield HitComps(hit.sceneObject, pt, normalV, eyeV, reflectV)
+      (n1, n2) <- n1n2
+    } yield HitComps(hit.sceneObject, pt, normalV, eyeV, reflectV, n1, n2)
+  }
 
 
   //TODO: make remaining part of an environment initialized with Ref

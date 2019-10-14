@@ -88,7 +88,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
       unsafeRun {
         (for {
           tf         <- AffineTransformation.id
-          mat        <- UIO(Material(pattern = Pattern.Striped(Color.white, Color.black, tf), ambient = 1, diffuse = 0, specular = 0, shininess = 0, reflective = 0))
+          mat        <- UIO(Material(pattern = Pattern.Striped(Color.white, Color.black, tf), ambient = 1, diffuse = 0, specular = 0, shininess = 0, reflective = 0, transparency = 0, refractionIndex = 1))
           s          <- Sphere.withTransformAndMaterial(tf, mat)
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           hitComps1  <- UIO(HitComps(s, Pt(0.9, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))

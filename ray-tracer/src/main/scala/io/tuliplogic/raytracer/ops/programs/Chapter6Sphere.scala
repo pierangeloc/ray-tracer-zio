@@ -33,7 +33,7 @@ object Chapter6Sphere extends App {
     canvas       <- Canvas.create(canvasHRes, canvasVRes)
     idTf         <- AffineTransformation.id
     pat          <- Pattern.uniform(Color(1, 0.2, 1)).provide(idTf)
-    mat          <- UIO(Material(pat, ambient = 0.2, diffuse = 0.9, 0.9, 50d, 0))
+    mat          <- UIO(Material(pat, ambient = 0.2, diffuse = 0.9, 0.9, 50d, 0, 0, 1))
     sampledRect  <- UIO.succeed(SampledRect(canvasHalfWidth, canvasHalfHeight, canvasZCoord, canvasHRes, canvasVRes))
     scene        <- UIO.succeed(Scene(infinitePoint, pointLight))
     sphereTransf <- AffineTransformation.id
