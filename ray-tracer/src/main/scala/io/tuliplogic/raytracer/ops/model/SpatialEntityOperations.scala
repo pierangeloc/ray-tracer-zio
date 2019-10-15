@@ -17,7 +17,7 @@ object SpatialEntityOperations {
   trait Service[R] {
     def normal(p: Pt, o: SceneObject): ZIO[R, Nothing, Vec]
     final def reflect(vec: Vec, normal: Vec): ZIO[R, Nothing, Vec] =
-      ZIO.succeed(vec.minus(normal.scale(2 * vec.dot(normal))))
+      ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
   }
 
   trait Live extends SpatialEntityOperations with AffineTransformationOps {

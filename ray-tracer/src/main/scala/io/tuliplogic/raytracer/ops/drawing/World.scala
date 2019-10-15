@@ -1,14 +1,15 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-  import io.tuliplogic.raytracer.ops.model.{phongOps, rayOps, spatialEntityOps, Color, Intersection, PhongReflection, Ray, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
-import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, RayTracerError}
-import io.tuliplogic.raytracer.ops.model.PhongReflection.HitComps
-import zio.{IO, UIO, URIO, ZIO}
-import cats.implicits._
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
-import zio.interop.catz._
+  import io.tuliplogic.raytracer.ops.model.{Color, Intersection, PhongReflection, Ray, RayOperations, SpatialEntityOperations, phongOps, rayOps, spatialEntityOps}
+  import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
+  import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, RayTracerError}
+  import io.tuliplogic.raytracer.ops.model.PhongReflection.HitComps
+  import zio.{IO, UIO, URIO, ZIO}
+  import cats.implicits._
+  import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
+  import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
+  import zio.interop.catz._
+  import Predef.{any2stringadd => _,_}
 
 case class World(pointLight: PointLight, objects: List[SceneObject]) {
   def intersect(ray: Ray): URIO[RayOperations, List[Intersection]] =
@@ -25,6 +26,7 @@ case class World(pointLight: PointLight, objects: List[SceneObject]) {
             color <- phongOps.lighting(pointLight, hc, shadowed).map(_.toColor)
             //invoke this only if remaining > 0. Also, reflected color and color can be computed in parallel
             reflectedColor <- if (remaining > 0) World.reflectedColor(this, hc, remaining - 1) else UIO(Color.black)
+            refractedColor <- if (remaining > 0) World.refractedColor(this, hc, remaining) else UIO(Color.black)
           } yield color + reflectedColor
         ).getOrElse(UIO(Color.black))
     } yield color
@@ -105,4 +107,19 @@ object World {
       )
     }
 
+  def refractedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[PhongReflection with RayOperations with SpatialEntityOperations, RayTracerError, Color] = {
+    val nRatio = hitComps.n1 / hitComps.n2
+    val eyeDotNormal = (hitComps.eyeV dot hitComps.normalV)
+    val cosTheta_i = eyeDotNormal * eyeDotNormal
+    val sin2Theta_t = nRatio * nRatio * (1 - cosTheta_i * cosTheta_i)
+
+    if (hitComps.obj.material.transparency == 0) UIO.succeed(Color.black) // opaque surfaces don't refract
+    else if (remaining == 0) UIO.succeed(Color.black) // refraction recursion is done
+    else if (sin2Theta_t > 1) UIO.succeed(Color.black) // total internal reflection reached
+    else {
+      val cosTheta_t: Double = math.sqrt(1 - sin2Theta_t)
+      val direction: Vec = (hitComps.normalV * (nRatio * cosTheta_i - cosTheta_t)) + (hitComps.eyeV * nRatio)
+      world.colorAt(Ray(hitComps.underPoint, direction), remaining - 1)
+    }
+  }
 }

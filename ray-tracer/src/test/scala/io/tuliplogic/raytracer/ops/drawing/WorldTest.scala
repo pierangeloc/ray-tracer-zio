@@ -85,6 +85,20 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       }
     }
 
+    "compute the underpoint" in {
+      unsafeRun {
+        (for {
+          r <- UIO(Ray(Pt(0, 0, -5), Vec.uz))
+          w <- oneTransparentCanonicalSphereWorld
+          s <- UIO(w.objects.head)
+          i <- UIO(Intersection(5, s))
+          hc <- World.hitComps(r, i, List(i))
+          _ <- IO{
+            hc.underPoint.z > HitComps.epsilon / 2 shouldEqual true}
+          _ <- IO{(hc.pt.z < hc.underPoint.z) shouldEqual true}
+        } yield ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live)
+      }
+    }
   }
 
   "colorAt" should {
@@ -223,7 +237,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     }
   }
 
-  "reflectedColor" should {
+  "reflected color" should {
     "return black for a material with reflective = 0 and ambient = 1" in {
       unsafeRun {
         (for {
@@ -255,6 +269,59 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           }
         } yield
           ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
+  }
+
+  "refracted color" should {
+    "be black for opaque surfaces" in {
+      unsafeRun {
+        (for {
+          w              <- defaultWorld
+          ray            <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
+          s              <- UIO(w.objects(0))
+          intersections  <- UIO(List(Intersection(4, s), Intersection(6, s)))
+          hitComps       <- World.hitComps(ray, intersections.head, intersections)
+          refractedColor <- World.refractedColor(w, hitComps)
+          _ <- IO {
+            refractedColor shouldEqual Color.black
+          }
+        } yield ())
+          .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
+
+    "be black for excessive recursive depth" in {
+      unsafeRun {
+        (for {
+          w              <- externalCanonicalTransparentInternalHalfOpaque
+          ray            <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
+          s              <- UIO(w.objects(0))
+          intersections  <- UIO(List(Intersection(4, s), Intersection(6, s)))
+          hitComps       <- World.hitComps(ray, intersections.head, intersections)
+          refractedColor <- World.refractedColor(w, hitComps, 0)
+          _ <- IO {
+            refractedColor shouldEqual Color.black
+            }
+        } yield ())
+          .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
+
+    "be black for total internal reflection" in {
+      unsafeRun {
+        (for {
+          w              <- externalCanonicalTransparentInternalHalfOpaque
+          ray            <- UIO(Ray(Pt(0, 0, math.sqrt(2) / 2), Vec(0, 1, 0)))
+          s              <- UIO(w.objects(0))
+          intersections  <- UIO(List(Intersection(- math.sqrt(2) / 2, s), Intersection(math.sqrt(2) / 2, s)))
+          hitComps       <- World.hitComps(ray, intersections(1), intersections)
+          refractedColor <- World.refractedColor(w, hitComps)
+          _ <- IO {
+            refractedColor shouldEqual Color.black
+          }
+        } yield ())
+          .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
       }
     }
   }
@@ -346,5 +413,25 @@ object WorldTest {
     s3   <- Sphere.unitGlass.map(s => s.copy(material = s.material.copy(refractionIndex = 2.5), transformation = tf3))
     w    <- UIO(World(pl, List(s1, s2, s3)))
   } yield w
+
+  val oneTransparentCanonicalSphereWorld = for {
+    pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
+    tf  <- AffineTransformation.translate(0, 0, 1)
+    s   <- Sphere.unitGlass.map(_.copy(transformation = tf))
+    w    <- UIO(World(pl, List(s)))
+  } yield w
+
+  val externalCanonicalTransparentInternalHalfOpaque =
+    for {
+      pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
+      idTf <- AffineTransformation.id
+      mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.1, 0.7, 0.2, 200, 0, 1, 1.5))
+      tf1  <- AffineTransformation.id
+      s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
+      mat2 <- Material.default
+      tf2  <- AffineTransformation.scale(0.5, 0.5, 0.5)
+      s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
+      w    <- UIO(World(pl, List(s1, s2)))
+    } yield w
 
 }

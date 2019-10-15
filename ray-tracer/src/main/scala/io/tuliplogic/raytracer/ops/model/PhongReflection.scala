@@ -25,7 +25,8 @@ object PhongReflection {
     */
   case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec, n1: Double = 1, n2: Double = 1) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
-    def overPoint: Pt   = pt + normalV.scale(HitComps.epsilon * (if(inside) -1 else 1))
+    def overPoint: Pt   = pt + normalV.*(HitComps.epsilon * (if(inside) -1 else 1))
+    def underPoint: Pt  = pt + normalV.*(-HitComps.epsilon * (if(inside) -1 else 1))
   }
 
   object HitComps {
@@ -46,6 +47,7 @@ object PhongReflection {
       * @return
       */
     def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[R, PhongComponents]
+
   }
 
   //TODO test the phongReflection in terms of the underlying dependencies

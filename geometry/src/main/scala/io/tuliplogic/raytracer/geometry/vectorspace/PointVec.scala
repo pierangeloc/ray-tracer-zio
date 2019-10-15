@@ -19,10 +19,10 @@ object PointVec {
   }
 
   case class Vec(x: Double, y: Double, z: Double) extends PointVec {
-    def plus(other: Vec): Vec   = Vec(x + other.x, y + other.y, z + other.z)
-    def plus(otherPt: Pt): Pt   = Pt(x + otherPt.x, y + otherPt.y, z + otherPt.z)
-    def minus(other: Vec): Vec  = Vec(x - other.x, y - other.y, z - other.z)
-    def scale(t: Double)        = Vec(x * t, y * t, z * t)
+    def +(other: Vec): Vec   = Vec(x + other.x, y + other.y, z + other.z)
+    def +(otherPt: Pt): Pt   = Pt(x + otherPt.x, y + otherPt.y, z + otherPt.z)
+    def -(other: Vec): Vec  = Vec(x - other.x, y - other.y, z - other.z)
+    def *(t: Double)        = Vec(x * t, y * t, z * t)
     def dot(other: Vec): Double = x * other.x + y * other.y + z * other.z
     def cross(other: Vec): Vec = Vec(
       y * other.z - z * other.y,
