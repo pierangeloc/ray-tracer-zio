@@ -26,8 +26,8 @@ case class World(pointLight: PointLight, objects: List[SceneObject]) {
             color <- phongOps.lighting(pointLight, hc, shadowed).map(_.toColor)
             //invoke this only if remaining > 0. Also, reflected color and color can be computed in parallel
             reflectedColor <- if (remaining > 0) World.reflectedColor(this, hc, remaining - 1) else UIO(Color.black)
-            refractedColor <- if (remaining > 0) World.refractedColor(this, hc, remaining) else UIO(Color.black)
-          } yield color + reflectedColor
+            refractedColor <- World.refractedColor(this, hc, remaining)
+          } yield color + reflectedColor + refractedColor
         ).getOrElse(UIO(Color.black))
     } yield color
 
@@ -109,8 +109,7 @@ object World {
 
   def refractedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[PhongReflection with RayOperations with SpatialEntityOperations, RayTracerError, Color] = {
     val nRatio = hitComps.n1 / hitComps.n2
-    val eyeDotNormal = (hitComps.eyeV dot hitComps.normalV)
-    val cosTheta_i = eyeDotNormal * eyeDotNormal
+    val cosTheta_i = (hitComps.eyeV dot hitComps.normalV)
     val sin2Theta_t = nRatio * nRatio * (1 - cosTheta_i * cosTheta_i)
 
     if (hitComps.obj.material.transparency == 0) UIO.succeed(Color.black) // opaque surfaces don't refract
@@ -118,8 +117,9 @@ object World {
     else if (sin2Theta_t > 1) UIO.succeed(Color.black) // total internal reflection reached
     else {
       val cosTheta_t: Double = math.sqrt(1 - sin2Theta_t)
-      val direction: Vec = (hitComps.normalV * (nRatio * cosTheta_i - cosTheta_t)) + (hitComps.eyeV * nRatio)
-      world.colorAt(Ray(hitComps.underPoint, direction), remaining - 1)
+      val direction: Vec = (hitComps.normalV * (nRatio * cosTheta_i - cosTheta_t)) - (hitComps.eyeV * nRatio)
+      val refractedRay = Ray(hitComps.underPoint, direction)
+      world.colorAt(refractedRay, remaining - 1).map(_ * hitComps.obj.material.transparency)
     }
   }
 }

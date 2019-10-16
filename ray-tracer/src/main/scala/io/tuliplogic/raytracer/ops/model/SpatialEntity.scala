@@ -17,7 +17,13 @@ case class Material(
 )
 
 object Material {
-  def default: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_, 0.1, 0.9, 0.9, 200d, 0, 0, 1))
+  def default: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_,
+    ambient = 0.1, diffuse = 0.9, specular = 0.9, shininess = 200d, reflective = 0, transparency = 0, refractionIndex = 1))
+  val glass: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_,
+    ambient = 0.0, diffuse = 0.0, specular = 0.1, shininess = 200d, reflective = 0.4, transparency = 0.95, refractionIndex = 1.5))
+  val air: UIO[Material] = Pattern.uniform(Color.white).provideM(AffineTransformation.id).map(Material(_,
+    ambient = 0.0, diffuse = 0.0, specular = 0, shininess = 0, reflective = 0, transparency = 1, refractionIndex = 1))
+
 }
 
 sealed trait SpatialEntity

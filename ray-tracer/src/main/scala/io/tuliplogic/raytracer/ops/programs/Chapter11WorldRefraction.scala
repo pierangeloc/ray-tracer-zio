@@ -11,23 +11,23 @@ import io.tuliplogic.raytracer.ops.drawing.{Camera, Pattern, Renderer, ViewTrans
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
+import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{console, App, UIO, ZIO}
+import zio.{App, UIO, ZIO, console}
 
-object Chapter10World extends App {
-  val canvasFile    = "/tmp/nioexp/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".ppm"
-  val lightPosition = Pt(10, 4, 2)
-  val cameraFrom    = Pt(15, 4, 0)
-  val cameraTo      = Pt(0, 4, 12)
-  val cameraUp      = Vec(0, 1, 0)
+object Chapter11WorldRefraction extends App {
+  val canvasFile    = "/tmp/nioexp/chapter-11-refractive-spheres" + System.currentTimeMillis + ".ppm"
+  val lightPosition = Pt(5, 5, 2)
+  val cameraFrom    = Pt(0, 10, 0)
+  val cameraTo      = Pt.origin
+  val cameraUp      = Vec(0, 0, 1)
 
-  val (hRes, vRes) = (640, 480)
-//  val (hRes, vRes) = (100, 50)
+//  val (hRes, vRes) = (640, 480)
+  val (hRes, vRes) = (100, 50)
 
-  override def run(args: List[String]): ZIO[Chapter10World.Environment, Nothing, Int] =
+  override def run(args: List[String]): ZIO[Chapter11WorldRefraction.Environment, Nothing, Int] =
     program
       .provide {
         new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live
@@ -42,26 +42,24 @@ object Chapter10World extends App {
   val world: ZIO[AffineTransformationOps, AlgebraicError, World] = for {
     mat      <- Material.default
     idTf     <- AffineTransformation.id
-    floorMat <- UIO(mat.copy(pattern = Pattern.Uniform(Color(1, 0.9, 0.9), idTf), specular = 0))
-    floorS   <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
+    planeMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(0.1, 0.1, 0.1), Color(0.3, 0.3, 0.3), idTf), specular = 0, reflective = 0.1))
+    translate4DownY <- AffineTransformation.translate(0, -4, 0)
+    floorS <- Plane.canonical.map(_.copy(material = planeMat, transformation = translate4DownY))
 
-    leftWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
-    leftWallTf3 <- AffineTransformation.rotateY(-math.Pi / 2)
-    leftWallTf4 <- AffineTransformation.translate(-10, 0, 0)
-    leftWallTf  <- (leftWallTf2 >=> leftWallTf3).flatMap(_ >=> leftWallTf4)
-    leftWallS   <- UIO(Plane(leftWallTf, floorMat))
+    s1Tf <- AffineTransformation.scale(4, 4, 4)
+    glass <- Material.glass
+    s1 <- Sphere.unit.map(_.copy(transformation = s1Tf, material = glass))
 
-    s1Tf1 <- AffineTransformation.translate(5, 2, 5)
-    s1Tf2 <- AffineTransformation.scale(2, 2, 2)
-    s1Tf  <- s1Tf2 >=> s1Tf1
-    s1    <- UIO(Sphere(s1Tf, mat.copy(pattern = Pattern.Striped(Color.black, Color.white, idTf), diffuse = 0.7, specular = 0.3)))
+    s2Tf <- AffineTransformation.scale(1, 2, 2)
+    air <- Material.air
+    s2 <- Sphere.unitGlass.map(s => s.copy(transformation = s2Tf, material = air))
 
-    s2Tf1 <- AffineTransformation.translate(10, 4, 8)
-    s2Tf2 <- AffineTransformation.scale(3, 3, 3)
-    s2Tf  <- s2Tf2 >=> s2Tf1
-    s2    <- UIO(Sphere(s2Tf, mat.copy(pattern = Pattern.Striped(Color.blue, Color.red, idTf), diffuse = 0.7, specular = 0.3)))
+    s3Tf <- AffineTransformation.scale(1, 1, 1)
+    s3    <- Sphere.unitGlass.map(_.copy(transformation = s3Tf, material = glass))
 
-  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, floorS, leftWallS))
+  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1,
+    s2, s3,
+    floorS))
 
   val camera: ZIO[AffineTransformationOps, AlgebraicError, Camera] = for {
     cameraTf <- ViewTransform(cameraFrom, cameraTo, cameraUp).tf

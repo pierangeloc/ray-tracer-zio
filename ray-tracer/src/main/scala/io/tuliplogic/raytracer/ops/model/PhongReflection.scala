@@ -30,7 +30,7 @@ object PhongReflection {
   }
 
   object HitComps {
-    val epsilon: Double = 1e-3
+    val epsilon: Double = 1e-6
   }
 
   case class PhongComponents(ambient: Color, diffuse: Color, reflective: Color) {

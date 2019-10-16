@@ -11,11 +11,11 @@ import io.tuliplogic.raytracer.ops.drawing.{Camera, Pattern, Renderer, ViewTrans
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
-import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
+import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{App, UIO, ZIO, console}
+import zio.{console, App, UIO, ZIO}
 
 object Chapter11World extends App {
   val canvasFile    = "/tmp/nioexp/chapter-11-reflective-spheres" + System.currentTimeMillis + ".ppm"
@@ -43,8 +43,8 @@ object Chapter11World extends App {
     mat      <- Material.default
     idTf     <- AffineTransformation.id
     scale4Tf <- AffineTransformation.scale(4, 4, 4)
-    planeMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(0.1, 0.1, 0.1), Color(0.3, 0.3, 0.3), scale4Tf), specular = 0, reflective = 0.1))
-    floorS <- Plane.canonical.map(_.copy(material = planeMat)) //grey, matte
+    planeMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(0.9, 0.9, 0.9), Color(0.3, 0.3, 0.3), scale4Tf), specular = 0, reflective = 0.1))
+    floorS   <- Plane.canonical.map(_.copy(material = planeMat)) //grey, matte
 
     leftWallTf2 <- AffineTransformation.rotateX(math.Pi / 2)
     leftWallTf3 <- AffineTransformation.rotateY(-math.Pi / 2)
@@ -54,15 +54,9 @@ object Chapter11World extends App {
 
     s1Tf1 <- AffineTransformation.translate(5, 2, 5)
     s1Tf2 <- AffineTransformation.scale(2, 2, 2)
-    s1Tf <- s1Tf2 >=> s1Tf1
+    s1Tf  <- s1Tf2 >=> s1Tf1
     s1 <- UIO(
-      Sphere(
-        s1Tf,
-        mat.copy(
-          pattern = Pattern.Uniform(Color(240 / 256.0, 121 / 256.0, 49 / 256.0), idTf),
-          diffuse = 0.7,
-          specular = 0.3,
-          reflective = 0.9)))
+      Sphere(s1Tf, mat.copy(pattern = Pattern.Uniform(Color(240 / 256.0, 121 / 256.0, 49 / 256.0), idTf), diffuse = 0.7, specular = 0.3)))
 
     s2Tf1 <- AffineTransformation.translate(10, 4, 8)
     s2Tf2 <- AffineTransformation.scale(3, 3, 3)
@@ -70,7 +64,7 @@ object Chapter11World extends App {
     p2Tf1 <- AffineTransformation.scale(0.3, 0.3, 0.3)
     p2Tf2 <- AffineTransformation.rotateZ(math.Pi / 4)
     p2Tf  <- p2Tf1 >=> p2Tf2
-    s2    <- UIO(
+    s2 <- UIO(
       Sphere(
         s2Tf,
         mat.copy(
@@ -82,7 +76,20 @@ object Chapter11World extends App {
       )
     )
 
-  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, floorS, leftWallS))
+    s3Tf1 <- AffineTransformation.translate(7, 4, 4)
+    s3Tf2 <- AffineTransformation.scale(2, 2, 1)
+    s3Tf  <- s3Tf2 >=> s3Tf1
+    glass <- Material.glass
+    s3 <- UIO(
+      Sphere(
+        s3Tf,
+        glass
+      )
+    )
+
+  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](
+//    s1, s2,
+    s3, floorS, leftWallS))
 
   val camera: ZIO[AffineTransformationOps, AlgebraicError, Camera] = for {
     cameraTf <- ViewTransform(cameraFrom, cameraTo, cameraUp).tf

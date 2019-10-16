@@ -180,6 +180,20 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ()).provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
       }
     }
+
+    "compute the correct color considering refraction" in {
+      unsafeRun {
+        (for {
+          w              <- defaultWorldWithRefractingPlane
+          ray            <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
+          fullColor      <- w.colorAt(ray, 10)
+          _ <- IO {
+            fullColor shouldEqual Color(0.93642, 0.68642, 0.68642)
+          }
+        } yield ())
+          .provide(new RayOperations.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live with PhongReflection.Live)
+      }
+    }
   }
 
   "isShadowed, with sphere of ray=1 around the origin and light at (-10, 10, -10)" should {
@@ -433,5 +447,23 @@ object WorldTest {
       s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
       w    <- UIO(World(pl, List(s1, s2)))
     } yield w
+
+  val defaultWorldWithRefractingPlane = for {
+    pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
+    idTf <- AffineTransformation.id
+    translatePlane <- AffineTransformation.translate(0, -1, 0)
+    plane <- Plane.canonical.map(p => p.copy(transformation = translatePlane, material = p.material.copy(transparency = 0.5, refractionIndex = 1.5)))
+
+    translateSphere <- AffineTransformation.translate(0, -3.5, -0.5)
+    s <- Sphere.unit.map(sph => sph.copy(transformation = translateSphere, material = sph.material.copy(pattern = Pattern.Uniform(Color.red, idTf), ambient = 0.5)))
+
+    mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.1, 0.7, 0.2, 200, 0, 0, 1))
+    tf1  <- AffineTransformation.id
+    s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
+    mat2 <- Material.default
+    tf2  <- AffineTransformation.scale(0.5, 0.5, 0.5)
+    s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
+    w    <- UIO(World(pl, List(plane, s, s1, s2)))
+  } yield w
 
 }
