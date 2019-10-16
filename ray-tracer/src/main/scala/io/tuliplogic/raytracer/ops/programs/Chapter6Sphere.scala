@@ -15,6 +15,8 @@ import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
 import zio.{clock, console, App, UIO, ZIO}
+import zio.ZEnv
+
 
 object Chapter6Sphere extends App {
   val infinitePoint    = Pt(0, 0, -2.5)
@@ -52,7 +54,7 @@ object Chapter6Sphere extends App {
     _        <- console.putStrLn(s"total time taken: ${(endTime - startTime) / 1000} us")
   } yield ()
 
-  override def run(args: List[String]): ZIO[Chapter5Sphere.Environment, Nothing, Int] =
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
         new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live

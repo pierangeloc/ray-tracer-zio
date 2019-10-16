@@ -8,12 +8,13 @@ import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
 import io.tuliplogic.raytracer.commons.errors.{CanvasError, RayTracerError}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.Sphere
-import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
-import io.tuliplogic.raytracer.ops.model.{rayOps, Canvas, Color, Ray, RayOperations}
+import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
+import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Ray, RayOperations, rayOps}
 import zio.blocking.Blocking
+import zio.ZEnv
 import zio.clock.Clock
 import zio.console.Console
-import zio.{clock, console, App, Chunk, UIO, ZIO}
+import zio.{App, Chunk, UIO, ZEnvDefinition, ZIO, clock, console}
 
 import scala.{Stream => ScalaStream}
 import zio.stream._
@@ -63,7 +64,7 @@ object Chapter5Sphere extends App {
     _        <- console.putStrLn(s"total time taken: ${(endTime - startTime) / 1000} us")
   } yield ()
 
-  override def run(args: List[String]): ZIO[Chapter5Sphere.Environment, Nothing, Int] =
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
         new CanvasRenderer.PPMCanvasRenderer with RayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live

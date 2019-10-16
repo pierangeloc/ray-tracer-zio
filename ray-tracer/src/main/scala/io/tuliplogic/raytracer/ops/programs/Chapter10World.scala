@@ -15,6 +15,8 @@ import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
+import zio.ZEnv
+
 import zio.{console, App, UIO, ZIO}
 
 object Chapter10World extends App {
@@ -27,7 +29,7 @@ object Chapter10World extends App {
   val (hRes, vRes) = (640, 480)
 //  val (hRes, vRes) = (100, 50)
 
-  override def run(args: List[String]): ZIO[Chapter10World.Environment, Nothing, Int] =
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
         new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live

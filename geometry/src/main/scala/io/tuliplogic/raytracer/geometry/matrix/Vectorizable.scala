@@ -10,7 +10,7 @@ trait Vectorizable[L[_]] {
 
   def toArray[A: ClassTag](as: L[A]): Array[A]
   def length[A](as: L[A]): Int
-  def get[A](as: L[A])(i: Int): A
+  def get[A: ClassTag](as: L[A])(i: Int): A
   def zip[A, B, C](as: L[A], bs: L[B])(f: (A, B) => C): L[C]
 
   def comp[A: ClassTag](as: A*): L[A]                       = fromArray(as.toArray)
@@ -28,7 +28,7 @@ object Vectorizable {
     override def fromArray[A](as: Array[A]): ZioChunk[A]                                     = ZioChunk.fromArray(as)
     override def toArray[A: ClassTag](as: ZioChunk[A]): Array[A]                             = as.toArray
     override def length[A](as: ZioChunk[A]): Int                                             = as.length
-    def get[A](as: ZioChunk[A])(i: Int): A                                                   = as.toArray(i)
+    override def get[A: ClassTag](as: ZioChunk[A])(i: Int): A                                = as.toArray[A](implicitly[ClassTag[A]])(i)
     override def zip[A, B, C](as: ZioChunk[A], bs: ZioChunk[B])(f: (A, B) => C): ZioChunk[C] = as.zipWith(bs)(f)
   }
 
@@ -36,7 +36,7 @@ object Vectorizable {
     override def fromArray[A](as: Array[A]): Vector[A]                                 = as.toVector
     override def toArray[A: ClassTag](as: Vector[A]): Array[A]                         = as.toArray
     override def length[A](as: Vector[A]): Int                                         = as.length
-    override def get[A](as: Vector[A])(i: Int): A                                      = as(i)
+    override def get[A: ClassTag](as: Vector[A])(i: Int): A                            = as(i)
     override def zip[A, B, C](as: Vector[A], bs: Vector[B])(f: (A, B) => C): Vector[C] = as.zip(bs).map(f.tupled)
   }
 
@@ -44,7 +44,7 @@ object Vectorizable {
     override def fromArray[A](as: Array[A]): Fs2Chunk[A]                                     = Fs2Chunk.array(as)
     override def toArray[A: ClassTag](as: Fs2Chunk[A]): Array[A]                             = as.toArray
     override def length[A](as: Fs2Chunk[A]): Int                                             = as.size
-    override def get[A](as: Fs2Chunk[A])(i: Int): A                                          = as(i)
+    override def get[A: ClassTag](as: Fs2Chunk[A])(i: Int): A                                = as(i)
     override def zip[A, B, C](as: Fs2Chunk[A], bs: Fs2Chunk[B])(f: (A, B) => C): Fs2Chunk[C] = as.zipWith(bs)(f)
   }
 

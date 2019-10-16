@@ -16,6 +16,8 @@ import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
 import zio.{console, App, UIO, ZIO}
+import zio.ZEnv
+
 
 object Chapter10World2 extends App {
   val canvasFile    = "/tmp/nioexp/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".ppm"
@@ -27,7 +29,7 @@ object Chapter10World2 extends App {
   val (hRes, vRes) = (640, 480)
 //  val (hRes, vRes) = (100, 50)
 
-  override def run(args: List[String]): ZIO[Chapter10World2.Environment, Nothing, Int] =
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
         new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live
