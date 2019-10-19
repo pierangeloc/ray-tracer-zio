@@ -4,8 +4,8 @@ import java.nio.file.{Path, Paths}
 
 import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, RayTracerError}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.{AffineTransformation, AffineTransformationOps}
 import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.drawing.{Camera, Pattern, Renderer, ViewTransform, World}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject

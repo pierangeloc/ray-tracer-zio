@@ -1,8 +1,8 @@
 package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.geometry.matrix.>
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformation
+import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import mouse.all._
 import io.tuliplogic.raytracer.ops.model.RayOperations.BreezeMatrixOps$
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, Sphere}

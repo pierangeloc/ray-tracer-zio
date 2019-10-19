@@ -4,9 +4,9 @@ import java.nio.file.{Path, Paths}
 
 import cats.data.NonEmptyList
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformationOps
 import io.tuliplogic.raytracer.commons.errors.{CanvasError, RayTracerError}
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.Sphere
 import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Ray, RayOperations, rayOps}

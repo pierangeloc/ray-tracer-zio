@@ -1,8 +1,8 @@
 package io.tuliplogic.raytracer.ops.drawing
 
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformationOps
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
 import io.tuliplogic.raytracer.ops.model.{Color, PhongReflection, RayOperations, SpatialEntityOperations}
 import zio.stream.Sink

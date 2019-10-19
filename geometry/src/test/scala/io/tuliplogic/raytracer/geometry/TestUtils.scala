@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.geometry
 
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import org.scalactic.TripleEquals._
 import org.scalactic.{Equality, Tolerance}
 

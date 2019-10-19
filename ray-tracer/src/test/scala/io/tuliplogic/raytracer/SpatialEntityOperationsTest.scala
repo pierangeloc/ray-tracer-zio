@@ -1,8 +1,8 @@
 package io.tuliplogic.raytracer
 
 import io.tuliplogic.raytracer.geometry.TestUtils
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformation
+import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.Sphere
 import io.tuliplogic.raytracer.ops.model.{spatialEntityOps, Material, SpatialEntityOperations}
 import org.scalatest.Matchers._

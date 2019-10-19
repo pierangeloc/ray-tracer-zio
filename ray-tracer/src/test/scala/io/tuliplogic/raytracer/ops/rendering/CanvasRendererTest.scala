@@ -3,10 +3,10 @@ package io.tuliplogic.raytracer.ops.rendering
 import java.nio.file.{Path, Paths}
 
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color}
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation._
-import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformation._
+import io.tuliplogic.raytracer.geometry.affine.{affineTfOps, AffineTransformationOps}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
+import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import org.scalatest.WordSpec
 import zio.{console, DefaultRuntime, IO}
 import zio.blocking.Blocking

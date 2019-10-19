@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.drawing
 
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformationOps
 import io.tuliplogic.raytracer.ops.model.{Color, PhongReflection, RayOperations, SpatialEntityOperations}
 import zio.Chunk
 import zio.stream.{Stream, StreamChunk, ZStreamChunk}

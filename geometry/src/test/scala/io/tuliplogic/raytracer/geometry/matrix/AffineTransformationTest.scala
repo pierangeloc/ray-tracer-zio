@@ -1,9 +1,9 @@
 package io.tuliplogic.raytracer.geometry.matrix
 
-import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformation}
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation._
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps.BreezeMatrixOps$
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
+import io.tuliplogic.raytracer.geometry.affine.{affineTfOps, AffineTransformation}
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformation._
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformationOps.BreezeMatrixOps$
+import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import mouse.all._
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._

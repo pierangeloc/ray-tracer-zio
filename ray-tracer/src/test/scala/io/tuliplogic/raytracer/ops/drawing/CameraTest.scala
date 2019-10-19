@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, AffineTransformationOps}
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.{AffineTransformation, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
 import io.tuliplogic.raytracer.ops.model.{Color, Ray}
 import org.scalatest.WordSpec

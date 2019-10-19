@@ -1,11 +1,11 @@
-package io.tuliplogic.raytracer.geometry.vectorspace
+package io.tuliplogic.raytracer.geometry.affine
 
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M}
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
+import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import io.tuliplogic.raytracer.geometry.matrix.{>, MatrixModule, Types}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.matrix.{>, MatrixModule}
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import zio.{UIO, ZIO}
 
 //TODO: #1

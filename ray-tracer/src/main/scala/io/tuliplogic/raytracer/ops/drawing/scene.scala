@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.drawing
 import cats.data.NonEmptyList
 import cats.implicits._
 import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, RayTracerError}
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}

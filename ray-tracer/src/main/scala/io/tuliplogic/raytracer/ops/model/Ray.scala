@@ -2,10 +2,10 @@ package io.tuliplogic.raytracer.ops.model
 
 import cats.data.NonEmptyList
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
+import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
-import io.tuliplogic.raytracer.geometry.vectorspace.{AffineTransformation, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.affine.{AffineTransformation, AffineTransformationOps}
 import zio.{UIO, URIO, ZIO}
 
 case class Ray(origin: Pt, direction: Vec)

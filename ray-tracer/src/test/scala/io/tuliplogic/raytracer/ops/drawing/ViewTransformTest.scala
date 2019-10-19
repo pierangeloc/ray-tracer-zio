@@ -2,9 +2,9 @@ package io.tuliplogic.raytracer.ops.drawing
 
 import io.tuliplogic.raytracer.geometry.TestUtils
 import io.tuliplogic.raytracer.geometry.matrix.{Generators, MatrixModule, Types}
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps.BreezeMatrixOps$
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformation}
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformationOps.BreezeMatrixOps$
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.{affineTfOps, AffineTransformation}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks

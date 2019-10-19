@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.affine.AffineTransformation
+import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.ops.model.Color
 import zio.ZIO
 

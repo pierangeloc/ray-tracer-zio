@@ -70,7 +70,8 @@ lazy val commonSettings = inThisBuild(
         "-Yliteral-types",
       ),
       addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
-      addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4")
+      addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4"),
+      testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
     )
 )
 
@@ -110,6 +111,8 @@ lazy val geometry = project
       breezeNative,
       singletonOps,
       log4CatsSlf4j,
+      zioMacrosAccessible,
+      zioMacrosMockable,
       scalaTest % "test",
       scalaCheck % "test"
     )

@@ -1,4 +1,4 @@
-package io.tuliplogic.raytracer.geometry.vectorspace
+package io.tuliplogic.raytracer.geometry.affine
 
 import io.tuliplogic.raytracer.geometry.matrix.Types.Col
 import io.tuliplogic.raytracer.geometry.matrix.Types.factory

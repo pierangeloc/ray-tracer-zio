@@ -6,7 +6,7 @@ package io.tuliplogic.raytracer.ops.drawing
   import io.tuliplogic.raytracer.ops.model.PhongReflection.HitComps
   import zio.{IO, UIO, URIO, ZIO}
   import cats.implicits._
-  import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
+  import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
   import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
   import zio.interop.catz._
   import Predef.{any2stringadd => _,_}

@@ -1,8 +1,8 @@
 package io.tuliplogic.raytracer.ops.drawing
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
-import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformation, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.affine.{affineTfOps, AffineTransformation, AffineTransformationOps}
 import io.tuliplogic.raytracer.ops.model.{Canvas, Ray}
 import zio.{UIO, ZIO}
 
