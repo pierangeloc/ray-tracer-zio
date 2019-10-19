@@ -5,11 +5,11 @@ import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError.MatrixDimError
 import zio.{IO, UIO, ZIO}
 
-trait MatrixOps {
-  def matrixOps: MatrixOps.Service[Any]
+trait MatrixModule {
+  val matrixModule: MatrixModule.Service[Any]
 }
 
-object MatrixOps {
+object MatrixModule {
 
   import Types._
 
@@ -20,6 +20,7 @@ object MatrixOps {
    */
   trait Service[R] {
     def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[R, AlgebraicError, Boolean]
+
     def opposite(m: M): ZIO[R, AlgebraicError, M]
     def equal(m1: M, m2: M): ZIO[R, AlgebraicError, Boolean]
     def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
@@ -36,9 +37,9 @@ object MatrixOps {
       } yield res
   }
 
-  trait Live extends MatrixOps {
+  trait BreezeMatrixModule extends MatrixModule {
 
-    override def matrixOps: Service[Any] = new Service[Any] {
+    override val matrixModule: Service[Any] = new Service[Any] {
 
       private def elementWiseOp(m1: M, m2: M)(op: (Double, Double) => Double): ZIO[Any, AlgebraicError, M] =
         for {
@@ -133,29 +134,29 @@ object MatrixOps {
     }
   }
 
-  object Live extends Live
+  object BreezeMatrixModule extends BreezeMatrixModule
 
 }
 
-object matrixOperations extends MatrixOps.Service[MatrixOps] {
-  override def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[MatrixOps, AlgebraicError, Boolean] =
-    ZIO.accessM(_.matrixOps.almostEqual(m1, m2, maxSquaredError))
+object > extends MatrixModule.Service[MatrixModule] {
+  override def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[MatrixModule, AlgebraicError, Boolean] =
+    ZIO.accessM(_.matrixModule.almostEqual(m1, m2, maxSquaredError))
 
-  override def opposite(m: M): ZIO[MatrixOps, AlgebraicError, M] =
-    ZIO.accessM(_.matrixOps.opposite(m))
+  override def opposite(m: M): ZIO[MatrixModule, AlgebraicError, M] =
+    ZIO.accessM(_.matrixModule.opposite(m))
 
-  override def equal(m1: M, m2: M): ZIO[MatrixOps, AlgebraicError, Boolean] =
-    ZIO.accessM(_.matrixOps.equal(m1, m2))
+  override def equal(m1: M, m2: M): ZIO[MatrixModule, AlgebraicError, Boolean] =
+    ZIO.accessM(_.matrixModule.equal(m1, m2))
 
-  override def add(m1: M, m2: M): ZIO[MatrixOps, AlgebraicError, M] =
-    ZIO.accessM(_.matrixOps.add(m1, m2))
+  override def add(m1: M, m2: M): ZIO[MatrixModule, AlgebraicError, M] =
+    ZIO.accessM(_.matrixModule.add(m1, m2))
 
-  override def mul(m1: M, m2: M): ZIO[MatrixOps, AlgebraicError, M] =
-    ZIO.accessM(_.matrixOps.mul(m1, m2))
+  override def mul(m1: M, m2: M): ZIO[MatrixModule, AlgebraicError, M] =
+    ZIO.accessM(_.matrixModule.mul(m1, m2))
 
-  override def had(m1: M, m2: M): ZIO[MatrixOps, AlgebraicError, M] =
-    ZIO.accessM(_.matrixOps.had(m1, m2))
+  override def had(m1: M, m2: M): ZIO[MatrixModule, AlgebraicError, M] =
+    ZIO.accessM(_.matrixModule.had(m1, m2))
 
-  override def invert(m: M): ZIO[MatrixOps, AlgebraicError, M] =
-    ZIO.accessM(_.matrixOps.invert(m))
+  override def invert(m: M): ZIO[MatrixModule, AlgebraicError, M] =
+    ZIO.accessM(_.matrixModule.invert(m))
 }

@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.ops.model
 
-import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
@@ -20,7 +20,7 @@ object SpatialEntityOperations {
       ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
   }
 
-  trait Live extends SpatialEntityOperations with AffineTransformationOps {
+  trait BreezeMatrixOps$ extends SpatialEntityOperations with AffineTransformationOps {
     def spatEntityOperations: Service[Any] = new Service[Any] {
 
       def canonicalNormal(p: Pt, o: SceneObject): UIO[Vec] = o match {
@@ -40,7 +40,7 @@ object SpatialEntityOperations {
     }
   }
 
-  object Live extends Live with AffineTransformationOps.Live with MatrixOps.Live
+  object BreezeMatrixOps$ extends BreezeMatrixOps$ with AffineTransformationOps.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
 }
 
 object spatialEntityOps extends SpatialEntityOperations.Service[SpatialEntityOperations] {

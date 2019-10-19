@@ -1,8 +1,8 @@
 package io.tuliplogic.raytracer.ops.drawing
 
 import io.tuliplogic.raytracer.geometry.TestUtils
-import io.tuliplogic.raytracer.geometry.matrix.{Generators, MatrixOps, Types}
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps.Live
+import io.tuliplogic.raytracer.geometry.matrix.{Generators, MatrixModule, Types}
+import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps.BreezeMatrixOps$
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformation}
 import org.scalatest.WordSpec
@@ -12,7 +12,7 @@ import zio.{DefaultRuntime, IO}
 
 class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with GeneratorDrivenPropertyChecks with Generators {
 
-  val env = new Live with MatrixOps.Live
+  val env = new BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
 
   //TODO: property of this transform is that a view with proportional `to - from` vectors should give the same transformation
 

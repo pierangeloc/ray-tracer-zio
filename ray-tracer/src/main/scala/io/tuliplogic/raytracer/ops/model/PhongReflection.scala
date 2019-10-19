@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
@@ -51,7 +51,7 @@ object PhongReflection {
   }
 
   //TODO test the phongReflection in terms of the underlying dependencies
-  trait Live extends PhongReflection with SpatialEntityOperations with AffineTransformationOps { self =>
+  trait BreezeMatrixOps$ extends PhongReflection with SpatialEntityOperations with AffineTransformationOps { self =>
     override def phongReflectionService: Service[Any] = new Service[Any] {
 
       override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
@@ -102,7 +102,7 @@ object PhongReflection {
     }
   }
 
-  object Live extends Live with SpatialEntityOperations.Live with AffineTransformationOps.Live with MatrixOps.Live
+  object BreezeMatrixOps$ extends BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with AffineTransformationOps.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
 }
 
 object phongOps extends PhongReflection.Service[PhongReflection] {

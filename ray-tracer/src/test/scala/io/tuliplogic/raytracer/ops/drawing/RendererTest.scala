@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
@@ -31,7 +31,7 @@ class RendererTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             .run(Sink.collectAllN(1))
           _ <- Task.effectTotal { pixels.head should ===(Color(0.38066, 0.47583, 0.2855)) }
         } yield pixels)
-          .provide(new RayOperations.Live with PhongReflection.Live with SpatialEntityOperations.Live with MatrixOps.Live with AffineTransformationOps.Live)
+          .provide(new RayOperations.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
       }
     }
   }

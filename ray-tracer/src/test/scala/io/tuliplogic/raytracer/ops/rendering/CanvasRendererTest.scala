@@ -61,7 +61,7 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
             }
             .run(Sink.collectAll)
           _ <- cr.renderer.render(c, 256)
-        } yield ()).provide(AffineTransformationOps.Live)
+        } yield ()).provide(AffineTransformationOps.BreezeMatrixOps$)
       }
     }
   }

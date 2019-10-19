@@ -2,9 +2,9 @@ package io.tuliplogic.raytracer.geometry.vectorspace
 
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
-import io.tuliplogic.raytracer.geometry.matrix.{matrixOperations, MatrixOps, Types}
+import io.tuliplogic.raytracer.geometry.matrix.{>, MatrixModule, Types}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.matrix.{matrixOperations, MatrixOps}
+import io.tuliplogic.raytracer.geometry.matrix.{>, MatrixModule}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
 import zio.{UIO, ZIO}
 
@@ -28,7 +28,7 @@ object AffineTransformationOps {
     def transpose(at: AffineTransformation): ZIO[R, AlgebraicError, AffineTransformation]
   }
 
-  trait Live extends AffineTransformationOps with MatrixOps { live =>
+  trait BreezeMatrixOps$ extends AffineTransformationOps with MatrixModule { live =>
     override def affineTfOps: Service[Any] = new Service[Any] {
 
       private def transform(at: AffineTransformation, v: Col): ZIO[Any, AlgebraicError, Col] =
@@ -36,7 +36,7 @@ object AffineTransformationOps {
           v_m <- v.m
           v_n <- v.n
           _   <- if (v_m != 4 || v_n != 1) ZIO.fail(AlgebraicError.MatrixDimError(s"can't apply an affine transformation to a matrix $v_m x $v_n")) else ZIO.unit
-          res <- matrixOperations.mul(at.m, v).provide(live)
+          res <- >.mul(at.m, v).provide(live)
         } yield res
 
       override def transform(at: AffineTransformation, pt: Pt): ZIO[Any, AlgebraicError, Pt] =
@@ -54,16 +54,16 @@ object AffineTransformationOps {
         } yield res
 
       override def compose(at1: AffineTransformation, at2: AffineTransformation): ZIO[Any, AlgebraicError, AffineTransformation] =
-        matrixOperations.mul(at2.m, at1.m).provide(live).map(AffineTransformation(_))
+        >.mul(at2.m, at1.m).provide(live).map(AffineTransformation(_))
 
       override def invert(at: AffineTransformation): ZIO[Any, AlgebraicError, AffineTransformation] =
-        matrixOperations.invert(at.m).map(AffineTransformation(_)).provide(live)
+        >.invert(at.m).map(AffineTransformation(_)).provide(live)
 
       override def transpose(at: AffineTransformation): ZIO[Any, AlgebraicError, AffineTransformation] =
         at.m.transpose.map(AffineTransformation(_))
     }
   }
-  object Live extends Live with MatrixOps.Live
+  object BreezeMatrixOps$ extends BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
 }
 
 object affineTfOps extends AffineTransformationOps.Service[AffineTransformationOps] {

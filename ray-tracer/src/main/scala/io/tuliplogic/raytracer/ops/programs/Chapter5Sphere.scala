@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.programs
 import java.nio.file.{Path, Paths}
 
 import cats.data.NonEmptyList
-import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps
 import io.tuliplogic.raytracer.commons.errors.{CanvasError, RayTracerError}
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
@@ -67,8 +67,8 @@ object Chapter5Sphere extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasRenderer.PPMCanvasRenderer with RayOperations.Live with Blocking.Live with MatrixOps.Live with Console.Live with Clock.Live
-        with AffineTransformationOps.Live {
+        new CanvasRenderer.PPMCanvasRenderer with RayOperations.BreezeMatrixOps$ with Blocking.Live with MatrixModule.BreezeMatrixModule with Console.Live with Clock.Live
+        with AffineTransformationOps.BreezeMatrixOps$ {
           override def path: Path = Paths.get(canvasFile)
         }
       }

@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.model
 
 import cats.data.NonEmptyList
-import io.tuliplogic.raytracer.geometry.matrix.MatrixOps
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
@@ -36,14 +36,14 @@ object RayOperations {
     def transform(at: AffineTransformation, ray: Ray): URIO[R, Ray]
   }
 
-  trait Live extends RayOperations with MatrixOps with AffineTransformationOps { self =>
+  trait BreezeMatrixOps$ extends RayOperations with MatrixModule with AffineTransformationOps { self =>
     def rayOpsService: RayOperations.Service[Any] = new Service[Any] {
       override def positionAt(ray: Ray, t: Double): ZIO[Any, Nothing, Pt] =
         for {
           dirCol  <- toCol(ray.direction)
-          s1      <- matrixOps.times(t, dirCol)
+          s1      <- matrixModule.times(t, dirCol)
           origCol <- toCol(ray.origin)
-          resCol  <- matrixOps.add(s1, origCol).orDie
+          resCol  <- matrixModule.add(s1, origCol).orDie
           res     <- colToPt(resCol).orDie
         } yield res
 
@@ -90,7 +90,7 @@ object RayOperations {
     }
   }
 
-  object Live extends Live with MatrixOps.Live with AffineTransformationOps.Live
+  object BreezeMatrixOps$ extends BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$
 }
 
 object rayOps extends RayOperations.Service[RayOperations] {
