@@ -1,15 +1,29 @@
 package io.tuliplogic.raytracer.geometry.matrix
 
-import io.tuliplogic.raytracer.geometry.matrix.Types.M
+import io.tuliplogic.raytracer.geometry.matrix.Types.{M, factory}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError.MatrixDimError
+import zio.macros.mock.mockable
 import zio.{IO, UIO, ZIO}
 
+//@mockable
 trait MatrixModule {
   val matrixModule: MatrixModule.Service[Any]
 }
 
 object MatrixModule {
+
+  object syntax {
+    implicit class RichService[R](s: Service[R]) {
+      def times(α: Double, m: M): ZIO[R, Nothing, M] =
+        for {
+          m_m   <- m.m
+            m_n   <- m.n
+            other <- factory.hom(m_m, m_n, α)
+            res   <- s.had(m, other).orDie
+        } yield res
+    }
+  }
 
   import Types._
 
@@ -28,13 +42,7 @@ object MatrixModule {
     def had(m1: M, m2: M): ZIO[R, AlgebraicError, M]
     def invert(m: M): ZIO[R, AlgebraicError, M]
 
-    def times(α: Double, m: M): ZIO[R, Nothing, M] =
-      for {
-        m_m   <- m.m
-        m_n   <- m.n
-        other <- factory.hom(m_m, m_n, α)
-        res   <- had(m, other).orDie
-      } yield res
+
   }
 
   trait BreezeMatrixModule extends MatrixModule {
@@ -56,10 +64,10 @@ object MatrixModule {
           res    <- factory.fromRows(m1_m, m1_n, opRows)
         } yield res
 
-      override def add(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
+      def add(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
         elementWiseOp(m1, m2)(_ + _)
 
-      override def mul(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
+      def mul(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
         for {
           m1_m   <- m1.m
           m1_n   <- m1.n
@@ -80,7 +88,7 @@ object MatrixModule {
           )
         } yield res
 
-      override def invert(m: M): ZIO[Any, AlgebraicError, M] = {
+      def invert(m: M): ZIO[Any, AlgebraicError, M] = {
         //cheating here, I don't want to bother coming up with a correct implementation of this, it might take considerable time
         import breeze.linalg._
         for {
@@ -94,7 +102,7 @@ object MatrixModule {
         } yield res
       }
 
-      override def equal(m1: M, m2: M): ZIO[Any, AlgebraicError, Boolean] =
+      def equal(m1: M, m2: M): ZIO[Any, AlgebraicError, Boolean] =
         for {
           m1_m <- m1.m
           m1_n <- m1.n
@@ -106,7 +114,7 @@ object MatrixModule {
           rows2 <- m2.rows
         } yield rows1 == rows2
 
-      override def almostEqual(m1: M, m2: M, maxMSEr: Double): ZIO[Any, AlgebraicError, Boolean] =
+      def almostEqual(m1: M, m2: M, maxMSEr: Double): ZIO[Any, AlgebraicError, Boolean] =
         for {
           m1_m <- m1.m
           m1_n <- m1.n
@@ -121,7 +129,7 @@ object MatrixModule {
           squaredError <- IO.effectTotal(vectorizable.l2(diff))
         } yield squaredError / (m1_m * m2_n) < maxMSEr
 
-      override def opposite(m: M): ZIO[Any, AlgebraicError, M] =
+      def opposite(m: M): ZIO[Any, AlgebraicError, M] =
         for {
           m_m  <- m.m
           m_n  <- m.n
@@ -129,7 +137,7 @@ object MatrixModule {
           res  <- factory.fromRows(m_m, m_n, rows.map(_.map(x => -x)))
         } yield res
 
-      override def had(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
+      def had(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
         elementWiseOp(m1, m2)(_ * _)
     }
   }

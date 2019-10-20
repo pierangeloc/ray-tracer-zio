@@ -94,6 +94,6 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
 object Scene {
   type RichRayOperations = PhongReflection with SpatialEntityOperations with RayOperations
   object RichRayOperations {
-    trait Live extends PhongReflection.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with RayOperations.BreezeMatrixOps$
+    trait Live extends PhongReflection.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with RayOperations.BreezeMatrixOps
   }
 }

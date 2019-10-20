@@ -19,7 +19,7 @@ class SpatialEntityOperationsTest extends WordSpec with DefaultRuntime with Test
           pts        <- UIO.succeed(List(Pt(0, 1, 0), Pt(1, 0, 0), Pt(0, 0, 1)))
           normalVecs <- ZIO.sequence(pts.map(spatialEntityOps.normal(_, s)))
           _          <- ZIO.effect { normalVecs shouldEqual pts.map(_ - Pt(0, 0, 0)) }
-        } yield ()).provide(SpatialEntityOperations.BreezeMatrixOps$)
+        } yield ()).provide(SpatialEntityOperations.BreezeMatrixOps)
       }
     }
   }
@@ -33,7 +33,7 @@ class SpatialEntityOperationsTest extends WordSpec with DefaultRuntime with Test
           s      <- UIO.succeed(Sphere(tf, mat))
           normal <- spatialEntityOps.normal(Pt(0, 1.70711, -0.70711), s)
           _      <- ZIO.effect { normal === Vec(0, 0.70711, -0.70711) }
-        } yield ()).provide(SpatialEntityOperations.BreezeMatrixOps$)
+        } yield ()).provide(SpatialEntityOperations.BreezeMatrixOps)
       }
     }
   }

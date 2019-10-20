@@ -20,7 +20,7 @@ object SpatialEntityOperations {
       ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
   }
 
-  trait BreezeMatrixOps$ extends SpatialEntityOperations with AffineTransformationOps {
+  trait BreezeMatrixOps extends SpatialEntityOperations with AffineTransformationOps {
     def spatEntityOperations: Service[Any] = new Service[Any] {
 
       def canonicalNormal(p: Pt, o: SceneObject): UIO[Vec] = o match {
@@ -40,7 +40,7 @@ object SpatialEntityOperations {
     }
   }
 
-  object BreezeMatrixOps$ extends BreezeMatrixOps$ with AffineTransformationOps.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
+  object BreezeMatrixOps extends BreezeMatrixOps with AffineTransformationOps.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
 }
 
 object spatialEntityOps extends SpatialEntityOperations.Service[SpatialEntityOperations] {

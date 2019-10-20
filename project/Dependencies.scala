@@ -59,7 +59,7 @@ object Dependencies {
 
   lazy val zioTest             = "dev.zio" %% "zio-test"              % zioVersion % "test"
   lazy val zioTestSbt          = "dev.zio" %% "zio-test-sbt"          % zioVersion % "test->test;compile->compile"
-  lazy val zioMacrosAccessible = "dev.zio" %% "zio-macros-accessible" % "0.4.0"
-  lazy val zioMacrosMockable   = "dev.zio" %% "zio-macros-mockable"   % "0.4.0"
+  lazy val zioMacrosAccess = "dev.zio" %% "zio-macros-access" % "0.4.0"
+  lazy val zioMacrosMock   = "dev.zio" %% "zio-macros-mock"   % "0.4.0"
 
 }

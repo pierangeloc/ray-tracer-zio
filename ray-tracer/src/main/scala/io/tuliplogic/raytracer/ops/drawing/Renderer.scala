@@ -13,14 +13,14 @@ object Renderer {
 
   def render(camera: Camera, world: World): ZStreamChunk[
     PhongReflection with SpatialEntityOperations with RayOperations with AffineTransformationOps,
-    RayTracerError,
+    Nothing,
     (Int, Int, Color)] =
     pixelsChunkedStream(camera).mapM {
       case (px, py) =>
-        for {
+        (for {
           ray   <- camera.rayForPixel(px, py)
           color <- world.colorAt(ray)
-        } yield (px, py, color)
+        } yield (px, py, color)).orDie
     }
 
   private def pixels(chunkSize: Int)(camera: Camera): scala.Stream[Chunk[(Int, Int)]] =

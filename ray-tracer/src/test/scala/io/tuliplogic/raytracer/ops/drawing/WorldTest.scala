@@ -22,7 +22,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           xs  <- w.intersect(ray)
           _   <- IO { xs.map(_.t) shouldEqual List(4.0, 4.5, 5.5, 6.0) }
-        } yield ()).provide(RayOperations.BreezeMatrixOps$)
+        } yield ()).provide(RayOperations.BreezeMatrixOps)
       }
     }
   }
@@ -36,7 +36,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           hc  <- World.hitComps(ray, i, List(i))
           _   <- IO { hc shouldEqual HitComps(s, Pt(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1)) }
-        } yield ()).provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
+        } yield ()).provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
       }
     }
 
@@ -50,7 +50,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           _ <- IO {
             hc should ===(HitComps(s, Pt.origin, Vec(0, 1, 0), Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, math.sqrt(2) / 2, math.sqrt(2) / 2)))
           }
-        } yield ()).provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
+        } yield ()).provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
       }
     }
 
@@ -81,7 +81,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             (hc4.n1, hc4.n2) shouldEqual 2.5 -> 1.5
             (hc5.n1, hc5.n2) shouldEqual 1.5 -> 1.0
           }
-        } yield ()).provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
+        } yield ()).provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
       }
     }
 
@@ -96,7 +96,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           _ <- IO{
             hc.underPoint.z > HitComps.epsilon / 2 shouldEqual true}
           _ <- IO{(hc.pt.z < hc.underPoint.z) shouldEqual true}
-        } yield ()).provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
+        } yield ()).provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
       }
     }
   }
@@ -110,7 +110,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           color <- w.colorAt(ray)
           _     <- IO { color shouldEqual Color.black }
         } yield color)
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -122,7 +122,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           color <- w.colorAt(ray)
           _     <- IO { color should ===(Color(0.38066, 0.47583, 0.2855)) }
         } yield color)
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -134,7 +134,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           color <- w.colorAt(ray)
           _     <- IO { color should ===(Color.white) }
         } yield color)
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -146,7 +146,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           color <- w.colorAt(ray)
           _     <- IO { color should ===(Color(0.1, 0.1, 0.1)) }
         } yield color)
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -163,7 +163,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             fullColor should ===(Color(0.87677, 0.92436, 0.82918))
           }
         } yield
-          ()).provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          ()).provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -177,7 +177,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             fullColor should not equal Color.black
           }
         } yield
-          ()).provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          ()).provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -191,7 +191,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             fullColor shouldEqual Color(0.93642, 0.68642, 0.68642)
           }
         } yield ())
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
   }
@@ -203,7 +203,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w        <- defaultWorld
           inShadow <- w.isShadowed(Pt(0, 10, 0))
           _        <- IO { inShadow shouldEqual false }
-        } yield ()).provide(RayOperations.BreezeMatrixOps$)
+        } yield ()).provide(RayOperations.BreezeMatrixOps)
       }
     }
 
@@ -213,7 +213,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w        <- defaultWorld
           inShadow <- w.isShadowed(Pt(10, -10, 10))
           _        <- IO { inShadow shouldEqual true }
-        } yield ()).provide(RayOperations.BreezeMatrixOps$)
+        } yield ()).provide(RayOperations.BreezeMatrixOps)
       }
     }
 
@@ -223,7 +223,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w        <- defaultWorld
           inShadow <- w.isShadowed(Pt(-20, 20, -20))
           _        <- IO { inShadow shouldEqual false }
-        } yield ()).provide(RayOperations.BreezeMatrixOps$)
+        } yield ()).provide(RayOperations.BreezeMatrixOps)
       }
     }
 
@@ -233,7 +233,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w        <- defaultWorld
           inShadow <- w.isShadowed(Pt(-2, 2, -2))
           _        <- IO { inShadow shouldEqual false }
-        } yield ()).provide(RayOperations.BreezeMatrixOps$)
+        } yield ()).provide(RayOperations.BreezeMatrixOps)
       }
     }
   }
@@ -246,7 +246,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           color <- w.colorAt(Ray(Pt(0, 0, 5), Vec(0, 0, 1)))
           _     <- IO { color should ===(Color(0.1, 0.1, 0.1)) }
         } yield
-          ()).provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with PhongReflection.BreezeMatrixOps$ with AffineTransformationOps.BreezeMatrixOps$)
+          ()).provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with PhongReflection.BreezeMatrixOps with AffineTransformationOps.BreezeMatrixOps$)
       }
     }
   }
@@ -265,7 +265,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             reflectedColor shouldEqual Color.black
           }
         } yield ())
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -282,7 +282,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             reflectedColor should ===(Color(0.19032, 0.2379, 0.14274)) //it shoudl return these according to the book. they are actually proportional by 2.891
           }
         } yield
-          ()).provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          ()).provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
   }
@@ -301,7 +301,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             refractedColor shouldEqual Color.black
           }
         } yield ())
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -318,7 +318,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             refractedColor shouldEqual Color.black
             }
         } yield ())
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
 
@@ -335,7 +335,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             refractedColor shouldEqual Color.black
           }
         } yield ())
-          .provide(new RayOperations.BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps$)
+          .provide(new RayOperations.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$ with PhongReflection.BreezeMatrixOps)
       }
     }
   }

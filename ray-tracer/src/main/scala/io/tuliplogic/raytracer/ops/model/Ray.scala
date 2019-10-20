@@ -36,7 +36,8 @@ object RayOperations {
     def transform(at: AffineTransformation, ray: Ray): URIO[R, Ray]
   }
 
-  trait BreezeMatrixOps$ extends RayOperations with MatrixModule with AffineTransformationOps { self =>
+  trait BreezeMatrixOps extends RayOperations with MatrixModule with AffineTransformationOps { self =>
+    import MatrixModule.syntax._
     def rayOpsService: RayOperations.Service[Any] = new Service[Any] {
       override def positionAt(ray: Ray, t: Double): ZIO[Any, Nothing, Pt] =
         for {
@@ -90,7 +91,7 @@ object RayOperations {
     }
   }
 
-  object BreezeMatrixOps$ extends BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$
+  object BreezeMatrixOps extends BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$
 }
 
 object rayOps extends RayOperations.Service[RayOperations] {

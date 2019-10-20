@@ -4,7 +4,7 @@ import io.tuliplogic.raytracer.geometry.matrix.>
 import io.tuliplogic.raytracer.geometry.affine.AffineTransformation
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import mouse.all._
-import io.tuliplogic.raytracer.ops.model.RayOperations.BreezeMatrixOps$
+import io.tuliplogic.raytracer.ops.model.RayOperations.BreezeMatrixOps
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, Sphere}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
@@ -38,7 +38,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
               )
             )
             .flatMap(deltas => IO(deltas.forall(_ == true) shouldEqual true))
-        } yield ()).provide(RayOperations.BreezeMatrixOps$)
+        } yield ()).provide(RayOperations.BreezeMatrixOps)
       }
     }
 
@@ -49,7 +49,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           s                  <- Sphere.unit
           intersectionPoints <- rayOps.intersect(ray, s)
           _                  <- IO(intersectionPoints shouldEqual List(4d, 6d).map(Intersection(_, s)))
-        } yield ()).provide(BreezeMatrixOps$)
+        } yield ()).provide(BreezeMatrixOps)
       }
     }
 
@@ -60,7 +60,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           p                  <- Plane.canonical
           intersectionPoints <- rayOps.intersect(ray, p)
           _                  <- IO(intersectionPoints shouldEqual List())
-        } yield ()).provide(BreezeMatrixOps$)
+        } yield ()).provide(BreezeMatrixOps)
       }
     }
 
@@ -71,7 +71,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           p                  <- Plane.canonical
           intersectionPoints <- rayOps.intersect(ray, p)
           _                  <- IO(intersectionPoints shouldEqual List())
-        } yield ()).provide(BreezeMatrixOps$)
+        } yield ()).provide(BreezeMatrixOps)
       }
     }
 
@@ -82,7 +82,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           p                  <- Plane.canonical
           intersectionPoints <- rayOps.intersect(ray, p)
           _                  <- IO(intersectionPoints shouldEqual List(Intersection(1, p)))
-        } yield ()).provide(BreezeMatrixOps$)
+        } yield ()).provide(BreezeMatrixOps)
       }
     }
 
@@ -95,7 +95,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           s                  <- UIO(Sphere(tf, mat))
           intersectionPoints <- rayOps.intersect(ray, s)
           _                  <- IO(intersectionPoints shouldEqual List(3d, 7d).map(Intersection(_, s)))
-        } yield ()).provide(BreezeMatrixOps$)
+        } yield ()).provide(BreezeMatrixOps)
       }
     }
 
@@ -107,7 +107,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           hit           <- rayOps.hit(intersections)
           _             <- IO(hit.get.t shouldEqual 2)
           _             <- IO(hit.get.sceneObject shouldEqual s)
-        } yield ()).provide(BreezeMatrixOps$)
+        } yield ()).provide(BreezeMatrixOps)
       }
     }
 
@@ -120,7 +120,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           res <- rayOps.transform(tf, ray)
           _   <- IO(res.origin shouldEqual Pt(4, 6, 8))
           _   <- IO(res.direction shouldEqual Vec(0, 1, 0))
-        } yield ()).provide(BreezeMatrixOps$)
+        } yield ()).provide(BreezeMatrixOps)
       }
     }
 
@@ -133,7 +133,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
           res <- rayOps.transform(tf, ray)
           _   <- IO(res.origin shouldEqual Pt(2, 6, 12))
           _   <- IO(res.direction shouldEqual Vec(0, 3, 0))
-        } yield ()).provide(BreezeMatrixOps$)
+        } yield ()).provide(BreezeMatrixOps)
       }
     }
   }

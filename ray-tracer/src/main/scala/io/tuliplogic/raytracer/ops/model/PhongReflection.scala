@@ -51,7 +51,7 @@ object PhongReflection {
   }
 
   //TODO test the phongReflection in terms of the underlying dependencies
-  trait BreezeMatrixOps$ extends PhongReflection with SpatialEntityOperations with AffineTransformationOps { self =>
+  trait BreezeMatrixOps extends PhongReflection with SpatialEntityOperations with AffineTransformationOps { self =>
     override def phongReflectionService: Service[Any] = new Service[Any] {
 
       override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
@@ -102,7 +102,7 @@ object PhongReflection {
     }
   }
 
-  object BreezeMatrixOps$ extends BreezeMatrixOps$ with SpatialEntityOperations.BreezeMatrixOps$ with AffineTransformationOps.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
+  object BreezeMatrixOps extends BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with AffineTransformationOps.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
 }
 
 object phongOps extends PhongReflection.Service[PhongReflection] {

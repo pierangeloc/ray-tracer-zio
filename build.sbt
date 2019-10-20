@@ -64,13 +64,10 @@ lazy val commonSettings = inThisBuild(
 
   tpolecatSettings ++
     Seq(
-      scalaOrganization := "org.typelevel", // provide literal types
-      scalaVersion := "2.12.4-bin-typelevel-4",
-      scalacOptions ++= Seq(
-        "-Yliteral-types",
-      ),
+      scalaVersion := "2.12.10",
       addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4"),
+      addCompilerPlugin(("org.scalamacros" % "paradise"  % "2.1.1") cross CrossVersion.full),
       testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
     )
 )
@@ -111,8 +108,8 @@ lazy val geometry = project
       breezeNative,
       singletonOps,
       log4CatsSlf4j,
-      zioMacrosAccessible,
-      zioMacrosMockable,
+      zioMacrosAccess,
+      zioMacrosMock,
       scalaTest % "test",
       scalaCheck % "test"
     )
