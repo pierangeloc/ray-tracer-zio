@@ -1,7 +1,5 @@
 package io.tuliplogic.raytracer.geometry.affine
 
-import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
-import org.scalatest.WordSpec
 import zio.test.DefaultRunnableSpec
 import zio.test._
 import zio.test.Assertion._
