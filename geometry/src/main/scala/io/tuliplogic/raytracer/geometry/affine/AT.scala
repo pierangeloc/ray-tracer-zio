@@ -4,13 +4,15 @@ import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.matrix.{>, MatrixModule}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import zio.{UIO, URIO, ZIO}
-import io.tuliplogic.raytracer.geometry.matrix.Types.{factory, vectorizable, Col, M}
+import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M, factory, vectorizable}
+import zio.macros.access.accessible
+
 import scala.math.{cos, sin}
 
 case class AT(direct: M, inverse: M)
 
 trait ATModule {
-  val service: ATModule.Service[Any]
+  val aTModule: ATModule.Service[Any]
 }
 
 object ATModule {
@@ -20,19 +22,19 @@ object ATModule {
     def compose(first: AT, second: AT): ZIO[R, AlgebraicError, AT]
     def invert(tf: AT): ZIO[R, AlgebraicError, AT]
 
-    def translate(x: Double, y: Double, z: Double): URIO[R, AT]
-    def scale(x: Double, y: Double, z: Double): URIO[R, AT]
-    def rotateX(θ: Double): URIO[R, AT]
-    def rotateY(θ: Double): URIO[R, AT]
-    def rotateZ(θ: Double): URIO[R, AT]
-    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): URIO[R, AT]
-    def id: URIO[R, AT] = translate(0, 0, 0)
+    def translate(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT]
+    def scale(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT]
+    def rotateX(θ: Double): ZIO[R, Nothing, AT]
+    def rotateY(θ: Double): ZIO[R, Nothing, AT]
+    def rotateZ(θ: Double): ZIO[R, Nothing, AT]
+    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): ZIO[R, Nothing, AT]
+    def id: ZIO[R, Nothing, AT]
   }
 
   trait Live extends ATModule {
     val matrixService: MatrixModule.Service[Any]
 
-    val service: ATModule.Service[Any] = new ATModule.Service[Any] {
+    val aTModule: ATModule.Service[Any] = new ATModule.Service[Any] {
       import vectorizable.comp
 
       private def transform(tf: AT, v: Col): ZIO[Any, AlgebraicError, Col] =
@@ -175,9 +177,34 @@ object ATModule {
         ).orDie
 
       override def invert(tf: AT): ZIO[Any, AlgebraicError, AT] = UIO.succeed(AT(tf.inverse, tf.direct))
+
+      override def id: ZIO[Any, Nothing, AT] = translate(0, 0, 0)
     }
 
   }
 
-  //TODO: use zio macros to generate the > object
+  object > extends Service[ATModule] {
+    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, AlgebraicError, Vec] =
+      ZIO.accessM(_.aTModule.applyTf(tf, vec))
+    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, AlgebraicError, Pt] =
+      ZIO.accessM(_.aTModule.applyTf(tf, pt))
+    def compose(first: AT, second: AT): ZIO[ATModule, AlgebraicError, AT] =
+      ZIO.accessM(_.aTModule.compose(first, second))
+    def invert(tf: AT): ZIO[ATModule, AlgebraicError, AT] =
+      ZIO.accessM(_.aTModule.invert(tf))
+    def translate(x: Double, y: Double, z: Double): ZIO[ATModule, Nothing, AT] =
+      ZIO.accessM(_.aTModule.translate(x, y, z))
+    def scale(x: Double, y: Double, z: Double): ZIO[ATModule, Nothing, AT] =
+      ZIO.accessM(_.aTModule.scale(x, y, z))
+    def rotateX(θ: Double): ZIO[ATModule, Nothing, AT] =
+      ZIO.accessM(_.aTModule.rotateX(θ))
+    def rotateY(θ: Double): ZIO[ATModule, Nothing, AT] =
+      ZIO.accessM(_.aTModule.rotateY(θ))
+    def rotateZ(θ: Double): ZIO[ATModule, Nothing, AT] =
+      ZIO.accessM(_.aTModule.rotateZ(θ))
+    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): ZIO[ATModule, Nothing, AT] =
+      ZIO.accessM(_.aTModule.shear(xY, xZ, yX, yZ, zX, zY))
+    def id: ZIO[ATModule, Nothing, AT] = 
+      ZIO.accessM(_.aTModule.id)
+  }
 }

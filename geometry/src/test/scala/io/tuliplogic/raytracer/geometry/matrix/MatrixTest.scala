@@ -1,8 +1,9 @@
 package io.tuliplogic.raytracer.geometry.matrix
 
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule.MatrixTestService.Op
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
-import zio.{Chunk, DefaultRuntime, IO, ZIO}
+import zio.{Chunk, DefaultRuntime, IO, Task, ZIO}
 
 /**
   *
@@ -14,6 +15,30 @@ class MatrixTest extends WordSpec with DefaultRuntime {
   import vectorizable.comp
 
   "a matrix" should {
+    "equals properly" in {
+      unsafeRun {
+        for {
+          m1 <- factory.fromRows(4, 4, Vector(
+            Vector(1d, 0d, 0d, 3d),
+            Vector(0d, 1d, 0d, 4d),
+            Vector(0d, 0d, 1d, 5d),
+            Vector(0d, 0d, 0d, 1d)
+          )).orDie
+          m2 <- factory.fromRows(4, 4, Vector(
+          Vector(1d, 0d, 0d, 3d),
+          Vector(0d, 1d, 0d, 4d),
+          Vector(0d, 0d, 1d, 5d),
+          Vector(0d, 0d, 0d, 1d)
+          )).orDie
+          ptVec <- factory.createColVector(Vector(1d, 2d, 3d, 1d))
+          _ <- Task.effect((m1 == m2) shouldEqual(true))
+          _ <- Task.effect((ptVec == ptVec) shouldEqual(true))
+          _ <- Task.effect((Op.Mul(m1, ptVec) == Op.Mul(m1, ptVec)) shouldEqual(true))
+          _ <- Task.effect((Vector(Vector(1d, 2d)) == Vector(Vector(1d, 2d))) shouldEqual(true))
+        } yield ()
+      }
+    }
+
     "once created have its elements accessible by 0-based indexes" in {
       unsafeRun {
         for {

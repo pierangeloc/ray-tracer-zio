@@ -3,10 +3,12 @@ package io.tuliplogic.raytracer.geometry.matrix
 import io.tuliplogic.raytracer.geometry.matrix.Types.{M, factory}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError.MatrixDimError
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule.MatrixTestService.Op
 import zio.macros.mock.mockable
-import zio.{IO, UIO, ZIO}
+import zio.{IO, Ref, UIO, ZIO}
 
 //@mockable
+//we don't make this mockable just to show the testing pattern
 trait MatrixModule {
   val matrixModule: MatrixModule.Service[Any]
 }
@@ -41,8 +43,6 @@ object MatrixModule {
     def mul(m1: M, m2: M): ZIO[R, AlgebraicError, M]
     def had(m1: M, m2: M): ZIO[R, AlgebraicError, M]
     def invert(m: M): ZIO[R, AlgebraicError, M]
-
-
   }
 
   trait BreezeMatrixModule extends MatrixModule {
@@ -144,6 +144,34 @@ object MatrixModule {
 
   object BreezeMatrixModule extends BreezeMatrixModule
 
+
+  case class MatrixTestService(ref: Ref[MatrixTestService.State]) extends MatrixModule.Service[Any] {
+    override def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[Any, AlgebraicError, Boolean] = ZIO.die(new IllegalArgumentException("not implemented"))
+    override def opposite(m: M): ZIO[Any, AlgebraicError, M] = ZIO.die(new IllegalArgumentException("not implemented"))
+    override def equal(m1: M, m2: M): ZIO[Any, AlgebraicError, Boolean] = ZIO.die(new IllegalArgumentException("not implemented"))
+    override def add(m1: M, m2: M): ZIO[Any, AlgebraicError, M] = ref.modify(_.findOp(Op.Add(m1, m2))).flatMap(_.get)
+    override def mul(m1: M, m2: M): ZIO[Any, AlgebraicError, M] = ref.modify(_.findOp(Op.Mul(m1, m2))).flatMap(_.get)
+    override def had(m1: M, m2: M): ZIO[Any, AlgebraicError, M] = ref.modify(_.findOp(Op.Had(m1, m2))).flatMap(_.get)
+    override def invert(m: M): ZIO[Any, AlgebraicError, M] = ref.modify(_.findOp(Op.Inv(m))).flatMap(_.get)
+  }
+
+  object MatrixTestService {
+    sealed trait Op extends Product with Serializable
+    object Op {
+      case class Add(m1: M, m2: M) extends Op
+      case class Mul(m1: M, m2: M) extends Op
+      case class Had(m1: M, m2: M) extends Op
+      case class Inv(m: M) extends Op
+    }
+
+    final case class State(preLoaded: Map[Op, IO[AlgebraicError, M]], calls: List[String]) {
+      def log(op: String): State = copy(calls = op :: calls)
+      def findOp(op: Op): (Option[IO[AlgebraicError, M]], State) = {
+        println(s"finding op $op among preloaded $preLoaded")
+        (preLoaded.get(op), log(op.toString))
+      }
+    }
+  }
 }
 
 object > extends MatrixModule.Service[MatrixModule] {

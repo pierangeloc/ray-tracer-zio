@@ -68,7 +68,11 @@ lazy val commonSettings = inThisBuild(
       addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4"),
       addCompilerPlugin(("org.scalamacros" % "paradise"  % "2.1.1") cross CrossVersion.full),
-      testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework"))
+      testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
+      libraryDependencies ++= Seq(
+        zioTest % "test",
+        zioTestSbt % "test"
+      )
     )
 )
 

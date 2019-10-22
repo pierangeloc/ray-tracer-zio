@@ -9,7 +9,7 @@ import zio.{IO, _}
 import scala.reflect.ClassTag
 
 //matrix m rows by n cols
-class Matrix[L[_]] private (private val m_ : Int, n_ : Int, rows_ : L[L[Double]])(implicit L: Vectorizable[L], ct: ClassTag[L[Double]]) {
+case class Matrix[L[_]] private (private val m_ : Int, private val n_ : Int, private val rows_ : L[L[Double]])(implicit L: Vectorizable[L], ct: ClassTag[L[Double]]) {
   private val cols_ : L[L[Double]] = L.toArray(rows_).map(L.toArray).transpose.map(L.fromArray).toArray |> L.fromArray[L[Double]]
 //  private val cols_ : Chunk[Chunk[Double]] = rows_.toArray.map(_.toArray).transpose.map(Chunk.fromArray) |> Chunk.fromArray
   def m: UIO[Int]               = UIO.succeed(m_)
@@ -26,6 +26,11 @@ class Matrix[L[_]] private (private val m_ : Int, n_ : Int, rows_ : L[L[Double]]
       }
 
   override def toString: String = L.toArray(rows_).map(rs => "| " + L.toArray(rs).mkString(" ") + " |").mkString("\n")
+  override def equals(that: Any): Boolean = that match {
+    case that: Matrix[L] =>
+      that.m_ == this.m_ &&  that.n_ == this.n_ && this.rows_ == that.rows_
+    case _ => false
+  }
 }
 
 object Matrix {

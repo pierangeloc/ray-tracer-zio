@@ -4,7 +4,7 @@ object Dependencies {
   val http4sVersion = "0.21.0-M4"
 
   val zioVersion     = "1.0.0-RC15"
-  val zioCatsVersion = "2.0.0.0-RC5"
+  val zioCatsVersion = "2.0.0.0-RC6"
 //  val zioNioVersion      = "0.2.1"
   val zioNioVersion      = "0.2.1+7-ef0306db+20191016-2333"
   val zioDelegateVersion = "0.0.5"
@@ -57,8 +57,8 @@ object Dependencies {
 
   lazy val scalaTags = "com.lihaoyi" %% "scalatags" % "0.6.8"
 
-  lazy val zioTest             = "dev.zio" %% "zio-test"              % zioVersion % "test"
-  lazy val zioTestSbt          = "dev.zio" %% "zio-test-sbt"          % zioVersion % "test->test;compile->compile"
+  lazy val zioTest             = "dev.zio" %% "zio-test"              % zioVersion
+  lazy val zioTestSbt          = "dev.zio" %% "zio-test-sbt"          % zioVersion
   lazy val zioMacrosAccess = "dev.zio" %% "zio-macros-access" % "0.4.0"
   lazy val zioMacrosMock   = "dev.zio" %% "zio-macros-mock"   % "0.4.0"
 
