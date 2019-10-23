@@ -4,7 +4,7 @@ import io.tuliplogic.raytracer.geometry.matrix.Types.{M, factory}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError.MatrixDimError
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule.MatrixTestService.Op
-import zio.macros.mock.mockable
+//import zio.macros.mock.mockable
 import zio.{IO, Ref, UIO, ZIO}
 
 //@mockable

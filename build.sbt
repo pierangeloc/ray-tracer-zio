@@ -84,7 +84,7 @@ lazy val `simple-http4s` = project
       name := "simple-http4s",
       libraryDependencies ++= Seq(
         zio,
-        zioCats,
+        zioCats exclude("dev.zio", "zio-test"),
         cats,
         catsEffect,
         http4sServer,
@@ -104,7 +104,7 @@ lazy val geometry = project
     name := "geometry",
     libraryDependencies ++= Seq(
       zio,
-      zioCats,
+      zioCats exclude("dev.zio", "zio-test"),
       cats,
       catsEffect,
       fs2,
@@ -112,8 +112,8 @@ lazy val geometry = project
       breezeNative,
       singletonOps,
       log4CatsSlf4j,
-      zioMacrosAccess,
-      zioMacrosMock,
+//      zioMacrosAccess,
+//      zioMacrosMock,
       scalaTest % "test",
       scalaCheck % "test"
     )
@@ -141,7 +141,7 @@ lazy val `ray-tracer` = project
     libraryDependencies ++= Seq(
       zio,
       zioNio,
-      zioCats,
+      zioCats exclude("dev.zio", "zio-test"),
       cats,
       catsEffect,
       log4CatsSlf4j,

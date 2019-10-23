@@ -5,7 +5,7 @@ import io.tuliplogic.raytracer.geometry.matrix.{>, MatrixModule}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import zio.{UIO, URIO, ZIO}
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M, factory, vectorizable}
-import zio.macros.access.accessible
+//import zio.macros.access.accessible
 
 import scala.math.{cos, sin}
 
@@ -32,7 +32,7 @@ object ATModule {
   }
 
   trait Live extends ATModule {
-    val matrixService: MatrixModule.Service[Any]
+    val matrixModule: MatrixModule.Service[Any]
 
     val aTModule: ATModule.Service[Any] = new ATModule.Service[Any] {
       import vectorizable.comp
@@ -44,7 +44,7 @@ object ATModule {
           _ <- if (v_m != 4 || v_n != 1)
             ZIO.fail(AlgebraicError.MatrixDimError(s"can't apply an affine transformation to a matrix $v_m x $v_n while expecting a matrix (vector) 4 x 1"))
           else ZIO.unit
-          res <- matrixService.mul(tf.direct, v)
+          res <- matrixModule.mul(tf.direct, v)
         } yield res
 
       override def applyTf(tf: AT, vec: Vec): ZIO[Any, AlgebraicError, Vec] =
@@ -63,13 +63,13 @@ object ATModule {
 
       override def compose(first: AT, second: AT): ZIO[Any, AlgebraicError, AT] =
         for {
-          direct  <- matrixService.mul(second.direct, first.direct)
-          inverse <- matrixService.mul(first.inverse, second.inverse)
+          direct  <- matrixModule.mul(second.direct, first.direct)
+          inverse <- matrixModule.mul(first.inverse, second.inverse)
         } yield AT(direct, inverse)
 
       def fromDirect(direct: M): UIO[AT] =
         for {
-          inverse <- matrixService.invert(direct).orDie
+          inverse <- matrixModule.invert(direct).orDie
         } yield AT(direct, inverse)
 
       override def translate(x: Double, y: Double, z: Double): URIO[Any, AT] =

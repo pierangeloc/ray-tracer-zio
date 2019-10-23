@@ -3,10 +3,10 @@ import sbt._
 object Dependencies {
   val http4sVersion = "0.21.0-M4"
 
-  val zioVersion     = "1.0.0-RC15"
+  val zioVersion     = "1.0.0-RC15+21-8cd3da56"
   val zioCatsVersion = "2.0.0.0-RC6"
 //  val zioNioVersion      = "0.2.1"
-  val zioNioVersion      = "0.2.1+7-ef0306db+20191016-2333"
+  val zioNioVersion      = "0.2.1+7-ef0306db"
   val zioDelegateVersion = "0.0.5"
 
   val fs2Version        = "2.0.0"
@@ -59,7 +59,7 @@ object Dependencies {
 
   lazy val zioTest             = "dev.zio" %% "zio-test"              % zioVersion
   lazy val zioTestSbt          = "dev.zio" %% "zio-test-sbt"          % zioVersion
-  lazy val zioMacrosAccess = "dev.zio" %% "zio-macros-access" % "0.4.0"
-  lazy val zioMacrosMock   = "dev.zio" %% "zio-macros-mock"   % "0.4.0"
+//  lazy val zioMacrosAccess = "dev.zio" %% "zio-macros-access" % "0.4.0"
+//  lazy val zioMacrosMock   = "dev.zio" %% "zio-macros-mock"   % "0.4.0"
 
 }

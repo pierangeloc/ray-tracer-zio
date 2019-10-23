@@ -1,14 +1,13 @@
 package io.tuliplogic.raytracer.geometry.affine
 
-import zio.test.DefaultRunnableSpec
-import zio.test._
-import zio.test.Assertion._
-import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
-import zio.{IO, Ref, UIO, ZIO}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.matrix.{Matrix, MatrixModule}
+import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule.MatrixTestService
 import io.tuliplogic.raytracer.geometry.matrix.Types.{factory, _}
+import io.tuliplogic.raytracer.geometry.matrix.{Matrix, MatrixModule}
+import zio.test.Assertion._
+import zio.test.{DefaultRunnableSpec, _}
+import zio.{IO, Ref, UIO}
 
 
 object ATModuleTest extends DefaultRunnableSpec(allSuites.s1) {
@@ -67,9 +66,22 @@ object allSuites {
         mockState <- Ref.make(MatrixTestService.State(expectedCalls, Nil))
         matrixServiceMock <- UIO.succeed(MatrixTestService(mockState))
         pt <- app.provide(new ATModule.Live {
-          override val matrixService: MatrixModule.Service[Any] = matrixServiceMock
+          override val matrixModule: MatrixModule.Service[Any] = matrixServiceMock
         })
-      } yield assert(pt, equalTo(Pt(4d, 6d, 8d)))
+        finalState <- mockState.get
+      } yield assert(pt, equalTo(Pt(4d, 6d, 8d))) && assert(finalState.calls, equalTo(List(
+        """Mul(| 1.0 0.0 0.0 3.0 |
+          || 0.0 1.0 0.0 4.0 |
+          || 0.0 0.0 1.0 5.0 |
+          || 0.0 0.0 0.0 1.0 |,| 1.0 |
+          || 2.0 |
+          || 3.0 |
+          || 1.0 |)""".stripMargin,
+        """Inv(| 1.0 0.0 0.0 3.0 |
+          || 0.0 1.0 0.0 4.0 |
+          || 0.0 0.0 1.0 5.0 |
+          || 0.0 0.0 0.0 1.0 |)""".stripMargin
+        )))
     }
   }
 }
