@@ -1,26 +1,30 @@
 package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.geometry.affine.AffineTransformationOps
+import io.tuliplogic.raytracer.geometry.affine.{ATModule, AffineTransformationOps}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, Sphere}
 import zio.{UIO, ZIO}
 
-trait SpatialEntityOperations {
-  def spatEntityOperations: SpatialEntityOperations.Service[Any]
+trait NormalReflectModule {
+  def spatEntityOperations: NormalReflectModule.Service[Any]
 }
 
 //TODO: test PBT that the angle between reflect and normal, and incident and normal is equal. Also, the 2 vectors should be coplanar
 //TODO: make these operations just shape related operations, because a shape is able to calculate the normal to itself at a given point, and calculate the reflected vector
-object SpatialEntityOperations {
+object NormalReflectModule {
+
   trait Service[R] {
     def normal(p: Pt, o: SceneObject): ZIO[R, Nothing, Vec]
     final def reflect(vec: Vec, normal: Vec): ZIO[R, Nothing, Vec] =
       ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
   }
 
-  trait BreezeMatrixOps extends SpatialEntityOperations with AffineTransformationOps {
+  trait Live extends NormalReflectModule {
+
+    val atModule: ATModule.Service[Any]
+
     def spatEntityOperations: Service[Any] = new Service[Any] {
 
       def canonicalNormal(p: Pt, o: SceneObject): UIO[Vec] = o match {
@@ -30,20 +34,19 @@ object SpatialEntityOperations {
 
       def normal(p: Pt, o: SceneObject): ZIO[Any, Nothing, Vec] =
         (for {
-          inverseTf         <- affineTfOps.invert(o.transformation)
-          objectPt          <- affineTfOps.transform(inverseTf, p)
+          inverseTf         <- atModule.invert(o.transformation)
+          objectPt          <- atModule.applyTf(inverseTf, p)
           objectNormal      <- canonicalNormal(objectPt, o)
-          inverseTransposed <- affineTfOps.transpose(inverseTf)
-          worldNormal       <- affineTfOps.transform(inverseTransposed, objectNormal)
+          inverseTransposed <- atModule.transpose(inverseTf)
+          worldNormal       <- atModule.applyTf(inverseTransposed, objectNormal)
           normalized        <- worldNormal.normalized
         } yield normalized).orDie
     }
   }
 
-  object BreezeMatrixOps extends BreezeMatrixOps with AffineTransformationOps.BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
 }
 
-object spatialEntityOps extends SpatialEntityOperations.Service[SpatialEntityOperations] {
-  override def normal(p: Pt, o: SceneObject): ZIO[SpatialEntityOperations, Nothing, Vec] =
+object spatialEntityOps extends NormalReflectModule.Service[NormalReflectModule] {
+  override def normal(p: Pt, o: SceneObject): ZIO[NormalReflectModule, Nothing, Vec] =
     ZIO.accessM(_.spatEntityOperations.normal(p, o))
 }

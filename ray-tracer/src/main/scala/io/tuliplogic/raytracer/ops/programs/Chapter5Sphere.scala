@@ -9,7 +9,7 @@ import io.tuliplogic.raytracer.commons.errors.{CanvasError, RayTracerError}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.Sphere
 import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
-import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Ray, RayOperations, rayOps}
+import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Ray, RayModule, rayOps}
 import zio.blocking.Blocking
 import zio.ZEnv
 import zio.clock.Clock
@@ -42,14 +42,14 @@ object Chapter5Sphere extends App {
 
   def rayForPixel(px: Pt): Ray = Ray(origin = lightPt, direction = px - lightPt)
 
-  def intersectAndRender(px: Pt, sphere: Sphere, xn: Int, yn: Int, canvas: Canvas): ZIO[RayOperations, CanvasError.IndexExceedCanvasDimension, Unit] =
+  def intersectAndRender(px: Pt, sphere: Sphere, xn: Int, yn: Int, canvas: Canvas): ZIO[RayModule, CanvasError.IndexExceedCanvasDimension, Unit] =
     for {
       intersections <- rayOps.intersect(rayForPixel(px), sphere)
       maybeHit      <- rayOps.hit(intersections)
       _             <- maybeHit.fold(canvas.update(xn, yn, Color.black))(_ => canvas.update(xn, yn, Color.red))
     } yield ()
 
-  val program: ZIO[CanvasRenderer with RayOperations with Clock with Console, RayTracerError, Unit] = for {
+  val program: ZIO[CanvasRenderer with RayModule with Clock with Console, RayTracerError, Unit] = for {
     startTime <- clock.nanoTime
     canvas    <- Canvas.create(canvasHRes, canvasVRes)
     sphere    <- Sphere.unit
@@ -67,7 +67,7 @@ object Chapter5Sphere extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasRenderer.PPMCanvasRenderer with RayOperations.BreezeMatrixOps with Blocking.Live with MatrixModule.BreezeMatrixModule with Console.Live with Clock.Live
+        new CanvasRenderer.PPMCanvasRenderer with RayModule.BreezeMatrixOps with Blocking.Live with MatrixModule.BreezeMatrixModule with Console.Live with Clock.Live
         with AffineTransformationOps.BreezeMatrixOps$ {
           override def path: Path = Paths.get(canvasFile)
         }

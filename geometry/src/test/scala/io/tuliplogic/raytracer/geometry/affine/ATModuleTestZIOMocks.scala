@@ -10,10 +10,7 @@ import zio.test.mock.Expectation._
 import zio.test.{DefaultRunnableSpec, _}
 import zio.{IO, UIO, ZIO}
 
-
-object ATModuleTestZIOMocks extends DefaultRunnableSpec(allSuites2.s1) {
-
-}
+object ATModuleTestZIOMocks extends DefaultRunnableSpec(allSuites2.s1) {}
 
 trait MatrixModuleMock extends MatrixModule {
   val matrixModule: MatrixModuleMock.Service[Any]
@@ -23,12 +20,12 @@ object MatrixModuleMock {
   trait Service[R] extends MatrixModule.Service[R]
 
   object almostEqual extends Method[MatrixModuleMock, (M, M, Double), Boolean]
-  object opposite extends Method[MatrixModuleMock, M, M] //def opposite(m: M): ZIO[R, AlgebraicError, M]
-  object equal extends Method[MatrixModuleMock, (M, M), Boolean] //def equal(m1: M, m2: M): ZIO[R, AlgebraicError, Boolean]
-  object add extends Method[MatrixModuleMock, (M, M), M]// def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
-  object mul extends Method[MatrixModuleMock, (M, M), M] // def mul(m1: M, m2: M): ZIO[R, AlgebraicError, M]
-  object had extends Method[MatrixModuleMock, (M, M), M]
-  object invert extends Method[MatrixModuleMock, M, M]
+  object opposite    extends Method[MatrixModuleMock, M, M] //def opposite(m: M): ZIO[R, AlgebraicError, M]
+  object equal       extends Method[MatrixModuleMock, (M, M), Boolean] //def equal(m1: M, m2: M): ZIO[R, AlgebraicError, Boolean]
+  object add         extends Method[MatrixModuleMock, (M, M), M] // def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
+  object mul         extends Method[MatrixModuleMock, (M, M), M] // def mul(m1: M, m2: M): ZIO[R, AlgebraicError, M]
+  object had         extends Method[MatrixModuleMock, (M, M), M]
+  object invert      extends Method[MatrixModuleMock, M, M]
 
   implicit val mockable: Mockable[MatrixModuleMock] = (mock: Mock) =>
     new MatrixModuleMock {
@@ -54,9 +51,8 @@ object MatrixModuleMock {
         override def invert(m: M): ZIO[Any, AlgebraicError, M] =
           mock(MatrixModuleMock.invert, m)
       }
-    }
+  }
 }
-
 
 object allSuites2 {
   import vectorizable.comp
@@ -72,8 +68,8 @@ object allSuites2 {
           comp(0d, 0d, 1d, 5d),
           comp(0d, 0d, 0d, 1d)
         )
-      ).orDie
-
+      )
+      .orDie
 
   val invertedTranslationMatrix: IO[AlgebraicError, Matrix[L]] =
     factory
@@ -86,12 +82,13 @@ object allSuites2 {
           comp(0d, 0d, 1d, -5d),
           comp(0d, 0d, 0d, 1d)
         )
-      ).orDie
+      )
+      .orDie
 
-  val ptVec = factory.createColVector(Vector(1d, 2d, 3d, 1d))
+  val ptVec                                            = factory.createColVector(Vector(1d, 2d, 3d, 1d))
   val translatedPtVec: IO[AlgebraicError, factory.Col] = factory.createColVector(Vector(4, 6, 8, 1)).mapError(_.asInstanceOf[AlgebraicError])
 
-  val s1 = suite("AT relies on matrix operations"){
+  val s1 = suite("AT relies on matrix operations") {
 
     testM("Applying AT to a vector means invoking matrix multiplication on that vector") {
       val app: ZIO[ATModule, AlgebraicError, Pt] = for {
@@ -100,22 +97,22 @@ object allSuites2 {
       } yield pt
 
       for {
-        translMx <- translationMatrix
-        invTranslMx <- invertedTranslationMatrix
-        ptColVec <- ptVec
+        translMx           <- translationMatrix
+        invTranslMx        <- invertedTranslationMatrix
+        ptColVec           <- ptVec
         translatedPtColVec <- translatedPtVec
         //set mocks
         mockedMatrix <- UIO {
           (MatrixModuleMock.invert(equalTo(translMx)) returns value(invTranslMx)) *>
-          (MatrixModuleMock.mul(equalTo((translMx, ptColVec))) returns value(translatedPtColVec))
+            (MatrixModuleMock.mul(equalTo((translMx, ptColVec))) returns value(translatedPtColVec))
         }
         pt <- app.provideManaged(
-                mockedMatrix.managedEnv.map { mm =>
-                  new ATModule.Live {
-                    override val matrixModule: MatrixModule.Service[Any] = mm.matrixModule
-                  }
-                }
-              )
+          mockedMatrix.managedEnv.map { mm =>
+            new ATModule.Live {
+              override val matrixModule: MatrixModule.Service[Any] = mm.matrixModule
+            }
+          }
+        )
       } yield assert(pt, equalTo(Pt(4d, 6d, 8d)))
     }
   }

@@ -9,7 +9,7 @@ import io.tuliplogic.raytracer.geometry.affine.{AffineTransformation, AffineTran
 import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.drawing.{Pattern, SampledRect, Scene}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
+import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflectionModule, RayModule, NormalReflectModule}
 import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
 import zio.blocking.Blocking
 import zio.clock.Clock
@@ -28,7 +28,7 @@ object Chapter6Sphere extends App {
   val canvasVRes       = 500
   val canvasFile       = "/tmp/nioexp/chapter-6-shaded-sphere.ppm"
 
-  type RichRayOperations = PhongReflection with SpatialEntityOperations with RayOperations
+  type RichRayOperations = PhongReflectionModule with NormalReflectModule with RayModule
 
   val program: ZIO[CanvasRenderer with RichRayOperations with Clock with Console, RayTracerError, Unit] = for {
     startTime    <- clock.nanoTime

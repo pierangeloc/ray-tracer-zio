@@ -1,9 +1,9 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-  import io.tuliplogic.raytracer.ops.model.{Color, Intersection, PhongReflection, Ray, RayOperations, SpatialEntityOperations, phongOps, rayOps, spatialEntityOps}
+  import io.tuliplogic.raytracer.ops.model.{Color, Intersection, PhongReflectionModule, Ray, RayModule, NormalReflectModule, phongOps, rayOps, spatialEntityOps}
   import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
   import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, RayTracerError}
-  import io.tuliplogic.raytracer.ops.model.PhongReflection.HitComps
+  import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
   import zio.{IO, UIO, URIO, ZIO}
   import cats.implicits._
   import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
@@ -12,10 +12,10 @@ package io.tuliplogic.raytracer.ops.drawing
   import Predef.{any2stringadd => _,_}
 
 case class World(pointLight: PointLight, objects: List[SceneObject]) {
-  def intersect(ray: Ray): URIO[RayOperations, List[Intersection]] =
+  def intersect(ray: Ray): URIO[RayModule, List[Intersection]] =
     objects.traverse(rayOps.intersect(ray, _)).map(_.flatten.sortBy(_.t))
 
-  def colorAt(ray: Ray, remaining: Int = 5): ZIO[PhongReflection with RayOperations with SpatialEntityOperations, RayTracerError, Color] =
+  def colorAt(ray: Ray, remaining: Int = 5): ZIO[PhongReflectionModule with RayModule with NormalReflectModule, RayTracerError, Color] =
     for {
       intersections <- intersect(ray)
       maybeHitComps <- intersections.find(_.t > 0).traverse(World.hitComps(ray, _, intersections))
@@ -31,7 +31,7 @@ case class World(pointLight: PointLight, objects: List[SceneObject]) {
         ).getOrElse(UIO(Color.black))
     } yield color
 
-  def isShadowed(pt: Pt): ZIO[RayOperations, AlgebraicError, Boolean] =
+  def isShadowed(pt: Pt): ZIO[RayModule, AlgebraicError, Boolean] =
     for {
       v        <- UIO(pointLight.position - pt)
       distance <- v.norm
@@ -48,7 +48,7 @@ object World {
       ray: Ray,
       hit: Intersection,
       intersections: List[Intersection]
-  ): ZIO[SpatialEntityOperations with RayOperations, BusinessError.GenericError, HitComps] = {
+  ): ZIO[NormalReflectModule with RayModule, BusinessError.GenericError, HitComps] = {
 
     type Z = (List[SceneObject], Option[Double], Option[Double])
 
@@ -97,7 +97,7 @@ object World {
 
 
   //TODO: make remaining part of an environment initialized with Ref
-  def reflectedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[PhongReflection with RayOperations with SpatialEntityOperations, RayTracerError, Color] =
+  def reflectedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[PhongReflectionModule with RayModule with NormalReflectModule, RayTracerError, Color] =
     if (hitComps.obj.material.reflective == 0) {
       UIO(Color.black)
     } else {
@@ -107,7 +107,7 @@ object World {
       )
     }
 
-  def refractedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[PhongReflection with RayOperations with SpatialEntityOperations, RayTracerError, Color] = {
+  def refractedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[PhongReflectionModule with RayModule with NormalReflectModule, RayTracerError, Color] = {
     val nRatio = hitComps.n1 / hitComps.n2
     val cosTheta_i = (hitComps.eyeV dot hitComps.normalV)
     val sin2Theta_t = nRatio * nRatio * (1 - cosTheta_i * cosTheta_i)

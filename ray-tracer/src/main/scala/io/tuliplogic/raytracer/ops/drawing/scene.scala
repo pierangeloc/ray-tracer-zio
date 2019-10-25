@@ -5,7 +5,7 @@ import cats.implicits._
 import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, BusinessError, RayTracerError}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
-import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
+import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{
   phongOps,
@@ -14,10 +14,10 @@ import io.tuliplogic.raytracer.ops.model.{
   Canvas,
   Intersection,
   Material,
-  PhongReflection,
+  PhongReflectionModule,
   Ray,
-  RayOperations,
-  SpatialEntityOperations
+  RayModule,
+  NormalReflectModule
 }
 import zio.interop.catz._
 import zio.stream._
@@ -62,7 +62,7 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
   private def hitComps(
       ray: Ray,
       hit: Intersection
-  ): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, HitComps] =
+  ): ZIO[PhongReflectionModule with NormalReflectModule with RayModule, BusinessError.GenericError, HitComps] =
     hit.sceneObject match {
       case s @ Sphere(_, _) =>
         for {
@@ -76,7 +76,7 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
   private def colorForHit(
       ray: Ray,
       hit: Intersection
-  ): ZIO[PhongReflection with SpatialEntityOperations with RayOperations, BusinessError.GenericError, PhongReflection.PhongComponents] =
+  ): ZIO[PhongReflectionModule with NormalReflectModule with RayModule, BusinessError.GenericError, PhongReflectionModule.PhongComponents] =
     hitComps(ray, hit).flatMap { hitComps =>
       phongOps.lighting(pointLight, hitComps, false)
     }
@@ -92,8 +92,8 @@ case class Scene(infinitePoint: Pt, pointLight: PointLight) {
 }
 
 object Scene {
-  type RichRayOperations = PhongReflection with SpatialEntityOperations with RayOperations
+  type RichRayOperations = PhongReflectionModule with NormalReflectModule with RayModule
   object RichRayOperations {
-    trait Live extends PhongReflection.BreezeMatrixOps with SpatialEntityOperations.BreezeMatrixOps with RayOperations.BreezeMatrixOps
+    trait Live extends PhongReflectionModule.BreezeMatrixOps with NormalReflectModule.BreezeMatrixOps with RayModule.BreezeMatrixOps
   }
 }

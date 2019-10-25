@@ -15,10 +15,12 @@ import zio.{UIO, ZIO}
 /**
   * A transformation is by construction a 4 x 4 matrix. We need just to validate the vectors that it operates on are 4 x 1
   */
+@deprecated
 trait AffineTransformationOps {
   def affineTfOps: AffineTransformationOps.Service[Any]
 }
 
+@deprecated
 object AffineTransformationOps {
   trait Service[R] {
     def transform(at: AffineTransformation, pt: Pt): ZIO[R, AlgebraicError, Pt]
@@ -66,6 +68,7 @@ object AffineTransformationOps {
   object BreezeMatrixOps$ extends BreezeMatrixOps$ with MatrixModule.BreezeMatrixModule
 }
 
+@deprecated
 object affineTfOps extends AffineTransformationOps.Service[AffineTransformationOps] {
   override def transform(at: AffineTransformation, pt: Pt): ZIO[AffineTransformationOps, AlgebraicError, Pt] =
     ZIO.accessM(_.affineTfOps.transform(at, pt))
@@ -85,11 +88,13 @@ object affineTfOps extends AffineTransformationOps.Service[AffineTransformationO
 
 //TODO: see if we can define an affinetransformation as a function Pt => Pt | Vec => Vec
 // def f[A <: SpatialEntity](a: A): A
+@deprecated
 case class AffineTransformation(m: M) {
   def >=>(next: AffineTransformation): ZIO[AffineTransformationOps, Nothing, AffineTransformation] =
     affineTfOps.compose(this, next).orDie
 }
 
+@deprecated
 object AffineTransformation {
   import Types._
   import vectorizable.comp

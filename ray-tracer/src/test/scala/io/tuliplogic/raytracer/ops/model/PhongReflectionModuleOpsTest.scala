@@ -4,13 +4,13 @@ import io.tuliplogic.raytracer.geometry.affine.AffineTransformation
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
 import io.tuliplogic.raytracer.ops.drawing.Pattern
-import io.tuliplogic.raytracer.ops.model.PhongReflection.{HitComps, PhongComponents}
+import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{PointLight, Sphere}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO}
 
-class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUtils {
+class PhongReflectionModuleOpsTest extends WordSpec with DefaultRuntime with OpsTestUtils {
   "phong reflection model live" should {
     "give correct phong components when eye is in LOS with source and aligned with normal" in {
       unsafeRun {
@@ -20,7 +20,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * 0.9, Color.white * 0.9)))
-        } yield res).provide(PhongReflection.BreezeMatrixOps)
+        } yield res).provide(PhongReflectionModule.BreezeMatrixOps)
       }
     }
 
@@ -32,7 +32,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * 0.9, Color.black)))
-        } yield res).provide(PhongReflection.BreezeMatrixOps)
+        } yield res).provide(PhongReflectionModule.BreezeMatrixOps)
       }
     }
 
@@ -44,7 +44,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.black)))
-        } yield res).provide(PhongReflection.BreezeMatrixOps)
+        } yield res).provide(PhongReflectionModule.BreezeMatrixOps)
       }
     }
 
@@ -56,7 +56,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.white * 0.9)))
-        } yield res).provide(PhongReflection.BreezeMatrixOps)
+        } yield res).provide(PhongReflectionModule.BreezeMatrixOps)
       }
     }
 
@@ -68,7 +68,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           pointLight <- UIO(PointLight(Pt(0, 0, 10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.black, Color.black)))
-        } yield res).provide(PhongReflection.BreezeMatrixOps)
+        } yield res).provide(PhongReflectionModule.BreezeMatrixOps)
       }
     }
 
@@ -80,7 +80,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- phongOps.lighting(pointLight, hitComps, true)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.black, Color.black)))
-        } yield res).provide(PhongReflection.BreezeMatrixOps)
+        } yield res).provide(PhongReflectionModule.BreezeMatrixOps)
       }
     }
 
@@ -97,7 +97,7 @@ class PhongReflectionOpsTest extends WordSpec with DefaultRuntime with OpsTestUt
           hitComps2  <- UIO(HitComps(s, Pt(1.1, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           res2       <- phongOps.lighting(pointLight, hitComps2, false)
           _          <- IO(res2.toColor should ===(Color.black))
-        } yield res1).provide(PhongReflection.BreezeMatrixOps)
+        } yield res1).provide(PhongReflectionModule.BreezeMatrixOps)
       }
     }
   }

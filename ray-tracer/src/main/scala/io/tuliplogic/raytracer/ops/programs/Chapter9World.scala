@@ -10,7 +10,7 @@ import io.tuliplogic.raytracer.ops.drawing.Scene.RichRayOperations
 import io.tuliplogic.raytracer.ops.drawing.{Camera, Pattern, Renderer, ViewTransform, World}
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflection, RayOperations, SpatialEntityOperations}
+import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, PhongReflectionModule, RayModule, NormalReflectModule}
 import io.tuliplogic.raytracer.ops.rendering.{canvasRendering, CanvasRenderer}
 import zio.blocking.Blocking
 import zio.clock.Clock
@@ -76,7 +76,7 @@ object Chapter9World extends App {
     cameraTf <- ViewTransform(cameraFrom, cameraTo, cameraUp).tf
   } yield Camera(hRes, vRes, math.Pi / 3, cameraTf)
 
-  val program: ZIO[PhongReflection with SpatialEntityOperations with RayOperations with AffineTransformationOps with CanvasRenderer, RayTracerError, Unit] =
+  val program: ZIO[PhongReflectionModule with NormalReflectModule with RayModule with AffineTransformationOps with CanvasRenderer, RayTracerError, Unit] =
     for {
       canvas <- Canvas.create(hRes, vRes)
       wrld   <- world

@@ -9,7 +9,9 @@ import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M, factory, vectoriza
 
 import scala.math.{cos, sin}
 
-case class AT(direct: M, inverse: M)
+case class AT(direct: M, inverse: M) {
+  def inverted: AT = AT(inverse, direct)
+}
 
 trait ATModule {
   val aTModule: ATModule.Service[Any]
@@ -21,6 +23,7 @@ object ATModule {
     def applyTf(tf: AT, pt: Pt): ZIO[R, AlgebraicError, Pt]
     def compose(first: AT, second: AT): ZIO[R, AlgebraicError, AT]
     def invert(tf: AT): ZIO[R, AlgebraicError, AT]
+    def transpose(tf: AT): ZIO[R, AlgebraicError, AT]
 
     def translate(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT]
     def scale(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT]
@@ -66,6 +69,14 @@ object ATModule {
           direct  <- matrixModule.mul(second.direct, first.direct)
           inverse <- matrixModule.mul(first.inverse, second.inverse)
         } yield AT(direct, inverse)
+
+      override def invert(tf: AT): ZIO[Any, AlgebraicError, AT] = UIO.succeed(AT(tf.inverse, tf.direct))
+
+      override def transpose(tf: AT): ZIO[Any, AlgebraicError, AT] = for {
+        direct <- tf.direct.transpose
+        inverse <- matrixModule.invert(direct)
+      } yield AT(direct, inverse)
+
 
       def fromDirect(direct: M): UIO[AT] =
         for {
@@ -176,8 +187,6 @@ object ATModule {
           } yield at
         ).orDie
 
-      override def invert(tf: AT): ZIO[Any, AlgebraicError, AT] = UIO.succeed(AT(tf.inverse, tf.direct))
-
       override def id: ZIO[Any, Nothing, AT] = translate(0, 0, 0)
     }
 
@@ -191,6 +200,8 @@ object ATModule {
     def compose(first: AT, second: AT): ZIO[ATModule, AlgebraicError, AT] =
       ZIO.accessM(_.aTModule.compose(first, second))
     def invert(tf: AT): ZIO[ATModule, AlgebraicError, AT] =
+      ZIO.accessM(_.aTModule.invert(tf))
+    override def transpose(tf: AT): ZIO[ATModule, AlgebraicError, AT] =
       ZIO.accessM(_.aTModule.invert(tf))
     def translate(x: Double, y: Double, z: Double): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.translate(x, y, z))

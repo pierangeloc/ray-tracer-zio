@@ -4,13 +4,13 @@ import io.tuliplogic.raytracer.geometry.matrix.>
 import io.tuliplogic.raytracer.geometry.affine.AffineTransformation
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import mouse.all._
-import io.tuliplogic.raytracer.ops.model.RayOperations.BreezeMatrixOps
+import io.tuliplogic.raytracer.ops.model.RayModule.BreezeMatrixOps
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, Sphere}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO, ZIO}
 
-class RayOperationsTest extends WordSpec with DefaultRuntime {
+class RayModuleTest extends WordSpec with DefaultRuntime {
 
   "Ray operations" should {
     "calculate position at different t" in {
@@ -38,7 +38,7 @@ class RayOperationsTest extends WordSpec with DefaultRuntime {
               )
             )
             .flatMap(deltas => IO(deltas.forall(_ == true) shouldEqual true))
-        } yield ()).provide(RayOperations.BreezeMatrixOps)
+        } yield ()).provide(RayModule.BreezeMatrixOps)
       }
     }
 

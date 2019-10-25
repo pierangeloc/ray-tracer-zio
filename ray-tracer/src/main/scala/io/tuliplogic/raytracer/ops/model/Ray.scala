@@ -1,22 +1,22 @@
 package io.tuliplogic.raytracer.ops.model
 
-import cats.data.NonEmptyList
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
-import io.tuliplogic.raytracer.geometry.affine.{AffineTransformation, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule, AffineTransformation, AffineTransformationOps}
 import zio.{UIO, URIO, ZIO}
 
 case class Ray(origin: Pt, direction: Vec)
 case class Intersection(t: Double, sceneObject: SceneObject) //pairs the t where a ray intersects an object, and the object itself
 
-trait RayOperations {
-  def rayOpsService: RayOperations.Service[Any]
+trait RayModule {
+  val rayModule: RayModule.Service[Any]
 }
 
 //TODO: make a separate operation for canonical intersect in a different module,and build the live version of this in terms of it
-object RayOperations {
+object RayModule {
+
   trait Service[R] {
 
     def positionAt(ray: Ray, t: Double): URIO[R, Pt]
@@ -31,42 +31,43 @@ object RayOperations {
       */
     def intersect(ray: Ray, o: SceneObject): URIO[R, List[Intersection]]
 
+    /**
+      * Calculate the hit of intersections, i.e. the intersection that has the minimal t > 0
+      */
     def hit(intersections: List[Intersection]): URIO[R, Option[Intersection]]
 
-    def transform(at: AffineTransformation, ray: Ray): URIO[R, Ray]
+    /**
+      * Applying an affine transformation to a Ray is applying it to the origin and to the direction
+      */
+    def transform(at: AT, ray: Ray): URIO[R, Ray]
   }
 
-  trait BreezeMatrixOps extends RayOperations with MatrixModule with AffineTransformationOps { self =>
-    import MatrixModule.syntax._
-    def rayOpsService: RayOperations.Service[Any] = new Service[Any] {
+  trait Live {
+
+    val aTModule: ATModule.Service[Any]
+    val rayModule: RayModule.Service[Any] = new Service[Any] {
+
       override def positionAt(ray: Ray, t: Double): ZIO[Any, Nothing, Pt] =
-        for {
-          dirCol  <- toCol(ray.direction)
-          s1      <- matrixModule.times(t, dirCol)
-          origCol <- toCol(ray.origin)
-          resCol  <- matrixModule.add(s1, origCol).orDie
-          res     <- colToPt(resCol).orDie
-        } yield res
+        UIO.succeed(ray.origin + (ray.direction * t))
 
       def canonicalIntersect(ray: Ray, o: SceneObject): URIO[Any, List[Intersection]] = o match {
-        case s @ Sphere(_, _) =>
+        case s@Sphere(_, _) =>
           val sphereToRay = ray.origin - Pt(0, 0, 0)
-          val a           = ray.direction dot ray.direction
-          val b           = 2 * (ray.direction dot sphereToRay)
-          val c           = (sphereToRay dot sphereToRay) - 1
+          val a = ray.direction dot ray.direction
+          val b = 2 * (ray.direction dot sphereToRay)
+          val c = (sphereToRay dot sphereToRay) - 1
 
           val delta = b * b - 4 * a * c
           if (delta < 0) UIO.succeed(List())
           else UIO.succeed(List((-b - math.sqrt(delta)) / (2 * a), (-b + math.sqrt(delta)) / (2 * a)).map(Intersection(_, s)))
 
-        case p @ Plane(_, _) =>
+        case p@Plane(_, _) =>
           if (math.abs(ray.direction.y) < Plane.horizEpsilon)
             UIO(List())
           else {
             val t = -ray.origin.y / ray.direction.y
             UIO(List(Intersection(t, p)))
           }
-
       }
 
       /**
@@ -74,8 +75,8 @@ object RayOperations {
         */
       override def intersect(ray: Ray, o: SceneObject): ZIO[Any, Nothing, List[Intersection]] =
         for {
-          inverseTf     <- affineTfOps.invert(o.transformation).orDie
-          tfRay         <- transform(inverseTf, ray)
+          inverseTf <- aTModule.invert(o.transformation).orDie
+          tfRay <- transform(inverseTf, ray)
           intersections <- canonicalIntersect(tfRay, o)
         } yield intersections
 
@@ -83,33 +84,32 @@ object RayOperations {
         intersections.filter(_.t > 0).sortBy(_.t).headOption
       }
 
-      override def transform(at: AffineTransformation, ray: Ray): URIO[Any, Ray] =
+      override def transform(at: AT, ray: Ray): URIO[Any, Ray] =
         (for {
-          tfPt  <- affineTfOps.transform(at, ray.origin)
-          tfVec <- affineTfOps.transform(at, ray.direction)
-        } yield Ray(tfPt, tfVec)).provide(self).orDie
+          tfPt <- aTModule.applyTf(at, ray.origin)
+            tfVec <- aTModule.applyTf(at, ray.direction)
+        } yield Ray(tfPt, tfVec)).orDie
     }
   }
 
-  object BreezeMatrixOps extends BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$
-}
+  object > extends RayModule.Service[RayModule] {
+    override def positionAt(ray: Ray, t: Double): ZIO[RayModule, Nothing, Pt] =
+      ZIO.accessM(_.rayModule.positionAt(ray, t))
 
-object rayOps extends RayOperations.Service[RayOperations] {
-  override def positionAt(ray: Ray, t: Double): ZIO[RayOperations, Nothing, Pt] =
-    ZIO.accessM(_.rayOpsService.positionAt(ray, t))
+    /**
+      * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
+      */
+    override def intersect(ray: Ray, o: SceneObject): ZIO[RayModule, Nothing, List[Intersection]] =
+      ZIO.accessM(_.rayModule.intersect(ray, o))
 
-  /**
-    * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
-    */
-  override def intersect(ray: Ray, o: SceneObject): ZIO[RayOperations, Nothing, List[Intersection]] =
-    ZIO.accessM(_.rayOpsService.intersect(ray, o))
+    override def hit(intersections: List[Intersection]): URIO[RayModule, Option[Intersection]] =
+      ZIO.accessM(_.rayModule.hit(intersections))
 
-  override def hit(intersections: List[Intersection]): URIO[RayOperations, Option[Intersection]] =
-    ZIO.accessM(_.rayOpsService.hit(intersections))
+    override def transform(at: AT, ray: Ray): URIO[RayModule, Ray] =
+      ZIO.accessM(_.rayModule.transform(at, ray))
 
-  override def transform(at: AffineTransformation, ray: Ray): URIO[RayOperations, Ray] =
-    ZIO.accessM(_.rayOpsService.transform(at, ray))
+    override def canonicalIntersect(ray: Ray, o: SceneObject): URIO[RayModule, List[Intersection]] =
+      ZIO.accessM(_.rayModule.canonicalIntersect(ray, o))
+  }
 
-  override def canonicalIntersect(ray: Ray, o: SceneObject): URIO[RayOperations, List[Intersection]] =
-    ZIO.accessM(_.rayOpsService.canonicalIntersect(ray, o))
 }
