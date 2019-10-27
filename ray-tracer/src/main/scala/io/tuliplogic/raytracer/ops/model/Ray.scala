@@ -1,13 +1,15 @@
 package io.tuliplogic.raytracer.ops.model
 
-import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject._
 import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
-import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule, AffineTransformation, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import zio.{UIO, URIO, ZIO}
 
-case class Ray(origin: Pt, direction: Vec)
+case class Ray(origin: Pt, direction: Vec) {
+  def positionAt(t: Double): Pt = origin + (direction * t)
+}
+
 case class Intersection(t: Double, sceneObject: SceneObject) //pairs the t where a ray intersects an object, and the object itself
 
 trait RayModule {
@@ -18,8 +20,6 @@ trait RayModule {
 object RayModule {
 
   trait Service[R] {
-
-    def positionAt(ray: Ray, t: Double): URIO[R, Pt]
 
     /**
       * Calculates ALL the intersections (positive and negative t) between a ray and a canonical scene object
@@ -46,9 +46,6 @@ object RayModule {
 
     val aTModule: ATModule.Service[Any]
     val rayModule: RayModule.Service[Any] = new Service[Any] {
-
-      override def positionAt(ray: Ray, t: Double): ZIO[Any, Nothing, Pt] =
-        UIO.succeed(ray.origin + (ray.direction * t))
 
       def canonicalIntersect(ray: Ray, o: SceneObject): URIO[Any, List[Intersection]] = o match {
         case s@Sphere(_, _) =>
@@ -93,8 +90,6 @@ object RayModule {
   }
 
   object > extends RayModule.Service[RayModule] {
-    override def positionAt(ray: Ray, t: Double): ZIO[RayModule, Nothing, Pt] =
-      ZIO.accessM(_.rayModule.positionAt(ray, t))
 
     /**
       * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned

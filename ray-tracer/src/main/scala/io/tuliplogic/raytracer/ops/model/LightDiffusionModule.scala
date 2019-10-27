@@ -3,7 +3,9 @@ package io.tuliplogic.raytracer.ops.model
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
 import zio.{UIO, ZIO}
 
-
+/**
+  * This module computes the diffusion component of the light, which represents how the light hitting a surface gets diffused around
+  */
 trait LightDiffusionModule {
   val lightDiffusionModule: LightDiffusionModule.Service[Any]
 }

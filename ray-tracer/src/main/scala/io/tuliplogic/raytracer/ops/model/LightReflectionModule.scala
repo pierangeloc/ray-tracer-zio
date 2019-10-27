@@ -3,6 +3,9 @@ package io.tuliplogic.raytracer.ops.model
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
 import zio.{UIO, ZIO}
 
+/**
+  * This module computes the reflective component of the light, i.e. how the light gets reflected by the surface. Depends on specular + shininess
+  */
 trait LightReflectionModule {
   val lightReflectionModule: LightReflectionModule.Service[Any]
 }
@@ -19,7 +22,7 @@ object LightReflectionModule {
 
       def computeReflection(reflEyeProjection: Double, lightIntensity: Color, materialSpecular: Double, materialShininess: Double): Color = {
         val factor = math.pow(reflEyeProjection, materialShininess)
-        lightIntensity * materialShininess * factor
+        lightIntensity * materialSpecular * factor
       }
 
       override def reflection(lightV: Vec, normalV: Vec, eyeV: Vec, lightIntensity: Color, materialSpecular: Double, materialShininess: Double): ZIO[Any, Nothing, Color] =

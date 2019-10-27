@@ -1,8 +1,6 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-import io.tuliplogic.raytracer.commons.errors.RayTracerError
-import io.tuliplogic.raytracer.geometry.affine.AffineTransformationOps
-import io.tuliplogic.raytracer.ops.model.{Color, PhongReflectionModule, RayModule, NormalReflectModule}
+import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, NormalReflectModule, PhongReflectionModule, RayModule, WorldModule}
 import zio.Chunk
 import zio.stream.{Stream, StreamChunk, ZStreamChunk}
 
@@ -12,14 +10,14 @@ object Renderer {
   type UStreamC[A] = StreamChunk[Nothing, A]
 
   def render(camera: Camera, world: World): ZStreamChunk[
-    PhongReflectionModule with NormalReflectModule with RayModule with AffineTransformationOps,
+    WorldModule with CameraModule,
     Nothing,
     (Int, Int, Color)] =
     pixelsChunkedStream(camera).mapM {
       case (px, py) =>
         (for {
-          ray   <- camera.rayForPixel(px, py)
-          color <- world.colorAt(ray)
+          ray   <- CameraModule.>.rayForPixel(camera, px, py)
+          color <- WorldModule.>.colorForRay(world, ray)
         } yield (px, py, color)).orDie
     }
 
