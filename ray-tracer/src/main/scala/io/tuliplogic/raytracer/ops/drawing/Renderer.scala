@@ -9,10 +9,7 @@ import scala.{Stream => ScalaStream}
 object Renderer {
   type UStreamC[A] = StreamChunk[Nothing, A]
 
-  def render(camera: Camera, world: World): ZStreamChunk[
-    WorldModule with CameraModule,
-    Nothing,
-    (Int, Int, Color)] =
+  def render(camera: Camera, world: World): ZStreamChunk[WorldModule with CameraModule, Nothing, (Int, Int, Color)] =
     pixelsChunkedStream(camera).mapM {
       case (px, py) =>
         (for {

@@ -11,8 +11,6 @@ import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.{CameraModule, Canvas, Color, Material, NormalReflectModule, PhongReflectionModule, RayModule, SceneObject, WorldModule}
 import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
 import zio.blocking.Blocking
-import zio.clock.Clock
-import zio.console.Console
 import zio.{App, UIO, ZIO, console}
 import zio.ZEnv
 
@@ -30,7 +28,10 @@ object Chapter10World2 extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasRenderer.PPMCanvasRenderer with ATModule.Live with MatrixModule.BreezeMatrixModule with Blocking.Live  {
+        new CanvasRenderer.PPMCanvasRenderer with ATModule.Live
+        with FullModules
+        with WorldModule.Live with CameraModule.Live
+        with MatrixModule.BreezeMatrixModule with Blocking.Live  {
           override def path: Path = Paths.get(canvasFile)
         }
       }

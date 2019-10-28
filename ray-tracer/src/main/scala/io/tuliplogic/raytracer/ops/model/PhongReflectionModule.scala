@@ -7,7 +7,7 @@ import io.tuliplogic.raytracer.ops.model.SceneObject.PointLight
 import zio.{IO, UIO, URIO, ZIO}
 
 trait PhongReflectionModule {
-  def phongReflectionModule: PhongReflectionModule.Service[Any]
+  val phongReflectionModule: PhongReflectionModule.Service[Any]
 }
 
 object PhongReflectionModule {
@@ -59,12 +59,12 @@ object PhongReflectionModule {
   //TODO test the phongReflection in terms of the underlying dependencies
   trait Live extends PhongReflectionModule {
 
-    val atModule: ATModule.Service[Any]
+    val aTModule: ATModule.Service[Any]
     val normalReflectModule: NormalReflectModule.Service[Any]
     val lightDiffusionModule: LightDiffusionModule.Service[Any]
     val lightReflectionModule: LightReflectionModule.Service[Any]
 
-    override def phongReflectionModule: Service[Any] = new Service[Any] {
+    override val phongReflectionModule: Service[Any] = new Service[Any] {
 
       override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
 
@@ -74,8 +74,8 @@ object PhongReflectionModule {
             objectTfInv  <- UIO.succeed(objectTf.inverted)
             patternTf    <- UIO(hitComps.obj.material.pattern.transformation)
             patternTfInv <- UIO.succeed(patternTf.inverted)
-            composed     <- atModule.compose(objectTfInv, patternTfInv)
-            effectivePt  <- atModule.applyTf(composed, hitComps.pt)
+            composed     <- aTModule.compose(objectTfInv, patternTfInv)
+            effectivePt  <- aTModule.applyTf(composed, hitComps.pt)
           } yield hitComps.obj.material.pattern(effectivePt)
 
         def lightV: UIO[Vec] = (pointLight.position - hitComps.pt).normalized.orDie

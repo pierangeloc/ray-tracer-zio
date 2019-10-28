@@ -41,7 +41,7 @@ object RayModule {
     def transform(at: AT, ray: Ray): URIO[R, Ray]
   }
 
-  trait Live {
+  trait Live extends RayModule {
 
     val aTModule: ATModule.Service[Any]
     val rayModule: RayModule.Service[Any] = new Service[Any] {

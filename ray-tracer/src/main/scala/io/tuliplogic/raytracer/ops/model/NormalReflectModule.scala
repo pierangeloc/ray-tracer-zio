@@ -6,7 +6,7 @@ import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, Sphere}
 import zio.{UIO, ZIO}
 
 trait NormalReflectModule {
-  def spatEntityOperations: NormalReflectModule.Service[Any]
+  val normalReflectModule: NormalReflectModule.Service[Any]
 }
 
 //TODO: test PBT that the angle between reflect and normal, and incident and normal is equal. Also, the 2 vectors should be coplanar
@@ -21,9 +21,9 @@ object NormalReflectModule {
 
   trait Live extends NormalReflectModule {
 
-    val atModule: ATModule.Service[Any]
+    val aTModule: ATModule.Service[Any]
 
-    def spatEntityOperations: Service[Any] = new Service[Any] {
+    val normalReflectModule: Service[Any] = new Service[Any] {
 
       def canonicalNormal(p: Pt, o: SceneObject): UIO[Vec] = o match {
         case Sphere(_, _) => UIO.succeed(p - Pt(0, 0, 0))
@@ -32,11 +32,11 @@ object NormalReflectModule {
 
       def normal(p: Pt, o: SceneObject): ZIO[Any, Nothing, Vec] =
         (for {
-          inverseTf         <- atModule.invert(o.transformation)
-          objectPt          <- atModule.applyTf(inverseTf, p)
+          inverseTf         <- aTModule.invert(o.transformation)
+          objectPt          <- aTModule.applyTf(inverseTf, p)
           objectNormal      <- canonicalNormal(objectPt, o)
-          inverseTransposed <- atModule.transpose(inverseTf)
-          worldNormal       <- atModule.applyTf(inverseTransposed, objectNormal)
+          inverseTransposed <- aTModule.transpose(inverseTf)
+          worldNormal       <- aTModule.applyTf(inverseTransposed, objectNormal)
           normalized        <- worldNormal.normalized
         } yield normalized).orDie
     }
@@ -46,5 +46,5 @@ object NormalReflectModule {
 
 object spatialEntityOps extends NormalReflectModule.Service[NormalReflectModule] {
   override def normal(p: Pt, o: SceneObject): ZIO[NormalReflectModule, Nothing, Vec] =
-    ZIO.accessM(_.spatEntityOperations.normal(p, o))
+    ZIO.accessM(_.normalReflectModule.normal(p, o))
 }

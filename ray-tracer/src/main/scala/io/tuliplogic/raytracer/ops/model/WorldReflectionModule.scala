@@ -23,7 +23,7 @@ object WorldReflectionModule {
 
   }
 
-  trait LiveWorldReflectionModule extends WorldReflectionModule {
+  trait Live extends WorldReflectionModule {
     val worldModule: WorldModule.Service[Any]
 
     val worldReflectionModule = new WorldReflectionModule.Service[Any] {

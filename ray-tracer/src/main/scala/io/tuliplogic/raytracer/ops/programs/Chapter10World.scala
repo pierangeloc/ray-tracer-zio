@@ -27,7 +27,7 @@ object Chapter10World extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasRenderer.PPMCanvasRenderer with ATModule.Live with MatrixModule.BreezeMatrixModule
+        new CanvasRenderer.PPMCanvasRenderer with FullModules with ATModule.Live with MatrixModule.BreezeMatrixModule
           with WorldModule.Live with CameraModule.Live
           with Blocking.Live with Console.Live
          {
