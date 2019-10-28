@@ -2,15 +2,15 @@ package io.tuliplogic.raytracer.ops.rendering
 
 import java.nio.file.{Path, Paths}
 
-import io.tuliplogic.raytracer.ops.model.{Canvas, Color}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
+import io.tuliplogic.raytracer.ops.model.{Canvas, Color}
 import org.scalatest.WordSpec
-import zio.{DefaultRuntime, IO, console}
 import zio.blocking.Blocking
-import zio.stream.{Sink, Stream, ZStream}
+import zio.stream.{Sink, ZStream}
+import zio.{DefaultRuntime, IO, ZIO}
 
 class CanvasRendererTest extends WordSpec with DefaultRuntime {
 
@@ -49,8 +49,8 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         (for {
           rotateTf    <- ATModule.>.rotateZ(rotationAngle)
-          scaleTf     <- ATModule.>.scale(math.min(ww, hh) / 3, math.min(ww, hh) / 3, 0)
-          translateTf <- ATModule.>.translate(ww / 2, hh / 2, 0)
+          scaleTf     <- ATModule.>.scale(math.min(ww, hh) / 3d, math.min(ww, hh) / 3d, 1d)
+          translateTf <- ATModule.>.translate(ww / 2d, hh / 2d, 0d)
           composed    <- ATModule.>.compose(scaleTf, translateTf)
           c           <- Canvas.create(ww, hh)
           positions <- ZStream
