@@ -43,6 +43,10 @@ object WorldReflectionModule {
     val worldReflectionModule = new WorldReflectionModule.Service[Any] {
       def reflectedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[Any, RayTracerError, Color] = UIO.succeed(Color.black)
     }
+  }
 
+  object > extends WorldReflectionModule.Service[WorldReflectionModule] {
+    override def reflectedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[WorldReflectionModule, RayTracerError, Color] =
+      ZIO.accessM(_.worldReflectionModule.reflectedColor(world, hitComps, remaining))
   }
 }

@@ -132,7 +132,7 @@ object WorldModule {
       ZIO.accessM(_.worldModule.isShadowed(world, pt))
     override def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[WorldModule, GenericError, HitComps] =
       ZIO.accessM(_.worldModule.hitComps(ray, hit, intersections))
-    override def colorForRay(world: World, ray: Ray, remaining: Int): ZIO[WorldModule, RayTracerError, Color] =
+    override def colorForRay(world: World, ray: Ray, remaining: Int = 10): ZIO[WorldModule, RayTracerError, Color] =
       ZIO.accessM(_.worldModule.colorForRay(world, ray, remaining))
   }
 }

@@ -1,19 +1,22 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-import io.tuliplogic.raytracer.commons.errors.RayTracerError
+import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.geometry.affine.AffineTransformationOps
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
-import io.tuliplogic.raytracer.ops.model.{Color, PhongReflectionModule, RayModule, NormalReflectModule}
-import zio.stream.{Sink, ZStream}
+import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule, RayModule, WorldModule, WorldReflectionModule, WorldRefractionModule}
+import zio.stream.Sink
 import zio.{DefaultRuntime, IO, Task, UIO}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 
 class RendererTest extends WordSpec with DefaultRuntime with OpsTestUtils {
 
-  type Env = PhongReflectionModule with NormalReflectModule with RayModule with AffineTransformationOps
+  val env = new WorldModule.Live
+    with ATModule.Live with MatrixModule.BreezeMatrixModule with WorldReflectionModule.Live
+    with LightReflectionModule.Live with LightDiffusionModule.Live
+    with WorldRefractionModule.Live with PhongReflectionModule.Live with NormalReflectModule.Live with RayModule.Live
+    with CameraModule.Live
   "renderer" should {
     "produce the expected color for the pixel" in {
       unsafeRun {
@@ -33,7 +36,7 @@ class RendererTest extends WordSpec with DefaultRuntime with OpsTestUtils {
             .run(Sink.collectAllN[Color](1))
           _ <- Task.effectTotal { pixels.head should ===(Color(0.38066, 0.47583, 0.2855)) }
         } yield pixels)
-          .provide(new RayModule.BreezeMatrixOps with PhongReflectionModule.BreezeMatrixOps with NormalReflectModule.BreezeMatrixOps with MatrixModule.BreezeMatrixModule with AffineTransformationOps.BreezeMatrixOps$)
+          .provide(env)
       }
     }
   }

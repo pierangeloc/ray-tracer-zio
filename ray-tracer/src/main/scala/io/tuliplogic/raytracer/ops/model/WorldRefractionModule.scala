@@ -12,7 +12,7 @@ trait WorldRefractionModule {
 
 object WorldRefractionModule {
   trait Service[R] {
-    def refractedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[Any, RayTracerError, Color]
+    def refractedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[R, RayTracerError, Color]
   }
 
   trait Live extends WorldRefractionModule {
@@ -42,5 +42,10 @@ object WorldRefractionModule {
       override def refractedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[Any, RayTracerError, Color] =
         UIO.succeed(Color.black)
     }
+  }
+
+  object > extends WorldRefractionModule.Service[WorldRefractionModule] {
+    override def refractedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[WorldRefractionModule, RayTracerError, Color] =
+      ZIO.accessM(_.worldRefractionModule.refractedColor(world, hitComps, remaining))
   }
 }

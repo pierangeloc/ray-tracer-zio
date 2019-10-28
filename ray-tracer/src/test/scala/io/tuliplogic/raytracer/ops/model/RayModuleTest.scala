@@ -1,11 +1,10 @@
 package io.tuliplogic.raytracer.ops.model
 
-import io.tuliplogic.raytracer.geometry.matrix.>
-import io.tuliplogic.raytracer.geometry.affine.AffineTransformation
+import io.tuliplogic.raytracer.geometry.affine.ATModule
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import mouse.all._
-import io.tuliplogic.raytracer.ops.model.RayModule.BreezeMatrixOps
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, Sphere}
+import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, Sphere}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO, ZIO}
@@ -20,10 +19,10 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
         val ray = Ray(p, v)
 
         (for {
-          res1 <- rayOps.positionAt(ray, 0) >>= toCol
-          res2 <- rayOps.positionAt(ray, 1) >>= toCol
-          res3 <- rayOps.positionAt(ray, -1) >>= toCol
-          res4 <- rayOps.positionAt(ray, 2.5) >>= toCol
+          res1 <- toCol(ray.positionAt(0))
+          res2 <- toCol(ray.positionAt(1))
+          res3 <- toCol(ray.positionAt( -1))
+          res4 <- toCol(ray.positionAt(2.5))
           exp1 <- Pt(2, 3, 4) |> toCol
           exp2 <- Pt(3, 3, 4) |> toCol
           exp3 <- Pt(1, 3, 4) |> toCol
@@ -31,25 +30,26 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
           _ <- ZIO
             .sequence(
               List(
-                >.equal(res1, exp1),
-                >.equal(res2, exp2),
-                >.equal(res3, exp3),
-                >.equal(res4, exp4)
+                MatrixModule.>.equal(res1, exp1),
+                MatrixModule.>.equal(res2, exp2),
+                MatrixModule.>.equal(res3, exp3),
+                MatrixModule.>.equal(res4, exp4)
               )
             )
             .flatMap(deltas => IO(deltas.forall(_ == true) shouldEqual true))
-        } yield ()).provide(RayModule.BreezeMatrixOps)
+        } yield ()).provide(new MatrixModule.BreezeMatrixModule{})
       }
     }
 
+    val rayEnv = new RayModule.Live with ATModule.Live with MatrixModule.BreezeMatrixModule
     "calculate intersection ray-unit sphere" in {
       unsafeRun {
         val ray = Ray(Pt(0, 0, -5), Vec(0, 0, 1))
         (for {
           s                  <- Sphere.unit
-          intersectionPoints <- rayOps.intersect(ray, s)
+          intersectionPoints <- RayModule.>.intersect(ray, s)
           _                  <- IO(intersectionPoints shouldEqual List(4d, 6d).map(Intersection(_, s)))
-        } yield ()).provide(BreezeMatrixOps)
+        } yield ()).provide(rayEnv)
       }
     }
 
@@ -58,9 +58,9 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
         val ray = Ray(Pt(0, 10, 0), Vec(0, 0, 1))
         (for {
           p                  <- Plane.canonical
-          intersectionPoints <- rayOps.intersect(ray, p)
+          intersectionPoints <- RayModule.>.intersect(ray, p)
           _                  <- IO(intersectionPoints shouldEqual List())
-        } yield ()).provide(BreezeMatrixOps)
+        } yield ()).provide(rayEnv)
       }
     }
 
@@ -69,9 +69,9 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
         val ray = Ray(Pt.origin, Vec(0, 0, 1))
         (for {
           p                  <- Plane.canonical
-          intersectionPoints <- rayOps.intersect(ray, p)
+          intersectionPoints <- RayModule.>.intersect(ray, p)
           _                  <- IO(intersectionPoints shouldEqual List())
-        } yield ()).provide(BreezeMatrixOps)
+        } yield ()).provide(rayEnv)
       }
     }
 
@@ -80,9 +80,9 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
         val ray = Ray(Pt(0, 1, 0), Vec(0, -1, 0))
         (for {
           p                  <- Plane.canonical
-          intersectionPoints <- rayOps.intersect(ray, p)
+          intersectionPoints <- RayModule.>.intersect(ray, p)
           _                  <- IO(intersectionPoints shouldEqual List(Intersection(1, p)))
-        } yield ()).provide(BreezeMatrixOps)
+        } yield ()).provide(rayEnv)
       }
     }
 
@@ -90,12 +90,12 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt(0, 0, -5), Vec(0, 0, 1))
         (for {
-          tf                 <- AffineTransformation.scale(2, 2, 2)
+          tf                 <- ATModule.>.scale(2, 2, 2)
           mat                <- Material.default
           s                  <- UIO(Sphere(tf, mat))
-          intersectionPoints <- rayOps.intersect(ray, s)
+          intersectionPoints <- RayModule.>.intersect(ray, s)
           _                  <- IO(intersectionPoints shouldEqual List(3d, 7d).map(Intersection(_, s)))
-        } yield ()).provide(BreezeMatrixOps)
+        } yield ()).provide(rayEnv)
       }
     }
 
@@ -104,10 +104,10 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
         (for {
           s             <- Sphere.unit
           intersections <- UIO.succeed(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s)))
-          hit           <- rayOps.hit(intersections)
+          hit           <- RayModule.>.hit(intersections)
           _             <- IO(hit.get.t shouldEqual 2)
           _             <- IO(hit.get.sceneObject shouldEqual s)
-        } yield ()).provide(BreezeMatrixOps)
+        } yield ()).provide(rayEnv)
       }
     }
 
@@ -116,11 +116,11 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
         val ray = Ray(Pt(1, 2, 3), Vec(0, 1, 0))
 
         (for {
-          tf  <- AffineTransformation.translate(3, 4, 5)
-          res <- rayOps.transform(tf, ray)
+          tf  <- ATModule.>.translate(3, 4, 5)
+          res <- RayModule.>.transform(tf, ray)
           _   <- IO(res.origin shouldEqual Pt(4, 6, 8))
           _   <- IO(res.direction shouldEqual Vec(0, 1, 0))
-        } yield ()).provide(BreezeMatrixOps)
+        } yield ()).provide(rayEnv)
       }
     }
 
@@ -129,11 +129,11 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
         val ray = Ray(Pt(1, 2, 3), Vec(0, 1, 0))
 
         (for {
-          tf  <- AffineTransformation.scale(2, 3, 4)
-          res <- rayOps.transform(tf, ray)
+          tf  <- ATModule.>.scale(2, 3, 4)
+          res <- RayModule.>.transform(tf, ray)
           _   <- IO(res.origin shouldEqual Pt(2, 6, 12))
           _   <- IO(res.direction shouldEqual Vec(0, 3, 0))
-        } yield ()).provide(BreezeMatrixOps)
+        } yield ()).provide(rayEnv)
       }
     }
   }

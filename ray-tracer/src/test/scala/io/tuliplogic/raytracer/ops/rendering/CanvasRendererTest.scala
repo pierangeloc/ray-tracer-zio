@@ -3,12 +3,12 @@ package io.tuliplogic.raytracer.ops.rendering
 import java.nio.file.{Path, Paths}
 
 import io.tuliplogic.raytracer.ops.model.{Canvas, Color}
-import io.tuliplogic.raytracer.geometry.affine.AffineTransformation._
-import io.tuliplogic.raytracer.geometry.affine.{affineTfOps, AffineTransformationOps}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
+import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import org.scalatest.WordSpec
-import zio.{console, DefaultRuntime, IO}
+import zio.{DefaultRuntime, IO, console}
 import zio.blocking.Blocking
 import zio.stream.{Sink, Stream, ZStream}
 
@@ -17,6 +17,8 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
   val canvasFile = "/tmp/nioexp/canvas.ppm"
   val w          = 5
   val h          = 4
+
+  val env = new ATModule.Live with MatrixModule.BreezeMatrixModule
 
   "canvas renderer" should {
     "write canvas as PPM file" in {
@@ -46,22 +48,22 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
 
       unsafeRun {
         (for {
-          rotateTf    <- rotateZ(rotationAngle)
-          scaleTf     <- scale(math.min(ww, hh) / 3, math.min(ww, hh) / 3, 0)
-          translateTf <- translate(ww / 2, hh / 2, 0)
-          composed    <- scaleTf >=> translateTf
+          rotateTf    <- ATModule.>.rotateZ(rotationAngle)
+          scaleTf     <- ATModule.>.scale(math.min(ww, hh) / 3, math.min(ww, hh) / 3, 0)
+          translateTf <- ATModule.>.translate(ww / 2, hh / 2, 0)
+          composed    <- ATModule.>.compose(scaleTf, translateTf)
           c           <- Canvas.create(ww, hh)
           positions <- ZStream
-            .unfoldM(horizontalRadius)(v => affineTfOps.transform(rotateTf, v).map(vv => Some((vv, vv))))
+            .unfoldM(horizontalRadius)(v => ATModule.>.applyTf(rotateTf, v).map(vv => Some((vv, vv))))
             .take(24)
             .mapM { p =>
-              affineTfOps.transform(composed, p) flatMap { p =>
+              ATModule.>.applyTf(composed, p) flatMap { p =>
                 updateCanvasFromXY(c, p)
               }
             }
             .run(Sink.collectAll[Unit])
           _ <- cr.renderer.render(c, 256)
-        } yield ()).provide(AffineTransformationOps.BreezeMatrixOps$)
+        } yield ()).provide(env)
       }
     }
   }
