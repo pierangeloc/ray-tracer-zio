@@ -112,8 +112,6 @@ lazy val geometry = project
       breezeNative,
       singletonOps,
       log4CatsSlf4j,
-//      zioMacrosAccess,
-//      zioMacrosMock,
       scalaTest % "test",
       scalaCheck % "test"
     )
