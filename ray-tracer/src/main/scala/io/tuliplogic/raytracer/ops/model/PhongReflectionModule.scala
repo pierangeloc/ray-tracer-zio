@@ -3,8 +3,7 @@ package io.tuliplogic.raytracer.ops.model
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.PointLight
+import io.tuliplogic.raytracer.ops.model.SceneObject.PointLight
 import zio.{IO, UIO, URIO, ZIO}
 
 trait PhongReflectionModule {

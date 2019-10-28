@@ -1,9 +1,8 @@
 package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject._
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
+import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, Sphere}
 import zio.{UIO, URIO, ZIO}
 
 case class Ray(origin: Pt, direction: Vec) {

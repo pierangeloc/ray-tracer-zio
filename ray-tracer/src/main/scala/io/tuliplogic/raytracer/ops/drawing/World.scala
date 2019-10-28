@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-  import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
-  import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.PointLight
+  import io.tuliplogic.raytracer.ops.model.SceneObject
+  import io.tuliplogic.raytracer.ops.model.SceneObject.PointLight
 
   import scala.Predef.{any2stringadd => _}
 

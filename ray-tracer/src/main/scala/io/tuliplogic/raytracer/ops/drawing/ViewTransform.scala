@@ -1,8 +1,8 @@
 package io.tuliplogic.raytracer.ops.drawing
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.matrix.Types
-import io.tuliplogic.raytracer.geometry.affine.{AffineTransformation, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.matrix.{MatrixModule, Types}
+import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import zio.{UIO, ZIO}
 
@@ -13,10 +13,11 @@ import zio.{UIO, ZIO}
   * @param up The upper direction of my eye
   *
   * we provide the equivalent transformation of the world needed to produce the same perspective
+  * TODO: put all this in Camera
   */
 case class ViewTransform(from: Pt, to: Pt, up: Vec) {
 
-  def tf: ZIO[AffineTransformationOps, AlgebraicError, AffineTransformation] = {
+  def tf: ZIO[ATModule with MatrixModule, AlgebraicError, AT] = {
     for {
       fwd          <- (to - from).normalized
       upNormalized <- up.normalized
@@ -31,8 +32,9 @@ case class ViewTransform(from: Pt, to: Pt, up: Vec) {
           Vector(-fwd.x, -fwd.y, -fwd.z, 0d),
           Vector(0d, 0d, 0d, 1d)
         ))
-      translateTf <- AffineTransformation.translate(-from.x, -from.y, -from.z)
-      composed    <- translateTf >=> AffineTransformation(orientationMatrix)
+      inverseMatrix <- MatrixModule.>.invert(orientationMatrix)
+      translateTf <- ATModule.>.translate(-from.x, -from.y, -from.z)
+      composed    <- ATModule.>.compose(translateTf,  AT(orientationMatrix, inverseMatrix))
     } yield composed
   }
 

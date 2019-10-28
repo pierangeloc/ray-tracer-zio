@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.geometry.affine
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.matrix.{>, MatrixModule}
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import zio.{UIO, URIO, ZIO}
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M, factory, vectorizable}

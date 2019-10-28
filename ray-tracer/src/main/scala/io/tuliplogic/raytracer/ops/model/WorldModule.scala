@@ -7,10 +7,7 @@ import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, RayTracerError}
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
 import zio.interop.catz._
-
-
 
 trait WorldModule {
   val worldModule: WorldModule.Service[Any]

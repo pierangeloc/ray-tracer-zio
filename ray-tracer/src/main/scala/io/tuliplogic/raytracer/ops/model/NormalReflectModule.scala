@@ -1,10 +1,8 @@
 package io.tuliplogic.raytracer.ops.model
 
-import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.geometry.affine.{ATModule, AffineTransformationOps}
+import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject
-import io.tuliplogic.raytracer.ops.model.SpatialEntity.SceneObject.{Plane, Sphere}
+import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, Sphere}
 import zio.{UIO, ZIO}
 
 trait NormalReflectModule {
