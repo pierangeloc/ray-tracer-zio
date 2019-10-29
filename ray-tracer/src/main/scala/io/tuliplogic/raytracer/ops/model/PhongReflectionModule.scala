@@ -92,7 +92,7 @@ object PhongReflectionModule {
           color          <- colorAtSurfacePoint.orDie
           effectiveColor <- UIO.succeed(color * pointLight.intensity)
           ambient        <- UIO(PhongComponents.ambient(effectiveColor * hitComps.obj.material.ambient))
-          res            <- diffusRefl(effectiveColor)
+          res            <- if (inShadow) UIO(PhongComponents.allBlack) else  diffusRefl(effectiveColor)
           } yield ambient + res
       }
     }

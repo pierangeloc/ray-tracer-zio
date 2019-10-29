@@ -82,9 +82,9 @@ class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChec
     "scale(a, b, c).apply(point) === [point.x * a, point.y * b, point.z * c]" in {
       forAll {
         for {
-          x     <- reasonableDouble
-          y     <- reasonableDouble
-          z     <- reasonableDouble
+          x     <- reasonableDouble.filter(_ != 0d)
+          y     <- reasonableDouble.filter(_ != 0d)
+          z     <- reasonableDouble.filter(_ != 0d)
           point <- pointGen
         } yield (x, y, z, ATModule.>.scale(x, y, z), point)
       } {

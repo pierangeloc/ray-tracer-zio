@@ -63,6 +63,7 @@ object WorldModule {
 
       override def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[Any, GenericError, HitComps] = {
         type Z = (List[SceneObject], Option[Double], Option[Double])
+
         /**
           * We can calculate the n1, n2 for the hit, given the list of intersections. Each intersection carries the object, together with its material
           * @return
