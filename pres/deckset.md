@@ -3,8 +3,14 @@ slidenumbers: false
 
 # Environmental effects
 
-## A ray tracing exercise
-Pierangelo Cecchetto - @pierangelocecc
+# A ray tracing exercise
+
+<br/>
+<br/>
+<br/>
+Pierangelo Cecchetto - @pierangelocecc 
+
+![right fit](img/title.png) 
 
 ---
 
