@@ -1,8 +1,7 @@
 autoscale: true
-footer: Pierangelo Cecchetto - @pierangelocecc 
 slidenumbers: false
 build-lists: true
-
+image: background-color: #FF0000
 
 # Environmental effects
 
@@ -19,7 +18,7 @@ build-lists: true
 
 1. Functional Effects
 1. Environmental effects
-1. Module pattern
+1x. Module pattern (we can skip it and make it in the next point)
 1. Build Ray tracer components
 1. Test Ray tracer components
 1. Wiring things together
@@ -32,7 +31,7 @@ build-lists: true
 <br>
 
 ---
-
+<!--
 # Functional Effects
 
 ^ Let's talk about functional effects. As functional programmers we appreciate the benefits of programming only with functions and immutable values 
@@ -105,13 +104,14 @@ invert(
 ```
 
 ---
+-->
 
-^ In this case we see that Option helps us dealing with one concern, i.e. the presence or absence of a given value (in our case the output of the `inverse` method)
+^ In this case we see that Option helps us dealing with one concern, i.e. the presence or absence of a given value
 Another concern is to express the presence the success of an operation (producing a value of type A) vs a failure (producing an error of type E)
 
 # Functional Effects
 
-Given a concern, build _**an immutable data structure**_ that provides a set of operations to deal with that concern
+Given a concern, build _**an immutable data structure**_ that provides a set of operations to deal with that concern (semiquoting JDG)
 
 [.code-highlight: none]
 [.code-highlight: 1]
@@ -127,7 +127,7 @@ Either[E, A]
 ^ What do we do with these data structures? We can combine them (map, flatmap, zip), but ultimately we want to produce some workable value for our business case.
 The interpretation phase takes these data structures, and extract the information and makes it usable
 
-Interpretation: Produce some business value from the processing of these data structures
+Interpretation: Produce some outcome from the processing of these data structures
 
 [.code-highlight: none]
 [.code-highlight: 1]
@@ -147,10 +147,9 @@ val ea: Either[E, A]
 ![left fit](img/bread.jpg) 
 
 # Functional Effects
-^ Let's talk about one of my favourite hobbies. Baking bread. How do I express the act of baking, in an imperative way? I just give a list of instructions and they get immediately executed
-Each of these statements gets executed immediately, or kicks in an asynchronous computation
-How do we deal with this in a functional way? We separate the description from the execution, having a data type that _describes
-
+^ Let's talk about one of my favourite hobbies. Baking bread. How do I express the act of baking, in an imperative way? 
+I just give a list of instructions and they get immediately executed
+How do we deal with this in a functional way? We separate the description from the execution
 
 #### Imperative baking
 
@@ -170,7 +169,7 @@ def bakeBread(): Unit = {
 ---
 
 # Functional Effects
-^ How do we deal with this in a functional way? We separate the description from the execution, having a data type that _describes the computation
+^ How do we deal with this in a functional way? We separate the description from the execution, having a data type that _describes_ what we want to do
 Then we provide this data type with (pretty standard) mechanism to chain/transform the computation, classical `map`/`flatMap`
 
 ![left fit](img/bread.jpg) 
@@ -197,7 +196,7 @@ val bakeBread: IO[Bread] = for {
 ---
 
 # Functional Effects
-^ But how do I get by bread? I need to interpret the data structure
+^ ...and finally we get our bread by interpreting the data structure we just built
 
 ![left fit](img/bread.jpg) 
 
@@ -426,7 +425,7 @@ Environment elimination
   val knead: ZIO[MixerEnv, WrongIngredients, Dough]
   
   val autonomousEffect = knead.provide(new MixerEnv{})
-  runtime.unsafeRun(autonomousEffect)  
+  val dough: Dough = runtime.unsafeRun(autonomousEffect)
 ```
 
 ---
@@ -455,7 +454,7 @@ Chaining errors and capabilities
 ---
 
 # Environmental effects
-^ Not onluy ths works, but the compiler infers errors and environment for us
+^ Not only ths works, but the compiler infers errors and environment for us
 We can see that the act of chaining these operations makes the required capabilities mix into an intersection type between
 the capabilities (`type BakingEnv = MixerEnv with WarmRoomEnv with OvenEnv`), and it tries to unify the errors, looking for the nearest common supertype of errors, in our case `BakingError`
 
@@ -483,27 +482,91 @@ Chaining errors and capabilities
 Full inference of Environment and errors
 
 ---
+![left fit](img/rt-world-light-eye.png) 
 
+# Ray tracing
+^The problem we want to solve is rendering a scene by simulating how the light works when coming from a light source, or from an environment, and hits some objects in an environemnt (world)
+and finally hits the sensors in a camera, or the photosensitive cells in our retina
 
-# Two dashes
+- Spheres (world), light source, eye
 
-The easiest way to build incremental slides is...
---
- to use two dashes `--` to separate content on a slide.
+---
+![left fit](img/rt-incident-rays.png) 
 
---
+[.build-lists: false]
 
-You can divide a slide in _any way you want_.
+# Ray tracing
 
---
+- Spheres (world), light source, eye
+- Incident rays    
 
-- One bullet
+---
 
-- Another bullet
+^ but.. how do we build an image, ultimately?
 
---
+![left fit](img/rt-reflected-rays.png) 
 
-- And one more
+[.build-lists: false]
+
+# Ray tracing
+
+- Spheres (world), light source, eye
+- Incident rays    
+- Reflected rays
+
+---
+^To build an image we need a canvas, a rectangular surface divided in pixels where the rays coming from the world will hit and produce the color they carry in the ray
+
+![left fit](img/rt-reflected-rays-screen.png) 
+
+[.build-lists: false]
+
+# Ray tracing
+
+- Spheres (world), light source, eye
+- Incident rays    
+- Reflected rays
+- Canvas
+
+---
+
+![left fit](img/rt-reflected-rays-screen-red-pixel.png) 
+
+[.build-lists: false]
+
+# Ray tracing
+
+- Spheres (world), light source, eye
+- Incident rays    
+- Reflected rays
+- Canvas
+
+---
+
+![left fit](img/rt-reflected-rays-screen-red-green-pixel.png) 
+
+[.build-lists: false]
+
+# Ray tracing
+
+- Spheres (world), light source, eye
+- Incident rays    
+- Reflected rays
+- Canvas
+
+---
+
+![left fit](img/rt-reflected-rays-screen-red-green-pixel-and-discarded.png) 
+
+[.build-lists: false]
+
+# Ray tracing
+
+- Spheres (world), light source, eye
+- Incident rays    
+- Reflected rays
+- Canvas
+- Discarded rays
 
 ---
 
