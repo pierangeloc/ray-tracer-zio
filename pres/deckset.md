@@ -292,7 +292,7 @@ Unaddressed concerns:
   case object Overcooking      extends BakingError
 
   val knead: IO[WrongIngredients, Dough] 
-  val cook(dough: Dough): IO[BakingError, Bread]
+  val cook(dough: Dough): IO[Overcooking, Bread]
 ```
 
 ---
@@ -350,8 +350,89 @@ Unaddressed concerns:
 ---
 [.build-lists: false]
 
-# Functional Effects
-^ How do we mix these capabilities and error together?
+# Environmental effects
+^ What are environmental effects? They are functional effects (= immutable data structures) that model, at once, the requirement of an environment, the possibility to fail or succeed, and the possiblity to perform IO
+This simple data type allows us to express different things: 
+1. The introduction of an environment requirement. I can access the mixing machine together with the oven through that R
+
+
+### `ZIO[-R, +E, +A]`
+
+[.code-highlight: none]
+[.code-highlight: 1-5]
+[.code-highlight: 1-10]
+```scala
+  object ZIO {
+    //environment introduction
+    def access[R, E, A](f: R => A): ZIO[R, Nothing, A]
+    def accessM[R, E, A](f: R => ZIO[R, E, A]): ZIO[R, E, A]
+  }
+```
+
+---
+
+# Environmental effects
+^ What are environmental effects? They are functional effects (= immutable data structures) that model, at once, the requirement of an environment, the possibility to fail or succeed, and the possiblity to perform IO
+This simple data type allows us to express different things: 
+1. The introduction of an environment requirement. I can access the environemnt that provides me with the mixing capabilities
+
+
+### `ZIO[-R, +E, +A]`
+
+Environment introduction 
+
+[.code-highlight: 1-5]
+[.code-highlight: 1-9]
+[.code-highlight: 1-13]
+[.code-highlight: 1-18]
+```scala
+  object ZIO {
+    def access[R, E, A](f: R => A): ZIO[R, Nothing, A]
+    def accessM[R, E, A](f: R => ZIO[R, E, A]): ZIO[R, E, A]
+  }
+
+  trait MixingMachine {
+    def knead: ZIO[Any, WrongIngredients, Dough] //IO[WrongIngredients, Dough]
+  }
+
+  trait MixerEnv {
+    val mixingMachine: MixingMachine
+  }
+
+  val knead: ZIO[MixerEnv, WrongIngredients, Dough] =
+    ZIO.accessM { mixerEnv =>
+      mixerEnv.mixingMachine.knead
+    }
+```
+
+---
+
+# Environmental effects
+^ And then, later (typically close to the main program, or in testing) I can provide the environment that my functional effect needs, eliminating the requirement of that environment 
+
+### `ZIO[-R, +E, +A]`
+
+Environment elimination
+
+[.code-highlight: none]
+[.code-highlight: 1-4]
+[.code-highlight: 1-9]
+```scala
+  trait ZIO[-R, +E, +A] {
+    // environment  elimination
+    def provide(r: R): ZIO[Any, E, A]
+  }
+
+  val knead: ZIO[MixerEnv, WrongIngredients, Dough]
+  
+  val autonomousEffect = knead.provide(new MixerEnv{})
+  runtime.unsafeRun(autonomousEffect)  
+```
+
+---
+
+# Environmental effects
+^ How do we mix these capabilities and error together? The simplest thing we can do is just flatmap these structures 
 
 ![left fit](img/bread.jpg) 
 
@@ -360,15 +441,11 @@ Unaddressed concerns:
 Chaining errors and capabilities
 
 ```scala
-  ZIO[-R, +E, +A] // R => IO[E, A]
-
-  val knead: ZIO[MixerEnv, WrongIngredients, Dough]
+  val knead:               ZIO[MixerEnv, WrongIngredients, Dough]
   val raise(dough: Dough): ZIO[WarmRoomEnv, Nothing, Dough]
-  val cook(dough: Dough): ZIO[OvenEnv, Overcooking, Bread]
+  val cook(dough: Dough):  ZIO[OvenEnv, Overcooking, Bread]
 
-  type Env = MixerEnv with WarmRoomEnv with OvenEnv
-  
-  val bakeBread: ZIO[Env, BakingError, Bread] = for {
+  val bakeBread = for {
     d1 <- knead
     d2 <- raise(d1)
     b  <- cook(d2)
@@ -376,47 +453,34 @@ Chaining errors and capabilities
 ```
 
 ---
-[.build-lists: false]
 
-# Functional Effects
-^ How do we mix these capabilities and error together?
+# Environmental effects
+^ Not onluy ths works, but the compiler infers errors and environment for us
+We can see that the act of chaining these operations makes the required capabilities mix into an intersection type between
+the capabilities (`type BakingEnv = MixerEnv with WarmRoomEnv with OvenEnv`), and it tries to unify the errors, looking for the nearest common supertype of errors, in our case `BakingError`
 
-![left fit](img/bread.jpg) 
-
-#### Functional baking
-
-Interpret the program
-
-```scala
-  type Env = MixerEnv with WarmRoomEnv with OvenEnv
-  val bakeBread: ZIO[Env, BakingError, Bread] 
-  
-  val bread = defaultRuntime.unsafeRun(bakeBread) 
-  //Won't compile  
-```
-
----
-[.build-lists: false]
-
-# Functional Effects
-^ How do we mix these capabilities and error together?
 
 ![left fit](img/bread.jpg) 
 
 #### Functional baking
 
-Interpret the program
+Chaining errors and capabilities
 
 ```scala
-  type Env = MixerEnv with WarmRoomEnv with OvenEnv
-  val bakeBread: ZIO[Env, BakingError, Bread] 
+  val knead:               ZIO[MixerEnv, WrongIngredients, Dough]
+  val raise(dough: Dough): ZIO[WarmRoomEnv, Nothing, Dough]
+  val cook(dough: Dough):  ZIO[OvenEnv, Overcooking, Bread]
+
+  type BakingEnv = MixerEnv with WarmRoomEnv with OvenEnv
   
-  val env: Env = ???
-  val provided: ZIO[Any, BakingError, Bread] =
-    bakeBread.provide(env)
-  
-  val bread = defaultRuntime.unsafeRun(provided)   
+  val bakeBread: ZIO[BakingEnv, BakingError, Bread] = for {
+    d1 <- knead
+    d2 <- raise(d1)
+    b  <- cook(d2)
+  } yield b 
 ```
+
+Full inference of Environment and errors
 
 ---
 
