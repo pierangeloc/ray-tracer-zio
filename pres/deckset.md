@@ -569,6 +569,38 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 - Discarded rays
 
 ---
+^At this point we have 2 options, one is computing all the rays for all the objects, and then consider only those that hit the canvas
+Another option is work on the reverse problem, i.e. have rays going out of the canvas, hitting the objects in the world and determine how they behave considering all the agents
+
+![left fit](img/rt-reflected-rays-screen-red-green-pixel-and-discarded.png) 
+
+# Ray tracing
+
+Options:
+ 
+1. Compute all the rays (and discard most of them)
+1. Compute only the rays outgoing the canvas, and determine how they behave on the surfaces
+
+---
+^Let's start building our model. A ray is an infinite line with a starting point
+
+![left fit](img/rt-reflected-rays-screen-red-green-pixel-and-discarded.png) 
+
+# Ray tracing
+
+A ray is defined by the point it starts from, and its direction
+
+$$
+P(t) = P_0 + t \vec{D},   t > 0 
+$$
+
+```scala
+case class Ray(origin: Pt, direction: Vec) {
+  def positionAt(t: Double): Pt = origin + (direction * t)
+}
+```
+
+---
 
 # Functional Effects
 ^ Now let's consider another function, that given a matrix, inverts it
