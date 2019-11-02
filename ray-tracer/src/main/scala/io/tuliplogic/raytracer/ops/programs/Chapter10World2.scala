@@ -16,7 +16,7 @@ import zio.ZEnv
 
 
 object Chapter10World2 extends App {
-  val canvasFile    = "/tmp/nioexp/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".ppm"
+  val canvasFile    = "ppm/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".ppm"
   val lightPosition = Pt(10, 10, 2)
   val cameraFrom    = Pt(12, 4, 0)
   val cameraTo      = Pt(0, 4, 16)

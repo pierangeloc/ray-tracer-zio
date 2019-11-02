@@ -14,7 +14,7 @@ import zio.{DefaultRuntime, IO, ZIO}
 
 class CanvasRendererTest extends WordSpec with DefaultRuntime {
 
-  val canvasFile = "/tmp/nioexp/canvas.ppm"
+  val canvasFile = "ppm/canvas.ppm"
   val w          = 5
   val h          = 4
 

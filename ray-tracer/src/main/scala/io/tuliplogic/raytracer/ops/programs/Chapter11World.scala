@@ -17,7 +17,7 @@ import zio.{App, UIO, ZEnv, ZIO, console}
 
 
 object Chapter11World extends App {
-  val canvasFile    = "/tmp/nioexp/chapter-11-reflective-spheres" + System.currentTimeMillis + ".ppm"
+  val canvasFile    = "ppm/chapter-11-reflective-spheres" + System.currentTimeMillis + ".ppm"
   val lightPosition = Pt(10, 10, 2)
   val cameraFrom    = Pt(9, 4, -4)
   val cameraTo      = Pt(0, 4, 16)

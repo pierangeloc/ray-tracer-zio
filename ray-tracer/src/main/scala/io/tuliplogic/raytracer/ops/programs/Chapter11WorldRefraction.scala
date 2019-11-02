@@ -16,7 +16,7 @@ import zio.ZEnv
 
 
 object Chapter11WorldRefraction extends App {
-  val canvasFile    = "/tmp/nioexp/chapter-11-refractive-spheres" + System.currentTimeMillis + ".ppm"
+  val canvasFile    = "ppm/chapter-11-refractive-spheres" + System.currentTimeMillis + ".ppm"
   val lightPosition = Pt(5, 5, 2)
   val cameraFrom    = Pt(0, 10, 0)
   val cameraTo      = Pt.origin

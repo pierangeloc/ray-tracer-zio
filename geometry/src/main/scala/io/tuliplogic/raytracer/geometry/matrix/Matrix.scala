@@ -9,14 +9,14 @@ import zio.{IO, _}
 import scala.reflect.ClassTag
 
 //matrix m rows by n cols
-case class Matrix[L[_]] private (private val m_ : Int, private val n_ : Int, private val rows_ : L[L[Double]])(implicit L: Vectorizable[L], ct: ClassTag[L[Double]]) {
+sealed abstract case class Matrix[L[_]] private (private val m_ : Int, private val n_ : Int, private val rows_ : L[L[Double]])(implicit L: Vectorizable[L], ct: ClassTag[L[Double]]) {
   private val cols_ : L[L[Double]] = L.toArray(rows_).map(L.toArray).transpose.map(L.fromArray).toArray |> L.fromArray[L[Double]]
 //  private val cols_ : Chunk[Chunk[Double]] = rows_.toArray.map(_.toArray).transpose.map(Chunk.fromArray) |> Chunk.fromArray
   def m: UIO[Int]               = UIO.succeed(m_)
   def n: UIO[Int]               = UIO.succeed(n_)
   def rows: UIO[L[L[Double]]]   = UIO.succeed(rows_)
   def cols: UIO[L[L[Double]]]   = UIO.succeed(cols_)
-  def transpose: UIO[Matrix[L]] = UIO.succeed(new Matrix(n_, m_, cols_))
+  def transpose: UIO[Matrix[L]] = UIO.succeed(new Matrix(n_, m_, cols_){})
   def get(i: Int, j: Int): IO[IndexExceedMatrixDimension, Double] =
     Matrix.checkAccessIndex(i, j, m_, n_) *>
 //    UIO.effectTotal(5.0)
@@ -45,7 +45,7 @@ object Matrix {
 
     def hom(m: Int, n: Int, value: Double): UIO[Matrix[L]] = UIO {
       val elems = L.fromArray(Array.fill(m)(L.fromArray(Array.fill(n)(value))))
-      new Matrix[L](m, n, elems)
+      new Matrix[L](m, n, elems){}
     }
 
     def zero(m: Int, n: Int): UIO[Matrix[L]]    = hom(m, n, 0)
@@ -53,8 +53,8 @@ object Matrix {
     def diag(n: Int, α: Double): UIO[Matrix[L]] = fromRows(n, n, L.fromArray(Array.tabulate(n, n)((x, y) => if (x == y) α else 0d).map(L.fromArray))).orDie
     def eye(n: Int): UIO[Matrix[L]]             = diag(n, 1d)
 
-    def createRowVector(elems: L[Double]): UIO[Row] = UIO.succeed(new Matrix[L](1, L.length(elems), L.fromArray(Array(elems))))
-    def createColVector(elems: L[Double]): UIO[Col] = UIO.succeed(new Matrix[L](L.length(elems), 1, elems.map(x => L.fromArray(Array(x)))))
+    def createRowVector(elems: L[Double]): UIO[Row] = UIO.succeed(new Matrix[L](1, L.length(elems), L.fromArray(Array(elems))){})
+    def createColVector(elems: L[Double]): UIO[Col] = UIO.succeed(new Matrix[L](L.length(elems), 1, elems.map(x => L.fromArray(Array(x)))){})
 
     def fromRows(m: Int, n: Int, rows: L[L[Double]]): ZIO[Any, MatrixConstructionError, Matrix[L]] =
       for {

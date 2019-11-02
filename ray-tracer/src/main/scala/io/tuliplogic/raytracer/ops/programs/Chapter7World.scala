@@ -16,7 +16,7 @@ import zio.console.Console
 import zio.{App, UIO, ZEnv, ZIO, console}
 
 object Chapter7World extends App {
-  val canvasFile    = "/tmp/nioexp/chapter-7-three-spheres-shadow-" + System.currentTimeMillis + ".ppm"
+  val canvasFile    = "ppm/chapter-7-three-spheres-shadow-" + System.currentTimeMillis + ".ppm"
   val lightPosition = Pt(-10, 5, -10)
   val cameraFrom    = Pt(0, 1.5, -5)
   val cameraTo      = Pt(0, 1, 0)

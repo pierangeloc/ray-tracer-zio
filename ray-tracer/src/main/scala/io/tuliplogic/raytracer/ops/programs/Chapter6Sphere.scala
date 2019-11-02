@@ -25,7 +25,7 @@
 //  val canvasZCoord     = 10
 //  val canvasHRes       = 500
 //  val canvasVRes       = 500
-//  val canvasFile       = "/tmp/nioexp/chapter-6-shaded-sphere.ppm"
+//  val canvasFile       = "ppm/chapter-6-shaded-sphere.ppm"
 //
 //  type RichRayOperations = PhongReflectionModule with NormalReflectModule with RayModule
 //

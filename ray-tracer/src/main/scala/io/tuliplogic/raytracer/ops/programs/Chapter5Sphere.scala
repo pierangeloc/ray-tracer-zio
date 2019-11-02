@@ -25,7 +25,7 @@ object Chapter5Sphere extends App {
   val canvasZCoord     = 10
   val canvasHRes       = 500
   val canvasVRes       = 500
-  val canvasFile       = "/tmp/nioexp/sphere-on-canvas.ppm"
+  val canvasFile       = "ppm/sphere-on-canvas.ppm"
 
   def pixelsChunked(chunkSize: Int): ScalaStream[Chunk[(Pt, Int, Int)]] =
     (for {
