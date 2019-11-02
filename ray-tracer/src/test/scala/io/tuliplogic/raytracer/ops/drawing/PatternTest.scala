@@ -1,7 +1,8 @@
 package io.tuliplogic.raytracer.ops.drawing
 
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformation
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.affine.ATModule
+import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.model.Color
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
@@ -9,9 +10,9 @@ import zio.DefaultRuntime
 
 class PatternTest extends WordSpec with DefaultRuntime {
 
+  val env = new ATModule.Live with MatrixModule.BreezeMatrixModule
   "Striped pattern" should {
-
-    val p = unsafeRun(AffineTransformation.id.map(Pattern.Striped(Color.white, Color.black, _)))
+    val p = unsafeRun(ATModule.>.id.map(Pattern.Striped(Color.white, Color.black, _)).provide(env))
     "be constant in y" in {
       (0 to 100).toList.map(Pt(0, _, 0)).forall(p(_) == Color.white) shouldEqual true
     }
@@ -26,7 +27,7 @@ class PatternTest extends WordSpec with DefaultRuntime {
   }
 
   "Gradient pattern" should {
-    val p = unsafeRun(AffineTransformation.id.map(Pattern.GradientX(Color.white, Color.black, _)))
+    val p = unsafeRun(ATModule.>.id.map(Pattern.GradientX(Color.white, Color.black, _)).provide(env))
     "determine correctly the colors" in {
       p(Pt.origin) shouldEqual Color.white
       p(Pt(0.25, 0, 0)) shouldEqual Color(0.75, 0.75, 0.75)
@@ -36,7 +37,7 @@ class PatternTest extends WordSpec with DefaultRuntime {
   }
 
   "Ring pattern" should {
-    val p = unsafeRun(AffineTransformation.id.map(Pattern.Ring(Color.white, Color.black, _)))
+    val p = unsafeRun(ATModule.>.id.map(Pattern.Ring(Color.white, Color.black, _)).provide(env))
     "determine correctly the colors" in {
       p(Pt.origin) shouldEqual Color.white
       p(Pt(1, 0, 0)) shouldEqual Color.black
@@ -46,7 +47,7 @@ class PatternTest extends WordSpec with DefaultRuntime {
   }
 
   "Checker pattern" should {
-    val p = unsafeRun(AffineTransformation.id.map(Pattern.Checker(Color.white, Color.black, _)))
+    val p = unsafeRun(ATModule.>.id.map(Pattern.Checker(Color.white, Color.black, _)).provide(env))
     "be periodic of 2 in x" in {
       p(Pt.origin) shouldEqual Color.white
       p(Pt(0.99, 0, 0)) shouldEqual Color.white

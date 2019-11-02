@@ -1,4 +1,4 @@
-package io.tuliplogic.raytracer.geometry.vectorspace
+package io.tuliplogic.raytracer.geometry.affine
 
 import io.tuliplogic.raytracer.geometry.matrix.Types.Col
 import io.tuliplogic.raytracer.geometry.matrix.Types.factory
@@ -7,9 +7,8 @@ import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError.IndexExceedMatrixDimension
 import zio.{IO, UIO}
 
-sealed trait PointVec
 object PointVec {
-  case class Pt(x: Double, y: Double, z: Double) extends PointVec {
+  case class Pt(x: Double, y: Double, z: Double) {
     def -(otherPt: Pt): Vec = Vec(x - otherPt.x, y - otherPt.y, z - otherPt.z)
     def +(vec: Vec)         = Pt(x + vec.x, y + vec.y, z + vec.z)
   }
@@ -18,9 +17,9 @@ object PointVec {
     val origin = Pt(0, 0, 0)
   }
 
-  case class Vec(x: Double, y: Double, z: Double) extends PointVec {
+  case class Vec(x: Double, y: Double, z: Double) {
     def +(other: Vec): Vec   = Vec(x + other.x, y + other.y, z + other.z)
-    def +(otherPt: Pt): Pt   = Pt(x + otherPt.x, y + otherPt.y, z + otherPt.z)
+    def +(otherPt: Pt): Pt   = otherPt + this
     def -(other: Vec): Vec  = Vec(x - other.x, y - other.y, z - other.z)
     def *(t: Double)        = Vec(x * t, y * t, z * t)
     def dot(other: Vec): Double = x * other.x + y * other.y + z * other.z

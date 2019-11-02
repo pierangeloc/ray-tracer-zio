@@ -1,10 +1,9 @@
 package io.tuliplogic.raytracer.ops.drawing
 
 import io.tuliplogic.raytracer.geometry.TestUtils
-import io.tuliplogic.raytracer.geometry.matrix.{Generators, MatrixOps, Types}
-import io.tuliplogic.raytracer.geometry.vectorspace.AffineTransformationOps.Live
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.geometry.vectorspace.{affineTfOps, AffineTransformation}
+import io.tuliplogic.raytracer.geometry.matrix.{Generators, MatrixModule, Types}
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -12,7 +11,7 @@ import zio.{DefaultRuntime, IO}
 
 class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with GeneratorDrivenPropertyChecks with Generators {
 
-  val env = new Live with MatrixOps.Live
+  val env = new ATModule.Live with MatrixModule.BreezeMatrixModule
 
   //TODO: property of this transform is that a view with proportional `to - from` vectors should give the same transformation
 
@@ -24,7 +23,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
         unsafeRun(
           (for {
             tf     <- ViewTransform.default.tf
-            result <- affineTfOps.transform(tf, point)
+            result <- ATModule.>.applyTf(tf, point)
             _      <- IO.effect(result should ===(point))
           } yield ()).provide(env)
         )
@@ -38,7 +37,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
         unsafeRun(
           (for {
             tf     <- ViewTransform(Pt.origin, Pt(0, 0, 1), Vec.uy).tf
-            result <- affineTfOps.transform(tf, point)
+            result <- ATModule.>.applyTf(tf, point)
             _      <- IO.effect(result should ===(point.copy(-point.x, point.y, -point.z)))
           } yield ()).provide(env)
         )
@@ -56,7 +55,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
           unsafeRun(
             (for {
               tf     <- ViewTransform(Pt.origin.copy(z = deltaZ), Pt(0, 0, deltaZ - 1), Vec.uy).tf
-              result <- affineTfOps.transform(tf, point)
+              result <- ATModule.>.applyTf(tf, point)
               _      <- IO.effect(result should ===(point.copy(point.x, point.y, point.z - deltaZ)))
             } yield ()).provide(env)
           )
@@ -70,7 +69,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
         unsafeRun(
           (for {
             tf     <- ViewTransform(Pt(1, 3, 2), Pt(4, -2, 8), Vec(1, 1, 0)).tf
-            result <- affineTfOps.transform(tf, point)
+            result <- ATModule.>.applyTf(tf, point)
             expectedTfMatrix <- Types.factory.fromRows(
               4,
               4,
@@ -81,7 +80,8 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
                 Vector(0.00000, 0.00000, 0.00000, 1.00000)
               )
             )
-            expected <- affineTfOps.transform(AffineTransformation(expectedTfMatrix), point)
+            inverseTfMatrix <- MatrixModule.>.invert(expectedTfMatrix)
+            expected <- ATModule.>.applyTf(AT(expectedTfMatrix, inverseTfMatrix), point)
             _        <- IO.effect(result should ===(expected))
           } yield ()).provide(env)
         )

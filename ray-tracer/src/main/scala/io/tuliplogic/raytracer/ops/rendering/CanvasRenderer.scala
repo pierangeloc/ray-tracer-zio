@@ -58,14 +58,17 @@ object CanvasRenderer {
         }
 
       override def render(canvas: Canvas, maxColor: Int): ZIO[Any, IOError, Unit] =
-        (for {
-          channel <- AsynchronousFileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ).provide(self)
-          _ <- (
-            Stream.fromEffect(headers(canvas, maxColor).map(Chunk(_))) ++
-              rowsStream(canvas, maxColor)
-          ).map(_.flatMap(_.getBytes |> Chunk.fromArray))
-            .run(channelSink(channel))
-        } yield ()).mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
+          AsynchronousFileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
+            .mapError(e => IOError.CanvasRenderingError("Error opening file", e)).provide(self).use{
+            channel =>
+              (for {
+                _ <- (
+                  Stream.fromEffect(headers(canvas, maxColor).map(Chunk(_))) ++
+                    rowsStream(canvas, maxColor)
+                  ).map(_.flatMap(_.getBytes |> Chunk.fromArray))
+                  .run(channelSink(channel))
+              } yield ()).mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
+          }
     }
   }
 

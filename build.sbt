@@ -64,13 +64,15 @@ lazy val commonSettings = inThisBuild(
 
   tpolecatSettings ++
     Seq(
-      scalaOrganization := "org.typelevel", // provide literal types
-      scalaVersion := "2.12.4-bin-typelevel-4",
-      scalacOptions ++= Seq(
-        "-Yliteral-types",
-      ),
+      scalaVersion := "2.12.10",
       addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
-      addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4")
+      addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4"),
+      addCompilerPlugin(("org.scalamacros" % "paradise"  % "2.1.1") cross CrossVersion.full),
+      testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
+      libraryDependencies ++= Seq(
+        zioTest % "test",
+        zioTestSbt % "test"
+      )
     )
 )
 
@@ -82,7 +84,7 @@ lazy val `simple-http4s` = project
       name := "simple-http4s",
       libraryDependencies ++= Seq(
         zio,
-        zioCats,
+        zioCats exclude("dev.zio", "zio-test"),
         cats,
         catsEffect,
         http4sServer,
@@ -102,7 +104,7 @@ lazy val geometry = project
     name := "geometry",
     libraryDependencies ++= Seq(
       zio,
-      zioCats,
+      zioCats exclude("dev.zio", "zio-test"),
       cats,
       catsEffect,
       fs2,
@@ -137,7 +139,7 @@ lazy val `ray-tracer` = project
     libraryDependencies ++= Seq(
       zio,
       zioNio,
-      zioCats,
+      zioCats exclude("dev.zio", "zio-test"),
       cats,
       catsEffect,
       log4CatsSlf4j,

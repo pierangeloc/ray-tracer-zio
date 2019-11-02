@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.geometry.matrix
 
-import io.tuliplogic.raytracer.geometry.vectorspace.PointVec._
+import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import org.scalacheck.Gen
 import zio.{Chunk, DefaultRuntime}
 
