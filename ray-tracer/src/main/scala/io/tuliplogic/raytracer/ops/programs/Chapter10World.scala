@@ -2,14 +2,14 @@ package io.tuliplogic.raytracer.ops.programs
 
 import java.nio.file.{Path, Paths}
 
-import io.tuliplogic.raytracer.commons.errors.{AlgebraicError, RayTracerError}
+import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.ops.drawing.{Camera, Pattern, Renderer, ViewTransform, World}
+import io.tuliplogic.raytracer.ops.drawing.{Pattern, World}
 import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{CameraModule, Canvas, Color, Material, SceneObject, WorldModule}
-import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}
+import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, Material, RasteringModule, SceneObject, WorldModule}
+import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import zio.blocking.Blocking
 import zio.console.Console
 import zio.{App, UIO, ZEnv, ZIO, console}
@@ -27,8 +27,8 @@ object Chapter10World extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasRenderer.PPMCanvasRenderer with FullModules with ATModule.Live with MatrixModule.BreezeMatrixModule
-          with WorldModule.Live with CameraModule.Live
+        new CanvasSerializer.PPMCanvasSerializer with FullModules with ATModule.Live with MatrixModule.BreezeMatrixModule
+          with WorldModule.Live with CameraModule.Live with RasteringModule.ChunkRasteringModule
           with Blocking.Live with Console.Live
          {
           override def path: Path = Paths.get(canvasFile)
@@ -62,20 +62,9 @@ object Chapter10World extends App {
 
   } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, floorS, leftWallS))
 
-  val camera: ZIO[ATModule with MatrixModule, AlgebraicError, Camera] = for {
-    cameraTf <- ViewTransform(cameraFrom, cameraTo, cameraUp).tf
-  } yield Camera(hRes, vRes, math.Pi / 2, cameraTf)
-
-  val program: ZIO[CanvasRenderer with ATModule with MatrixModule with CameraModule with WorldModule, RayTracerError, Unit] =
-    for {
-      canvas <- Canvas.create(hRes, vRes)
-      w      <- world
-      cam    <- camera
-      _ <- Renderer.render(cam, w).flattenChunks.foreach {
-        case (px, py, color) =>
-          canvas.update(px, py, color)
-      }
-      _ <- canvasRendering.render(canvas, 255)
-    } yield ()
-
+  val program = for {
+    w      <- world
+    canvas <- RaytracingProgram.drawOnCanvas(w, cameraFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
+    _      <- CanvasSerializer.>.render(canvas, 255)
+  } yield ()
 }

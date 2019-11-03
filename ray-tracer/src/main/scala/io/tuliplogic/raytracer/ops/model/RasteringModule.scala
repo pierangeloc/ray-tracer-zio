@@ -1,0 +1,64 @@
+package io.tuliplogic.raytracer.ops.model
+
+import io.tuliplogic.raytracer.commons.errors.RayTracerError
+import io.tuliplogic.raytracer.ops.drawing.{Camera, World}
+import zio.stream.ZStream
+import zio.{UIO, ZIO}
+
+/**
+  * This module provides access to a stream of colored point, given a world and a camera
+  */
+trait RasteringModule {
+  val rasteringModule: RasteringModule.Service[Any]
+}
+
+object RasteringModule {
+
+  trait Service[R] {
+    def raster(world: World, camera: Camera): ZIO[R, Nothing, ZStream[R, RayTracerError, ColoredPoint]]
+  }
+
+  /**
+    * This implementation
+    */
+  trait ChunkRasteringModule extends RasteringModule {
+    val chunkSize: Int = 4096
+    val parChunks: Int = 15 //nr cores - 1
+    val cameraModule: CameraModule.Service[Any]
+    val worldModule: WorldModule.Service[Any]
+
+    override val rasteringModule: Service[Any] = new Service[Any] {
+      override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPoint]] = {
+        val pixels = for {
+          x <- ZStream.fromIterable(0 to camera.hRes )
+          y <- ZStream.fromIterable(0 to camera.vRes )
+        } yield (x, y)
+
+        UIO.succeed(pixels.chunkN(4096).mapMPar(parChunks) { chunk =>
+          chunk.mapM {
+            case (px, py) =>
+              for {
+                ray   <- cameraModule.rayForPixel(camera, px, py)
+                color <- worldModule.colorForRay(world, ray)
+              } yield ColoredPoint(Pixel(px, py), color)
+          }
+        }.flatMap(ZStream.fromChunk))
+      }
+    }
+  }
+
+  trait AllWhiteTestRasteringModule extends RasteringModule {
+    override val rasteringModule: Service[Any] = new Service[Any] {
+      override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPoint]] =
+        UIO.succeed(for {
+          x <- ZStream.fromIterable(0 to camera.hRes)
+          y <- ZStream.fromIterable(0 to camera.vRes)
+        } yield ColoredPoint(Pixel(x, y), Color.white))
+    }
+  }
+
+  object > extends RasteringModule.Service[RasteringModule] {
+    override def raster(world: World, camera: Camera): ZIO[RasteringModule, Nothing, ZStream[RasteringModule, RayTracerError, ColoredPoint]] =
+          ZIO.accessM[RasteringModule](_.rasteringModule.raster(world, camera))
+  }
+}

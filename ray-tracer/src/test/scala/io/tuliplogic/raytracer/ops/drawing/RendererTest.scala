@@ -25,10 +25,9 @@ class RendererTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           from <- UIO(Pt(0, 0, -5))
           to   <- UIO(Pt.origin)
           up   <- UIO(Vec(0, 1, 0))
-          tf   <- ViewTransform(from, to, up).tf
-          c    <- UIO(Camera(11, 11, math.Pi / 2, tf))
+          camera <- Camera.make(from, to, up, math.Pi / 2, 11, 11)
           pixels <- Renderer
-            .render(c, w)
+            .render(camera, w)
             .flattenChunks
             .collect {
               case (5, 5, c) => c

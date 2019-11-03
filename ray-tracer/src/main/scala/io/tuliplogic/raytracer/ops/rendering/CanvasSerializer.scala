@@ -12,18 +12,18 @@ import zio.blocking.Blocking
 
 import scala.math.min
 //TODO: rename this package "serializing"
-trait CanvasRenderer {
-  def renderer: CanvasRenderer.Service[Any]
+trait CanvasSerializer {
+  def canvasSerializer: CanvasSerializer.Service[Any]
 }
 
-object CanvasRenderer {
+object CanvasSerializer {
   trait Service[R] {
     def render(canvas: Canvas, maxColor: Int): ZIO[R, IOError, Unit]
   }
 
-  trait PPMCanvasRenderer extends CanvasRenderer with Blocking { self =>
+  trait PPMCanvasSerializer extends CanvasSerializer with Blocking { self =>
     def path: Path
-    override def renderer: Service[Any] = new Service[Any] {
+    override def canvasSerializer: Service[Any] = new Service[Any] {
 
       def formatHeader: String                  = "P3"
       def sizeHeader(c: Canvas): UIO[String]    = c.width.zip(c.height).map { case (w, h) => s"$w $h" }
@@ -58,7 +58,7 @@ object CanvasRenderer {
         }
 
       override def render(canvas: Canvas, maxColor: Int): ZIO[Any, IOError, Unit] =
-          AsynchronousFileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
+          AsynchronousFileChannel.open(zio.nio.file.Path.fromJava(path), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
             .mapError(e => IOError.CanvasRenderingError("Error opening file", e)).provide(self).use{
             channel =>
               (for {
@@ -72,9 +72,10 @@ object CanvasRenderer {
     }
   }
 
+  object > extends CanvasSerializer.Service[CanvasSerializer] {
+    override def render(canvas: Canvas, maxColor: Int): ZIO[CanvasSerializer, IOError, Unit] =
+      ZIO.accessM(_.canvasSerializer.render(canvas, maxColor))
+  }
+
 }
 
-object canvasRendering extends CanvasRenderer.Service[CanvasRenderer] {
-  override def render(canvas: Canvas, maxColor: Int): ZIO[CanvasRenderer, IOError, Unit] =
-    ZIO.accessM(_.renderer.render(canvas, maxColor))
-}

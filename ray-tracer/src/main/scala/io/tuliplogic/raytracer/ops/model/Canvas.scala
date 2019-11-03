@@ -27,6 +27,9 @@ abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array
       }
     )
 
+  def update(coloredPoint: ColoredPoint): IO[IndexExceedCanvasDimension, Unit] =
+    update(coloredPoint.pixel.x, coloredPoint.pixel.y, coloredPoint.color)
+
   def rows: UIO[Array[Array[Color]]] =
     UIO.succeed(rows)
 }
@@ -35,21 +38,4 @@ object Canvas {
   def create(width: Int, height: Int): UIO[Canvas] = UIO.effectTotal {
     new Canvas(width, height, Array.fill(height)(Array.fill(width)(Color.black))) {}
   }
-
-  //TODO: make a `SampledRect` case class with this info
-  def canvasPixels(halfWidth: Double, halfHeight: Double, z: Double, hres: Int, vres: Int, chunkSize: Int): ScalaStream[Chunk[(Pt, Int, Int)]] =
-    (for {
-      xn <- ScalaStream.from(0).take(hres)
-      yn <- ScalaStream.from(0).take(vres)
-    } yield {
-      val cX = xn * (halfWidth * 2) / hres
-      val cY = yn * (halfHeight * 2) / vres
-      (Pt(cX - halfWidth, -cY + halfHeight, z), xn, yn)
-    }).grouped(chunkSize)
-      .map(str => Chunk.fromIterable(str))
-      .toStream
-
-  def canvasPixelsChunked(halfWidth: Double, halfHeight: Double, z: Double, hres: Int, vres: Int) =
-    StreamChunk(Stream.fromIterable(canvasPixels(halfWidth, halfHeight, z, hres, vres, 4096)))
-
 }

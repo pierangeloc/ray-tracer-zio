@@ -2,6 +2,7 @@ package io.tuliplogic.raytracer.geometry.affine
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.affine.fixtures.{invertedTranslationMatrix, ptVec, translatedPtVec, translationMatrix}
 import io.tuliplogic.raytracer.geometry.matrix.Types._
 import io.tuliplogic.raytracer.geometry.matrix.{Matrix, MatrixModule}
 import zio.test.Assertion._
@@ -10,7 +11,35 @@ import zio.test.mock.Expectation._
 import zio.test.{DefaultRunnableSpec, _}
 import zio.{IO, UIO, ZIO}
 
-object ATModuleTestZIOMocks extends DefaultRunnableSpec(allSuites2.s1) {}
+object ATModuleTestZIOMocks extends DefaultRunnableSpec(
+  suite("AT relies on matrix operations") {
+    testM("Applying AT to a vector means invoking matrix multiplication on that vector") {
+      val app: ZIO[ATModule, AlgebraicError, Pt] = for {
+        tf <- ATModule.>.translate(3d, 4d, 5d)
+        pt <- ATModule.>.applyTf(tf, Pt(1d, 2d, 3d))
+      } yield pt
+
+      for {
+        translMx             <- translationMatrix
+          invTranslMx        <- invertedTranslationMatrix
+          ptColVec           <- ptVec
+          translatedPtColVec <- translatedPtVec
+          //set mocks
+          mockedMatrix <- UIO {
+            (MatrixModuleMock.invert(equalTo(translMx)) returns value(invTranslMx)) *>
+              (MatrixModuleMock.mul(equalTo((translMx, ptColVec))) returns value(translatedPtColVec))
+          }
+          pt <- app.provideManaged(
+            mockedMatrix.managedEnv.map { mm =>
+              new ATModule.Live {
+                override val matrixModule: MatrixModule.Service[Any] = mm.matrixModule
+              }
+            }
+          )
+      } yield assert(pt, equalTo(Pt(4d, 6d, 8d)))
+    }
+  }
+)
 
 trait MatrixModuleMock extends MatrixModule {
   val matrixModule: MatrixModuleMock.Service[Any]
@@ -54,7 +83,7 @@ object MatrixModuleMock {
   }
 }
 
-object allSuites2 {
+object fixtures {
   import vectorizable.comp
 
   val translationMatrix: UIO[Matrix[L]] =
@@ -87,33 +116,4 @@ object allSuites2 {
 
   val ptVec                                            = factory.createColVector(Vector(1d, 2d, 3d, 1d))
   val translatedPtVec: IO[AlgebraicError, factory.Col] = factory.createColVector(Vector(4, 6, 8, 1)).mapError(_.asInstanceOf[AlgebraicError])
-
-  val s1 = suite("AT relies on matrix operations") {
-
-    testM("Applying AT to a vector means invoking matrix multiplication on that vector") {
-      val app: ZIO[ATModule, AlgebraicError, Pt] = for {
-        tf <- ATModule.>.translate(3d, 4d, 5d)
-        pt <- ATModule.>.applyTf(tf, Pt(1d, 2d, 3d))
-      } yield pt
-
-      for {
-        translMx           <- translationMatrix
-        invTranslMx        <- invertedTranslationMatrix
-        ptColVec           <- ptVec
-        translatedPtColVec <- translatedPtVec
-        //set mocks
-        mockedMatrix <- UIO {
-          (MatrixModuleMock.invert(equalTo(translMx)) returns value(invTranslMx)) *>
-            (MatrixModuleMock.mul(equalTo((translMx, ptColVec))) returns value(translatedPtColVec))
-        }
-        pt <- app.provideManaged(
-          mockedMatrix.managedEnv.map { mm =>
-            new ATModule.Live {
-              override val matrixModule: MatrixModule.Service[Any] = mm.matrixModule
-            }
-          }
-        )
-      } yield assert(pt, equalTo(Pt(4d, 6d, 8d)))
-    }
-  }
 }

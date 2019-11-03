@@ -928,6 +928,14 @@ And then we define the module for affine transformations
 - add layers to the onion
 
 ---
+
+Plan for the talk
+^ Top down approach. Start from the camera, raster, render on canvas
+Continue with how to produce the ray for the pixel and the color for the ray
+Delegate the color computation to the World module
+Live world module can rely further on Phong, LightReflection, Refraction etc...
+
+---
 # Functional Effects
 ^ Now let's consider another function, that given a matrix, inverts it
 
