@@ -12,7 +12,7 @@ import zio.blocking.Blocking
 import zio.stream.{Sink, ZStream}
 import zio.{DefaultRuntime, IO, ZIO}
 
-class CanvasRendererTest extends WordSpec with DefaultRuntime {
+class CanvasSerializerTest extends WordSpec with DefaultRuntime {
 
   val canvasFile = "ppm/canvas.ppm"
   val w          = 5
@@ -22,19 +22,19 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
 
   "canvas renderer" should {
     "write canvas as PPM file" in {
-      val cr = new CanvasRenderer.PPMCanvasRenderer with Blocking.Live {
+      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live {
         override def path: Path = Paths.get(canvasFile)
       }
       unsafeRun {
         for {
           newCanvas <- Canvas.create(w, h)
-          _         <- cr.renderer.render(newCanvas, 256)
+          _         <- cr.canvasSerializer.render(newCanvas, 256)
         } yield ()
       }
     }
 
     "show that a point can rotate in the plane" in {
-      val cr = new CanvasRenderer.PPMCanvasRenderer with Blocking.Live {
+      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live {
         override def path: Path = Paths.get(canvasFile)
       }
 
@@ -62,7 +62,7 @@ class CanvasRendererTest extends WordSpec with DefaultRuntime {
               }
             }
             .run(Sink.collectAll[Unit])
-          _ <- cr.renderer.render(c, 256)
+          _ <- cr.canvasSerializer.render(c, 256)
         } yield ()).provide(env)
       }
     }

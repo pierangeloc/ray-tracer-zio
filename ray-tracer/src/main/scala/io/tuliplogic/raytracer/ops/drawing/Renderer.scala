@@ -27,6 +27,6 @@ object Renderer {
       .map(str => Chunk.fromIterable(str))
       .toStream
 
-  private def pixelsChunkedStream: Camera => UStreamC[(Int, Int)] = c => StreamChunk(Stream.fromIterable(pixels(4096)(c)))
+  private val pixelsChunkedStream: Camera => UStreamC[(Int, Int)] = c => StreamChunk(Stream.fromIterable(pixels(4096)(c)))
 
 }

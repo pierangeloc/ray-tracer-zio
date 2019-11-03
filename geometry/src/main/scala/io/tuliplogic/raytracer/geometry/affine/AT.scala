@@ -5,9 +5,10 @@ import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import zio.{UIO, URIO, ZIO}
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M, factory, vectorizable}
+import scala.math.{cos, sin}
+
 //import zio.macros.access.accessible
 
-import scala.math.{cos, sin}
 
 case class AT(direct: M, inverse: M) {
   def inverted: AT = AT(inverse, direct)
@@ -24,14 +25,62 @@ object ATModule {
     def compose(first: AT, second: AT): ZIO[R, AlgebraicError, AT]
     def invert(tf: AT): ZIO[R, AlgebraicError, AT]
     def transpose(tf: AT): ZIO[R, AlgebraicError, AT]
+    def invertible(
+      x11:Double, x12:Double, x13:Double, x14:Double,
+      x21:Double, x22:Double, x23:Double, x24:Double,
+      x31:Double, x32:Double, x33:Double, x34:Double,
+      x41:Double, x42:Double, x43:Double, x44:Double
+    ): ZIO[R, AlgebraicError, AT]
 
-    def translate(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT]
-    def scale(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT]
-    def rotateX(θ: Double): ZIO[R, Nothing, AT]
-    def rotateY(θ: Double): ZIO[R, Nothing, AT]
-    def rotateZ(θ: Double): ZIO[R, Nothing, AT]
-    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): ZIO[R, Nothing, AT]
-    def id: ZIO[R, Nothing, AT]
+    def translate(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT] =
+      invertible(
+        1d, 0d, 0d, x,
+        0d, 1d, 0d, y,
+        0d, 0d, 1d, z,
+        0d, 0d, 0d, 1d
+      ).orDie
+
+    def scale(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT] =
+      invertible(
+        x, 0d, 0d, 0d,
+        0d, y, 0d, 0d,
+        0d, 0d, z, 0d,
+        0d, 0d, 0d, 1d
+      ).orDie
+
+    def rotateX(θ: Double): ZIO[R, Nothing, AT] =
+      invertible(
+        1d, 0d, 0d, 0d,
+        0d, cos(θ), -sin(θ), 0d,
+        0d, sin(θ), cos(θ), 0d,
+        0d, 0d, 0d, 1d
+      ).orDie
+
+    def rotateY(θ: Double): ZIO[R, Nothing, AT] =
+      invertible(
+        cos(θ), 0d, -sin(θ), 0d,
+        0d, 1d, 0d, 0d,
+        sin(θ), 0d, cos(θ), 0d,
+        0d, 0d, 0d, 1d
+      ).orDie
+
+    def rotateZ(θ: Double): ZIO[R, Nothing, AT] =
+      invertible(
+        cos(θ), -sin(θ), 0d, 0d,
+        sin(θ), cos(θ), 0d, 0d,
+        0d, 0d, 1d, 0d,
+        0d, 0d, 0d, 1d
+      ).orDie
+
+    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): ZIO[R, Nothing, AT] =
+      invertible(
+        1d, xY, xZ, 0d,
+        yX, 1d, yZ, 0d,
+        zX, zY, 1d, 0d,
+        0d, 0d, 0d, 1d
+      ).orDie
+
+    def id: ZIO[R, Nothing, AT] = translate(0, 0, 0)
   }
 
   trait Live extends ATModule {
@@ -77,119 +126,26 @@ object ATModule {
         inverse <- matrixModule.invert(direct)
       } yield AT(direct, inverse)
 
-
-      def fromDirect(direct: M): UIO[AT] =
-        for {
+      override def invertible(
+        x11:Double, x12:Double, x13:Double, x14:Double,
+        x21:Double, x22:Double, x23:Double, x24:Double,
+        x31:Double, x32:Double, x33:Double, x34:Double,
+        x41:Double, x42:Double, x43:Double, x44:Double
+      ): ZIO[Any, AlgebraicError, AT] = for {
+        direct <- factory
+          .fromRows(
+            4,
+            4,
+            comp(
+              comp(x11, x12, x13, x14),
+              comp(x21, x22, x23, x24),
+              comp(x31, x32, x33, x34),
+              comp(x41, x42, x43, x44)
+            )
+          )
           inverse <- matrixModule.invert(direct).orDie
-        } yield AT(direct, inverse)
-
-      override def translate(x: Double, y: Double, z: Double): URIO[Any, AT] =
-        (
-          for {
-            direct <- factory
-              .fromRows(
-                4,
-                4,
-                comp(
-                  comp(1d, 0d, 0d, x),
-                  comp(0d, 1d, 0d, y),
-                  comp(0d, 0d, 1d, z),
-                  comp(0d, 0d, 0d, 1d)
-                )
-              )
-            at <- fromDirect(direct)
-          } yield at
-        ).orDie
-
-      override def scale(x: Double, y: Double, z: Double): URIO[Any, AT] =
-        (
-          for {
-            direct <- factory
-              .fromRows(
-                4,
-                4,
-                comp(
-                  comp(x, 0d, 0d, 0d),
-                  comp(0d, y, 0d, 0d),
-                  comp(0d, 0d, z, 0d),
-                  comp(0d, 0d, 0d, 1d)
-                )
-              )
-            at <- fromDirect(direct)
-          } yield at
-        ).orDie
-
-      override def rotateX(θ: Double): URIO[Any, AT] =
-        (
-          for {
-            direct <- factory
-              .fromRows(
-                4,
-                4,
-                comp(
-                  comp(1d, 0d, 0d, 0d),
-                  comp(0d, cos(θ), -sin(θ), 0d),
-                  comp(0d, sin(θ), cos(θ), 0d),
-                  comp(0d, 0d, 0d, 1d)
-                ))
-            at <- fromDirect(direct)
-          } yield at
-        ).orDie
-
-      override def rotateY(θ: Double): URIO[Any, AT] =
-        (
-          for {
-            direct <- factory
-              .fromRows(
-                4,
-                4,
-                comp(
-                  comp(cos(θ), 0d, -sin(θ), 0d),
-                  comp(0d, 1d, 0d, 0d),
-                  comp(sin(θ), 0d, cos(θ), 0d),
-                  comp(0d, 0d, 0d, 1d)
-                ))
-            at <- fromDirect(direct)
-          } yield at
-        ).orDie
-
-      override def rotateZ(θ: Double): URIO[Any, AT] =
-        (
-          for {
-            direct <- factory
-              .fromRows(
-                4,
-                4,
-                comp(
-                  comp(cos(θ), -sin(θ), 0d, 0d),
-                  comp(sin(θ), cos(θ), 0d, 0d),
-                  comp(0d, 0d, 1d, 0d),
-                  comp(0d, 0d, 0d, 1d)
-                ))
-            at <- fromDirect(direct)
-          } yield at
-        ).orDie
-
-      override def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): URIO[Any, AT] =
-        (
-          for {
-            direct <- factory
-              .fromRows(
-                4,
-                4,
-                comp(
-                  comp(1d, xY, xZ, 0d),
-                  comp(yX, 1d, yZ, 0d),
-                  comp(zX, zY, 1d, 0d),
-                  comp(0d, 0d, 0d, 1d)
-                ))
-            at <- fromDirect(direct)
-          } yield at
-        ).orDie
-
-      override def id: ZIO[Any, Nothing, AT] = translate(0, 0, 0)
+      } yield AT(direct, inverse)
     }
-
   }
 
   object > extends Service[ATModule] {
@@ -201,21 +157,34 @@ object ATModule {
       ZIO.accessM(_.aTModule.compose(first, second))
     def invert(tf: AT): ZIO[ATModule, AlgebraicError, AT] =
       ZIO.accessM(_.aTModule.invert(tf))
+
+    override def invertible(
+      x11: Double, x12: Double, x13: Double, x14: Double,
+      x21: Double, x22: Double, x23: Double, x24: Double,
+      x31: Double, x32: Double, x33: Double, x34: Double,
+      x41: Double, x42: Double, x43: Double, x44: Double): ZIO[ATModule, AlgebraicError, AT] =
+      ZIO.accessM(_.aTModule.invertible(
+        x11, x12, x13, x14,
+        x21, x22, x23, x24,
+        x31, x32, x33, x34,
+        x41, x42, x43, x44
+      ))
     override def transpose(tf: AT): ZIO[ATModule, AlgebraicError, AT] =
       ZIO.accessM(_.aTModule.invert(tf))
-    def translate(x: Double, y: Double, z: Double): ZIO[ATModule, Nothing, AT] =
+    override def translate(x: Double, y: Double, z: Double): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.translate(x, y, z))
-    def scale(x: Double, y: Double, z: Double): ZIO[ATModule, Nothing, AT] =
+    override def scale(x: Double, y: Double, z: Double): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.scale(x, y, z))
-    def rotateX(θ: Double): ZIO[ATModule, Nothing, AT] =
+    override def rotateX(θ: Double): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.rotateX(θ))
-    def rotateY(θ: Double): ZIO[ATModule, Nothing, AT] =
+    override def rotateY(θ: Double): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.rotateY(θ))
-    def rotateZ(θ: Double): ZIO[ATModule, Nothing, AT] =
+    override def rotateZ(θ: Double): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.rotateZ(θ))
-    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): ZIO[ATModule, Nothing, AT] =
+    override def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.shear(xY, xZ, yX, yZ, zX, zY))
-    def id: ZIO[ATModule, Nothing, AT] = 
+
+    override def id: ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.id)
   }
 }

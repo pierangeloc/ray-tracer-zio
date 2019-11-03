@@ -23,16 +23,16 @@ object CameraModule {
     val cameraModule: CameraModule.Service[Any] = new Service[Any] {
       override def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[Any, AlgebraicError, Ray] =
         for {
-          xOffset <- UIO((px + 0.5) * camera.pixelXSize)
-            yOffset <- UIO((py + 0.5) * camera.pixelYSize)
-            //coordinates of the canvas point before the transformation
-            origX <- UIO(camera.halfWidth - xOffset)
-            origY <- UIO(camera.halfHeight - yOffset)
-            //transform the coordinates by the inverse
-            inverseTf <- aTModule.invert(camera.tf)
-            pixel     <- aTModule.applyTf(inverseTf, Pt(origX, origY, -1))
-            origin    <- aTModule.applyTf(inverseTf, Pt.origin)
-            direction <- (pixel - origin).normalized
+          xOffset   <- UIO((px + 0.5) * camera.pixelXSize)
+          yOffset   <- UIO((py + 0.5) * camera.pixelYSize)
+          //coordinates of the canvas point before the transformation
+          origX     <- UIO(camera.halfWidth - xOffset)
+          origY     <- UIO(camera.halfHeight - yOffset)
+          //transform the coordinates by the inverse
+          inverseTf <- aTModule.invert(camera.tf)
+          pixel     <- aTModule.applyTf(inverseTf, Pt(origX, origY, -1))
+          origin    <- aTModule.applyTf(inverseTf, Pt.origin)
+          direction <- (pixel - origin).normalized
         } yield Ray(origin, direction)
     }
   }

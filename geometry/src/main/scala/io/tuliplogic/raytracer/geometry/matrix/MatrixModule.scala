@@ -97,7 +97,7 @@ object MatrixModule {
           nrCols <- m.n
           arrayElems: Array[Double] = rows.flatten.toArray
           bm                        = DenseMatrix.create(nrRows, nrCols, arrayElems)
-          inverse <- ZIO.effect(inv(bm)).mapError(_ => AlgebraicError.MatrixNotInvertible)
+          inverse <- ZIO.effect(inv(bm)).mapError(_ => AlgebraicError.MatrixNotInvertible(m.toString))
           res     <- factory.fromRows(nrRows, nrCols, vectorizable.fromArray(inverse.data.grouped(nrCols).map(vectorizable.fromArray).toArray))
         } yield res
       }

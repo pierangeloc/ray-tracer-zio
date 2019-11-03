@@ -42,12 +42,11 @@ sealed trait SceneObject {
 }
 object SceneObject {
 
-  //TODO refine Double > 0
   case class PointLight(position: Pt, intensity: Color)
 
   /**
     * A unit sphere centered in (0, 0, 0) and a transformation on the sphere that puts it  into final position
-    * This can be e.g. a chain of transate and shear
+    * This can be e.g. a chain of translate and shear
     */
   case class Sphere(transformation: AT, material: Material) extends SceneObject
   object Sphere {
