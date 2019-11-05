@@ -19,7 +19,7 @@ class PhongReflectionModuleTest extends WordSpec with DefaultRuntime with OpsTes
     "give correct phong components when eye is in LOS with source and aligned with normal" in {
       unsafeRun {
         (for {
-          s          <- Sphere.unit
+          s          <- Sphere.canonical
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- PhongReflectionModule.>.lighting(pointLight, hitComps, false)
@@ -31,7 +31,7 @@ class PhongReflectionModuleTest extends WordSpec with DefaultRuntime with OpsTes
     "give correct phong components when eye is 45 deg off the normal and light aligned with normal" in {
       unsafeRun {
         (for {
-          s          <- Sphere.unit
+          s          <- Sphere.canonical
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), eyeV = Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), normalV = Vec(0, 0, -1), rayReflectV = Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- PhongReflectionModule.>.lighting(pointLight, hitComps, false)
@@ -43,7 +43,7 @@ class PhongReflectionModuleTest extends WordSpec with DefaultRuntime with OpsTes
     "give correct phong components when eye aligned with normal and light is 45 deg off" in {
       unsafeRun {
         (for {
-          s          <- Sphere.unit
+          s          <- Sphere.canonical
           hitComps   <- UIO(HitComps(s, pt = Pt(0, 0, 0), normalV = Vec(0, 0, -1), eyeV = Vec(0, 0, -1), rayReflectV = Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- PhongReflectionModule.>.lighting(pointLight, hitComps, false)
@@ -55,7 +55,7 @@ class PhongReflectionModuleTest extends WordSpec with DefaultRuntime with OpsTes
     "give correct phong components when eye aligned with reflection vector light is 45 deg off" in {
       unsafeRun {
         (for {
-          s          <- Sphere.unit
+          s          <- Sphere.canonical
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, -math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- PhongReflectionModule.>.lighting(pointLight, hitComps, false)
@@ -67,7 +67,7 @@ class PhongReflectionModuleTest extends WordSpec with DefaultRuntime with OpsTes
     "give correct phong components when eye is on the other side of the light, aligned with normal" in {
       unsafeRun {
         (for {
-          s          <- Sphere.unit
+          s          <- Sphere.canonical
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 0, 10), Color.white))
           res        <- PhongReflectionModule.>.lighting(pointLight, hitComps, false)
@@ -79,7 +79,7 @@ class PhongReflectionModuleTest extends WordSpec with DefaultRuntime with OpsTes
     "give correct phong components when eye is in LOS with source and aligned with normal, but shadowed" in {
       unsafeRun {
         (for {
-          s          <- Sphere.unit
+          s          <- Sphere.canonical
           hitComps   <- UIO(HitComps(s, Pt(0, 0, 0), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 0, -10), Color.white))
           res        <- PhongReflectionModule.>.lighting(pointLight, hitComps, true)

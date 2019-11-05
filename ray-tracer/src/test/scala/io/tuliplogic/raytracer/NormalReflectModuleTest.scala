@@ -17,7 +17,7 @@ class NormalReflectModuleTest extends WordSpec with DefaultRuntime with TestUtil
     "be the point minus origin" in {
       unsafeRun {
         (for {
-          s          <- Sphere.unit
+          s          <- Sphere.canonical
           pts        <- UIO.succeed(List(Pt(0, 1, 0), Pt(1, 0, 0), Pt(0, 0, 1)))
           normalVecs <- ZIO.sequence(pts.map(spatialEntityOps.normal(_, s)))
           _          <- ZIO.effect { normalVecs shouldEqual pts.map(_ - Pt(0, 0, 0)) }

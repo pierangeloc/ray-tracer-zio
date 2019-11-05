@@ -7,7 +7,7 @@ import zio.stream._
 
 import scala.{Stream => ScalaStream}
 
-abstract class Canvas(private val width_ : Int, height_ : Int, rows: Array[Array[Color]]) {
+abstract class Canvas private (private val width_ : Int, height_ : Int, rows: Array[Array[Color]]) {
   private def checkAccessIndex(x: Int, y: Int): IO[IndexExceedCanvasDimension, Unit] =
     if (x >= 0 && x < width_ && y >= 0 && y < height_) IO.unit
     else IO.fail(IndexExceedCanvasDimension(x, y, width_, height_))

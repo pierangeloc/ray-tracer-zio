@@ -46,7 +46,7 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         val ray = Ray(Pt(0, 0, -5), Vec(0, 0, 1))
         (for {
-          s                  <- Sphere.unit
+          s                  <- Sphere.canonical
           intersectionPoints <- RayModule.>.intersect(ray, s)
           _                  <- IO(intersectionPoints shouldEqual List(4d, 6d).map(Intersection(_, s)))
         } yield ()).provide(rayEnv)
@@ -102,7 +102,7 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
     "calculate hit from list of intersections" in {
       unsafeRun {
         (for {
-          s             <- Sphere.unit
+          s             <- Sphere.canonical
           intersections <- UIO.succeed(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s)))
           hit           <- RayModule.>.hit(intersections)
           _             <- IO(hit.get.t shouldEqual 2)

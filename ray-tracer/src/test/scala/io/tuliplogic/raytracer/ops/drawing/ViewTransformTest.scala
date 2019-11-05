@@ -16,13 +16,13 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
   //TODO: property of this transform is that a view with proportional `to - from` vectors should give the same transformation
 
   "View transform" should {
-    "provide identity transformaton for default view" in {
+    "provide identity transformation for default view" in {
       forAll {
         pointGen
       } { point =>
         unsafeRun(
           (for {
-            tf     <- ViewTransform.default.tf
+            tf     <- Camera.canonicalTransformation
             result <- ATModule.>.applyTf(tf, point)
             _      <- IO.effect(result should ===(point))
           } yield ()).provide(env)
@@ -36,7 +36,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
       } { point =>
         unsafeRun(
           (for {
-            tf     <- ViewTransform(Pt.origin, Pt(0, 0, 1), Vec.uy).tf
+            tf     <- Camera.viewTransform(Pt.origin, Pt(0, 0, 1), Vec.uy)
             result <- ATModule.>.applyTf(tf, point)
             _      <- IO.effect(result should ===(point.copy(-point.x, point.y, -point.z)))
           } yield ()).provide(env)
@@ -54,7 +54,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
         case (point, deltaZ) =>
           unsafeRun(
             (for {
-              tf     <- ViewTransform(Pt.origin.copy(z = deltaZ), Pt(0, 0, deltaZ - 1), Vec.uy).tf
+              tf     <- Camera.viewTransform(Pt.origin.copy(z = deltaZ), Pt(0, 0, deltaZ - 1), Vec.uy)
               result <- ATModule.>.applyTf(tf, point)
               _      <- IO.effect(result should ===(point.copy(point.x, point.y, point.z - deltaZ)))
             } yield ()).provide(env)
@@ -68,7 +68,7 @@ class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with
       } { point =>
         unsafeRun(
           (for {
-            tf     <- ViewTransform(Pt(1, 3, 2), Pt(4, -2, 8), Vec(1, 1, 0)).tf
+            tf     <- Camera.viewTransform(Pt(1, 3, 2), Pt(4, -2, 8), Vec(1, 1, 0))
             result <- ATModule.>.applyTf(tf, point)
             expectedTfMatrix <- Types.factory.fromRows(
               4,

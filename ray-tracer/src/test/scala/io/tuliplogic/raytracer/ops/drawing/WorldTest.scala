@@ -36,7 +36,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     "compute the components of a ray hitting the surface at a given intersection" in {
       unsafeRun {
         (for {
-          s   <- Sphere.unit
+          s   <- Sphere.canonical
           i   <- UIO(Intersection(4, s))
           ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           hc  <- WorldModule.>.hitComps(ray, i, List(i))
@@ -460,7 +460,7 @@ object WorldTest {
     plane <- Plane.canonical.map(p => p.copy(transformation = translatePlane, material = p.material.copy(transparency = 0.5, refractionIndex = 1.5)))
 
     translateSphere <- ATModule.>.translate(0, -3.5, -0.5)
-    s <- Sphere.unit.map(sph => sph.copy(transformation = translateSphere, material = sph.material.copy(pattern = Pattern.Uniform(Color.red, idTf), ambient = 0.5)))
+    s <- Sphere.canonical.map(sph => sph.copy(transformation = translateSphere, material = sph.material.copy(pattern = Pattern.Uniform(Color.red, idTf), ambient = 0.5)))
 
     mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.1, 0.7, 0.2, 200, 0, 0, 1))
     tf1  <- ATModule.>.id

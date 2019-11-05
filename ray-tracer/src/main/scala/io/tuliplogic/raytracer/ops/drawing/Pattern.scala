@@ -45,11 +45,4 @@ object Pattern {
       if (math.floor(edgesSum) % 2 == 0) c1 else c2
     }
   }
-
-  def uniform(c: Color): ZIO[AT, Nothing, Uniform]                 = ZIO.access(Uniform(c, _))
-  def striped(c1: Color, c2: Color): ZIO[AT, Nothing, Striped]     = ZIO.access(Striped(c1, c2, _))
-  def gradientX(c1: Color, c2: Color): ZIO[AT, Nothing, GradientX] = ZIO.access(GradientX(c1, c2, _))
-  def ring(c1: Color, c2: Color): ZIO[AT, Nothing, Ring]           = ZIO.access(Ring(c1, c2, _))
-  def checker(c1: Color, c2: Color): ZIO[AT, Nothing, Checker]     = ZIO.access(Checker(c1, c2, _))
-
 }

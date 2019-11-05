@@ -12,8 +12,7 @@ import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{App, UIO, ZEnv, ZIO, console}
-
+import zio.{console, App, UIO, ZEnv, ZIO}
 
 object Chapter9World extends App {
   val canvasFile    = "ppm/chapter-9-three-spheres-shadow-" + System.currentTimeMillis + ".ppm"
@@ -27,52 +26,29 @@ object Chapter9World extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasSerializer.PPMCanvasSerializer
-          with FullModules with RasteringModule.ChunkRasteringModule
-          with ATModule.Live with MatrixModule.BreezeMatrixModule with CameraModule.Live with WorldModule.Live with Console.Live with Clock.Live with Blocking.Live {
+        new CanvasSerializer.PPMCanvasSerializer with FullModules with RasteringModule.ChunkRasteringModule with ATModule.Live
+        with MatrixModule.BreezeMatrixModule with CameraModule.Live with WorldModule.Live with Console.Live with Clock.Live with Blocking.Live {
           override def path: Path = Paths.get(canvasFile)
         }
       }
       .foldM(err => console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1), _ => UIO.succeed(0))
 
-  //TODO: make a DSL to build a world, this is too painful
-
   val world = for {
     defaultMat <- Material.default
     idTf       <- ATModule.>.id
     floorMat   <- UIO(defaultMat.copy(pattern = Pattern.Uniform(Color(1, 0.9, 0.9), idTf), specular = 0))
-    floorS     <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
-
-    leftWallTf2 <- ATModule.>.rotateX(math.Pi / 2)
-    leftWallTf3 <- ATModule.>.rotateY(-math.Pi / 4)
-    leftWallTf4 <- ATModule.>.translate(0, 0, 5)
-    leftWallTf  <- ATModule.>.compose(leftWallTf2, leftWallTf3).flatMap(ATModule.>.compose(_, leftWallTf4))
-    leftWallS   <- UIO(Plane(leftWallTf, floorMat))
-
-    rightWallTf2 <- ATModule.>.rotateX(math.Pi / 2)
-    rightWallTf3 <- ATModule.>.rotateY(math.Pi / 4)
-    rightWallTf4 <- ATModule.>.translate(0, 0, 5)
-    rightWallTf  <- ATModule.>.compose(rightWallTf2, rightWallTf3).flatMap(ATModule.>.compose(_, rightWallTf4))
-    rightWallS   <- UIO(Plane(rightWallTf, floorMat))
-
-    s1Tf <- ATModule.>.translate(-0.5, 1.2, 0.5)
-    s1   <- UIO(Sphere(s1Tf, defaultMat.copy(pattern = Pattern.Uniform(Color(0.1, 1, 0.5), idTf), diffuse = 0.7, specular = 0.3)))
-
-    s2Tf1 <- ATModule.>.scale(0.5, 0.5, 0.5)
-    s2Tf2 <- ATModule.>.translate(1.5, 0.5, -0.5)
-    s2Tf  <- ATModule.>.compose(s2Tf2, s2Tf1)
-    s2    <- UIO(Sphere(s2Tf, defaultMat.copy(pattern = Pattern.Uniform(Color(0.5, 1, 0.1), idTf), diffuse = 0.7, specular = 0.3)))
-
-    s3Tf1 <- ATModule.>.scale(0.33, 0.33, 0.33)
-    s3Tf2 <- ATModule.>.translate(-1.5, 0.33, -0.75)
-    s3Tf  <- ATModule.>.compose(s3Tf2, s3Tf1)
-    s3    <- UIO(Sphere(s3Tf, defaultMat.copy(pattern = Pattern.Uniform(Color(1, 0.8, 0.1), idTf), diffuse = 0.7, specular = 0.3)))
+    floorS     <- Plane.make(0, 0, 0, Pt.origin, floorMat) //grey, matte
+    leftWallS  <- Plane.make(math.Pi / 2, -math.Pi / 4, 0, Pt(0, 0, 5), floorMat)
+    rightWallS <- Plane.make(math.Pi / 2, math.Pi / 4, 0, Pt(0, 0, 5), floorMat)
+    s1         <- Sphere.make(Pt(-0.5, 1.2, 0.5), 1, defaultMat.copy(pattern = Pattern.Uniform(Color(0.1, 1, 0.5), idTf), diffuse = 0.7, specular = 0.3))
+    s2         <- Sphere.make(Pt(1.5, 0.5, -0.5), 0.5, defaultMat.copy(pattern = Pattern.Uniform(Color(0.5, 1, 0.1), idTf), diffuse = 0.7, specular = 0.3))
+    s3         <- Sphere.make(Pt(-1.5, 0.33, -0.75), 0.33, defaultMat.copy(pattern = Pattern.Uniform(Color(1, 0.8, 0.1), idTf), diffuse = 0.7, specular = 0.3))
   } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, s3, floorS, rightWallS, leftWallS))
 
   val program = for {
     w      <- world
-      canvas <- RaytracingProgram.drawOnCanvas(w, cameraFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
-      _      <- CanvasSerializer.>.render(canvas, 255)
+    canvas <- RaytracingProgram.drawOnCanvas(w, cameraFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
+    _      <- CanvasSerializer.>.render(canvas, 255)
   } yield ()
 
 }

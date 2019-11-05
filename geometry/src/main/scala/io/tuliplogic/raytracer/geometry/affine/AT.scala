@@ -3,12 +3,12 @@ package io.tuliplogic.raytracer.geometry.affine
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import zio.{UIO, URIO, ZIO}
+import zio.{DefaultRuntime, UIO, ZIO}
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M, factory, vectorizable}
+
 import scala.math.{cos, sin}
 
 //import zio.macros.access.accessible
-
 
 case class AT(direct: M, inverse: M) {
   def inverted: AT = AT(inverse, direct)
@@ -117,7 +117,7 @@ object ATModule {
         for {
           direct  <- matrixModule.mul(second.direct, first.direct)
           inverse <- matrixModule.mul(first.inverse, second.inverse)
-        } yield AT(direct, inverse)
+        } yield new AT(direct, inverse)
 
       override def invert(tf: AT): ZIO[Any, AlgebraicError, AT] = UIO.succeed(AT(tf.inverse, tf.direct))
 

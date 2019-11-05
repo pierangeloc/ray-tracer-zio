@@ -45,7 +45,7 @@ object Chapter11WorldRefraction extends App {
 
     s1Tf <- ATModule.>.scale(4, 4, 4)
     glass <- Material.glass
-    s1 <- Sphere.unit.map(_.copy(transformation = s1Tf, material = glass))
+    s1 <- Sphere.canonical.map(_.copy(transformation = s1Tf, material = glass))
 
     s2Tf <- ATModule.>.scale(1, 2, 2)
     air <- Material.air
