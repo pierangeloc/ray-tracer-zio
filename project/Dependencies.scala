@@ -3,11 +3,10 @@ import sbt._
 object Dependencies {
   val http4sVersion = "0.21.0-M4"
 
-  val zioVersion     = "1.0.0-RC16"
-  val zioCatsVersion = "2.0.0.0-RC7"
-  val zioNioVersion      = "0.3.0"
-//  val zioNioVersion      = "0.2.1+13-23144bd0+20191029-0050"
-  val zioDelegateVersion = "0.0.5"
+  val zioVersion       = "1.0.0-RC16"
+  val zioCatsVersion   = "2.0.0.0-RC7"
+  val zioNioVersion    = "0.3.0"
+  val zioMacrosVersion = "0.5.0"
 
   val fs2Version        = "2.0.0"
   val catsVersion       = "2.0.0"
@@ -26,7 +25,6 @@ object Dependencies {
   lazy val zioStreams  = "dev.zio"       %% "zio-streams"      % zioVersion
   lazy val zioCats     = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
   lazy val zioNio      = "dev.zio"       %% "zio-nio"          % zioNioVersion
-  lazy val zioDelegate = "dev.zio"       %% "zio-delegate"     % zioDelegateVersion
 
   lazy val fs2 = "co.fs2" %% "fs2-io" % fs2Version
 
@@ -57,9 +55,9 @@ object Dependencies {
 
   lazy val scalaTags = "com.lihaoyi" %% "scalatags" % "0.6.8"
 
-  lazy val zioTest             = "dev.zio" %% "zio-test"              % zioVersion
-  lazy val zioTestSbt          = "dev.zio" %% "zio-test-sbt"          % zioVersion
-//  lazy val zioMacrosAccess = "dev.zio" %% "zio-macros-access" % "0.4.0"
-//  lazy val zioMacrosMock   = "dev.zio" %% "zio-macros-mock"   % "0.4.0"
+  lazy val zioTest         = "dev.zio" %% "zio-test"        % zioVersion
+  lazy val zioTestSbt      = "dev.zio" %% "zio-test-sbt"    % zioVersion
+  lazy val zioMacrosCore   = "dev.zio" %% "zio-macros-core" % zioMacrosVersion
+  lazy val zioMacrosTest   = "dev.zio" %% "zio-macros-test" % zioMacrosVersion
 
 }

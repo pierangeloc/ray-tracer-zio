@@ -24,6 +24,6 @@ object Color {
   def mul(c1: Color, c2: Color): Color = Color(c1.red * c2.red, c1.green * c2.green, c1.blue * c2.blue)
 }
 
-final case class ColoredPoint(pixel: Pixel, color: Color) {
+final case class ColoredPixel(pixel: Pixel, color: Color) {
   override def toString: String = s"(${pixel.x}, ${pixel.y}, [${color.red}, ${color.green}, ${color.blue}])"
 }

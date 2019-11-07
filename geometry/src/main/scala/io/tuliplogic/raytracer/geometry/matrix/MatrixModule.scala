@@ -173,6 +173,7 @@ object MatrixModule {
     }
   }
 
+  // access helper
   object > extends MatrixModule.Service[MatrixModule] {
     override def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[MatrixModule, AlgebraicError, Boolean] =
       ZIO.accessM(_.matrixModule.almostEqual(m1, m2, maxSquaredError))

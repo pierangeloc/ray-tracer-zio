@@ -15,11 +15,11 @@ trait RasteringModule {
 object RasteringModule {
 
   trait Service[R] {
-    def raster(world: World, camera: Camera): ZIO[R, Nothing, ZStream[R, RayTracerError, ColoredPoint]]
+    def raster(world: World, camera: Camera): ZIO[R, Nothing, ZStream[R, RayTracerError, ColoredPixel]]
   }
 
   /**
-    * This implementation
+    * This implementation tries to exploit the parallelism as much as possible, splitting the stream in chunks and processing each chunk of pixels in parallel
     */
   trait ChunkRasteringModule extends RasteringModule {
     val chunkSize: Int = 4096
@@ -28,10 +28,10 @@ object RasteringModule {
     val worldModule: WorldModule.Service[Any]
 
     override val rasteringModule: Service[Any] = new Service[Any] {
-      override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPoint]] = {
+      override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] = {
         val pixels = for {
-          x <- ZStream.fromIterable(0 to camera.hRes )
-          y <- ZStream.fromIterable(0 to camera.vRes )
+          x <- ZStream.fromIterable(0 until camera.hRes )
+          y <- ZStream.fromIterable(0 until camera.vRes )
         } yield (x, y)
 
         UIO.succeed(pixels.chunkN(4096).mapMPar(parChunks) { chunk =>
@@ -40,7 +40,7 @@ object RasteringModule {
               for {
                 ray   <- cameraModule.rayForPixel(camera, px, py)
                 color <- worldModule.colorForRay(world, ray)
-              } yield ColoredPoint(Pixel(px, py), color)
+              } yield ColoredPixel(Pixel(px, py), color)
           }
         }.flatMap(ZStream.fromChunk))
       }
@@ -49,16 +49,16 @@ object RasteringModule {
 
   trait AllWhiteTestRasteringModule extends RasteringModule {
     override val rasteringModule: Service[Any] = new Service[Any] {
-      override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPoint]] =
+      override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] =
         UIO.succeed(for {
           x <- ZStream.fromIterable(0 to camera.hRes)
           y <- ZStream.fromIterable(0 to camera.vRes)
-        } yield ColoredPoint(Pixel(x, y), Color.white))
+        } yield ColoredPixel(Pixel(x, y), Color.white))
     }
   }
 
   object > extends RasteringModule.Service[RasteringModule] {
-    override def raster(world: World, camera: Camera): ZIO[RasteringModule, Nothing, ZStream[RasteringModule, RayTracerError, ColoredPoint]] =
+    override def raster(world: World, camera: Camera): ZIO[RasteringModule, Nothing, ZStream[RasteringModule, RayTracerError, ColoredPixel]] =
           ZIO.accessM[RasteringModule](_.rasteringModule.raster(world, camera))
   }
 }

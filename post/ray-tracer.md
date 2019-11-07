@@ -11,6 +11,14 @@ All rays and objects are described in terms of euclidean space, the space of poi
 
 We will implement a simple ray tracer using ZIO environmental effects, to demonstrate how we can build a true onion architecture application, and test it completely relying solely on functional effects.
 
+To start, the data type modelling a ray is simply a pair of a point (origin) and a vector saying where it's going. We also want to be able to describe all possible hits of a ray, therefore we equip it with the `positionAt(t)` function. 
+
+```scala
+case class Ray(origin: Pt, direction: Vec) {
+  def positionAt(t: Double): Pt = origin + (direction * t)
+}
+```
+
 ## 1. Create a camera
 A camera in a 3d space is completely described by its resolution (`hRes`, `vRes`), the point where it is located (`viewFrom`), the point it is looking at (`viewTo`) and the direction of the vector "looking up" the camera, to distinguish how the camera is rotated. Moreover, the aperture angle of the camera determines uniquely the distance between the "eye" and the camera itself (see Fig 1)
 
@@ -30,7 +38,7 @@ This will create a(n `UIO` of a) `case class Camera( hRes: Int, vRes: Int, field
 
 So we will start with the definition of a module that gives us the capability of applying, and defining, these transformations, that are called _affine transformations_ and are completely specified by a matrix 4 x 4.
 
-### 1.1. Define an Affine Transformations module
+### 1.1 Define an Affine Transformations module
 Affine transformations can be applied both to points and vectors. With the convention that a point `Pt(x, y, z)` is represented by a column vector $`[x, y, z, 1]^T`$, and a vector `Vec(x, y, z)` is represented by a vector $`[x, y, z, 0]`$, given an affine transformation matrix, applying that transformation to the vector or point means simply multiplying the transformation matrix by the vector representing the `Vec` or the `Pt`. To make things more efficient, given that often in our computations for every transformation we need the opposite one (think about changing perspective and observer relativity), we will compute the inverse at the moment of creation of an affine transformation.
 
 ```scala
@@ -116,7 +124,7 @@ rotatedPt.provide(new ATModule.Live with MatrixModule.BreezeMatrixModule{})
 // Compiles!
 ```
 
-### 1.3. Make a Camera
+### 1.3 Make a Camera
 With the capability of applying affine transformations, it is relatively easy to create a `Camera`, once we compute the transformation to be embedded in the camera (and for that we just need `ATModule` capabilities)
 
 ```scala
@@ -149,9 +157,137 @@ case class World(pointLight: PointLight, objects: List[SceneObject])
 ```
 
 # 3. Render a `World`
+Rendering a world means scanning the grid of pixels of our camera, and produce a color for each pixel. To guarantee us maximal flexibility on how to manage those colored pixels, and considering the pixels to color can be pretty numerous, it is convenient to produce a stream of colored pixels.
 
+We define our module `RasteringModule` as follows (I'm omitting the definition of the `trait RasteringModule` for brevity):
 
+```scala
+object RasteringModule {
 
+  trait Service[R] {
+    def raster(world: World, camera: Camera): ZIO[R, Nothing, ZStream[R, RayTracerError, ColoredPixel]]
+  }
+```
 
+We can provide different implementations of this module, for example for testing it might be useful to have an all white result
 
+```scala
+trait AllWhiteTestRasteringModule extends RasteringModule {
+  override val rasteringModule: Service[Any] = new Service[Any] {
+    override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] =
+      UIO.succeed(for {
+        x <- ZStream.fromIterable(0 to camera.hRes)
+        y <- ZStream.fromIterable(0 to camera.vRes)
+      } yield ColoredPixel(Pixel(x, y), Color.white))
+  }
+}
+```
 
+But for production we need to be able to simulate the real behavior of rays in our world, and this requires 2 capabilities:
+1. Being able to produce one (outgoing) ray for every pixel in the camera
+2. Calculate the color for that ray, considering all the possible effects (shadows, reflection, material, etc)
+
+For each of these capabilities, we create a module, let's start with a module that given a camera and a pixel, is able to compute the ray for that pixel
+
+```scala
+object CameraModule {
+
+  trait Service[R] {
+    def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[R, AlgebraicError, Ray]
+  }
+```
+
+The live implementation for this is a bit verbose but not really complicated, and you can find it in the code together with some explanatory comments about the calculation logic.
+
+For the calculation of the color for a given ray, we define the core module of our ray tracing application, the `WorldModule`
+
+```scala
+object WorldModule {
+  trait Service[R] {
+    def colorForRay(world: World, ray: Ray): ZIO[R, RayTracerError, Color]
+```
+
+Now, regardless of the implementations of `CameraModule` and `WorldModule`, we can provide a live implementation of our rastering module, that will depend on these 2 modules without bothering about their implementation. Here is an implementation that tries to exploit all the cores of our processor, but as I don't want to divert to a different topic (computation strategies with streams), the key point here is that for each point in our camera we are calling the 2 modules defined above  
+
+```scala
+trait ChunkRasteringModule extends RasteringModule {
+    val cameraModule: CameraModule.Service[Any]
+    val worldModule: WorldModule.Service[Any]
+
+    val chunkSize: Int = 4096
+    val parChunks: Int = 15 //nr cores - 1
+
+    override val rasteringModule: Service[Any] = new Service[Any] {
+      override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] = {
+          /* omitted code, see source */
+          for {
+            ray   <- cameraModule.rayForPixel(camera, px, py)
+            color <- worldModule.colorForRay(world, ray)
+          } yield ColoredPixel(Pixel(px, py), color)
+          /* omitted code */
+      }
+    }
+  }
+```
+
+### 3.1 Testing the rastering module
+To unit test the rastering module, we make use of the mocking features provided by [`zio-test`](https://github.com/zio/zio/tree/master/test). In tagless final, to test functionally we would rely on state monad or `Ref` to load the mocks and keep track of the calls being performed. For an example of this strategy in Tagless Final see [here](https://github.com/profunktor/console4cats/blob/master/core/src/test/scala/cats/effect/ConsoleSpec.scala), for a ZIO base done see [here](https://gist.github.com/jdegoes/dd66656382247dc5b7228fb0f2cb97c8). Basically the idea is to use the `Ref` as a mutable state to hold the "preload" of the mocks and as a tracker that the expected calls have been performed.
+
+`Zio-test` generalizes this, and together with a couple of macro annotations it makes testing with mock straightforward, just follow these simple steps:
+
+1. Define what you want to test, leaving out the dependencies on the services you want to mock, in this case we want to test this
+
+```scala
+ val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
+        RasteringModule.>.raster(world, camera).flatMap(_.runCollect)
+```
+
+You can see that this effect needs to be provided with the implementation of `RasteringModule` we want to test. In this case we will produce a list of `ColoredPixel` that we can check later against expectations  
+
+1. Annotate the _modules_ (not the services!!!) you want to mock with `@mockable` 
+
+```scala
+@mockable
+trait CameraModule { ... }
+
+@mockable
+trait WorldModule { ... }
+```
+
+1. In the unit test, prepare your mocks by defining the `Expectations` for the methods you want to mock, e.g. here we specify that when the call to `WorldModule.colorForRay` is done with `world, r1, 5` input, it should return `Color.red` 
+
+```scala
+  val colorForRayExp = (WorldModule.colorForRay(equalTo((world, r1, 5))) returns value(Color.red)) *>
+    (WorldModule.colorForRay(equalTo((world, r2, 5))) returns value(Color.green))
+
+  val rayForPixelExp = CameraModule.rayForPixel(equalTo((camera, 0, 0))) returns value(r1)) *>
+      (CameraModule.rayForPixel(equalTo((camera, 0, 1))) returns value(r2))
+```
+
+Expectations are pure values and monads, so we can combine them, zip them like we are used to with other structures
+
+1. Provide the `appUnderTest` with a managed environment build using the expectations we just built 
+
+```scala
+appUnderTest.provideManaged(
+  worldModuleExp.managedEnv.zipWith(cameraModuleExp.managedEnv) { (wm, cm) =>
+    new ChunkRasteringModule {
+      override val cameraModule: CameraModule.Service[Any] = cm.cameraModule
+      override val worldModule: WorldModule.Service[Any] = wm.worldModule
+        }
+      }
+    )
+```
+
+1. Assert on the result
+```scala
+assert(res, equalTo(List(
+  ColoredPixel(Pixel(0, 0), Color.red),
+  ColoredPixel(Pixel(0, 1), Color.green),
+  ColoredPixel(Pixel(1, 0), Color.blue),
+  ColoredPixel(Pixel(1, 1), Color.white),
+  ))
+)
+```
+
+The fact that we provide our effect with a `Managed` rather than just an environment, makes sure that the `release` process of the `Managed` is executed no matter what happens in the tests. The `release` will take care of asserting that all the mocks have been called as expected.

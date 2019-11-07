@@ -3,7 +3,8 @@ package io.tuliplogic.raytracer.ops.drawing
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import zio.{UIO, ZIO}
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
+import zio.{DefaultRuntime, UIO, ZIO}
 
 /**
   * @param tf describes how the _world_ moves with respect to the camera
@@ -22,6 +23,8 @@ case class Camera (
 
   val pixelXSize: Double = 2 * halfWidth / hRes
   val pixelYSize: Double = pixelXSize //2 * halfHeight / vRes
+
+  override def toString: String = s"Camera(hRes = $hRes, vRes = $vRes, fieldOfView = $fieldOfViewRad)"
 }
 
 object Camera {
@@ -35,7 +38,7 @@ object Camera {
   * we provide the equivalent transformation of the world needed to produce the same perspective
   */
   def viewTransform(from: Pt, to: Pt, up: Vec): ZIO[ATModule, AlgebraicError, AT] = for {
-    fwd             <- (to - from).normalized
+      fwd             <- (to - from).normalized
       upNormalized  <- up.normalized
       left          <- UIO(fwd cross upNormalized)
       trueUp        <- UIO(left cross fwd) //this makes a real reference system LTR with fwd, up, left really orthogonal with each other
@@ -62,6 +65,12 @@ object Camera {
   def make(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): ZIO[ATModule, AlgebraicError, Camera] = for {
     cameraTf <- viewTransform(viewFrom, viewTo, upDirection)
   } yield new Camera(hRes, vRes, visualAngleRad, cameraTf)
+
+  def makeUnsafe(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): Camera =
+    new DefaultRuntime{}.unsafeRun(
+      Camera.make(viewFrom, viewTo, upDirection, visualAngleRad, hRes, vRes)
+        .provide(new ATModule.Live with MatrixModule.BreezeMatrixModule)
+    )
 
   //this is just the `identity` transformation
   val canonicalTransformation: ZIO[ATModule, AlgebraicError, AT] = viewTransform(Pt.origin, Pt(0, 0, -1), Vec.uy)

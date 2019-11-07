@@ -8,7 +8,7 @@ import io.tuliplogic.raytracer.geometry.matrix.{Matrix, MatrixModule}
 import zio.test.Assertion._
 import zio.test.mock.{Method, Mock, Mockable}
 import zio.test.mock.Expectation._
-import zio.test.{DefaultRunnableSpec, _}
+import zio.test._
 import zio.{IO, UIO, ZIO}
 
 object ATModuleTestZIOMocks extends DefaultRunnableSpec(
@@ -48,6 +48,7 @@ trait MatrixModuleMock extends MatrixModule {
 object MatrixModuleMock {
   trait Service[R] extends MatrixModule.Service[R]
 
+  // capability tags
   object almostEqual extends Method[MatrixModuleMock, (M, M, Double), Boolean]
   object opposite    extends Method[MatrixModuleMock, M, M] //def opposite(m: M): ZIO[R, AlgebraicError, M]
   object equal       extends Method[MatrixModuleMock, (M, M), Boolean] //def equal(m1: M, m2: M): ZIO[R, AlgebraicError, Boolean]

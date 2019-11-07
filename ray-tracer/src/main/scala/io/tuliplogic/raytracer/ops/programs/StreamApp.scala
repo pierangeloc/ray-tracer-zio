@@ -8,7 +8,7 @@ import zio.clock.Clock
 import zio.duration.Duration
 import zio.internal.{Executor, NamedThreadFactory, PlatformLive}
 import zio.stream._
-import zio.{App, Schedule, UIO, ZIO, ZSchedule, blocking, clock, console}
+import zio.{App, Schedule, UIO, ZEnvDefinition, ZIO, ZSchedule, blocking, clock, console}
 
 object StreamApp extends App {
 
@@ -77,4 +77,25 @@ object TestClock {
     clock.currentDateTime.map(at => SimpleEvent(at.toInstant))
   ).schedule(ZSchedule.spaced(zio.duration.Duration.fromScala(10.seconds)))
 
+}
+
+import zio.ZIO
+import zio.stream.ZStream
+
+object Repro extends zio.App {
+
+  def stream: ZIO[Any, Nothing, List[Either[Int, Int]]] = ZStream
+    .fromIterable[Int](Seq.empty)
+    .partitionEither(i => ZIO.succeed(if (i % 2 == 0) Left(i) else Right(i)))
+    .map { case (evens, odds) => evens.mergeEither(odds) }
+    .use(_.runCollect)
+
+  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, Int] = {
+    ZIO.sequence(Range(0, 100).toList.map(i => for {
+      res <- stream
+        _ <- ZIO.effectTotal(println(s"$i, $res"))
+    } yield ())).map(_ => 0)
+//    stream.flatMap(list => ZIO.effectTotal(println(list))).as(0)
+//    ZIO.sequence(Range(0, 100).toList.map(x => ZIO.effectTotal(println(x)))).as(0)
+  }
 }

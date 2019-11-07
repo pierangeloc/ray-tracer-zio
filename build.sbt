@@ -70,6 +70,8 @@ lazy val commonSettings = inThisBuild(
       addCompilerPlugin(("org.scalamacros" % "paradise"  % "2.1.1") cross CrossVersion.full),
       testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
       libraryDependencies ++= Seq(
+        zioMacrosCore,
+        zioMacrosTest,
         zioTest % "test",
         zioTestSbt % "test"
       )

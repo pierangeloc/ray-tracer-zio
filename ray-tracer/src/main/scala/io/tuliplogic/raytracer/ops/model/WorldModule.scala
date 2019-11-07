@@ -8,7 +8,9 @@ import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
 import zio.interop.catz._
+import zio.macros.annotation.mockable
 
+@mockable
 trait WorldModule {
   val worldModule: WorldModule.Service[Any]
 }

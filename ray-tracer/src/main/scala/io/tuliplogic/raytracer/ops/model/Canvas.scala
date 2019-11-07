@@ -27,7 +27,7 @@ abstract class Canvas private (private val width_ : Int, height_ : Int, rows: Ar
       }
     )
 
-  def update(coloredPoint: ColoredPoint): IO[IndexExceedCanvasDimension, Unit] =
+  def update(coloredPoint: ColoredPixel): IO[IndexExceedCanvasDimension, Unit] =
     update(coloredPoint.pixel.x, coloredPoint.pixel.y, coloredPoint.color)
 
   def rows: UIO[Array[Array[Color]]] =
