@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
-import io.tuliplogic.raytracer.ops.drawing.{Camera, World}
+import io.tuliplogic.raytracer.ops.model.data.{Camera, Color, ColoredPixel, Pixel, World}
 import zio.stream.ZStream
 import zio.{UIO, ZIO}
 
@@ -40,7 +40,7 @@ object RasteringModule {
               for {
                 ray   <- cameraModule.rayForPixel(camera, px, py)
                 color <- worldModule.colorForRay(world, ray)
-              } yield ColoredPixel(Pixel(px, py), color)
+              } yield data.ColoredPixel(Pixel(px, py), color)
           }
         }.flatMap(ZStream.fromChunk))
       }

@@ -1,6 +1,7 @@
 package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
+import io.tuliplogic.raytracer.ops.model.data.Color
 import zio.{UIO, ZIO}
 
 /**

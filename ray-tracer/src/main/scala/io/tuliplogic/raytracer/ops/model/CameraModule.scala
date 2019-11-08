@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.model
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.geometry.affine.ATModule
-import io.tuliplogic.raytracer.ops.drawing.Camera
+import io.tuliplogic.raytracer.ops.model.data.{Camera, Ray}
 import zio.macros.annotation.mockable
 import zio.{UIO, ZIO}
 

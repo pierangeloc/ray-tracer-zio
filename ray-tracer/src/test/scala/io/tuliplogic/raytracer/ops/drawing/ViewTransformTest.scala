@@ -4,6 +4,7 @@ import io.tuliplogic.raytracer.geometry.TestUtils
 import io.tuliplogic.raytracer.geometry.matrix.{Generators, MatrixModule, Types}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
+import io.tuliplogic.raytracer.ops.model.data.Camera
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks

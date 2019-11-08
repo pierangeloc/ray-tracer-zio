@@ -5,14 +5,14 @@ import java.nio.file.{Path, Paths}
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.ops.drawing.{Pattern, World}
-import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, Material, RasteringModule, SceneObject, WorldModule}
+import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, PointLight, Shape, Sphere}
+import io.tuliplogic.raytracer.ops.model.data.{Color, Material, Pattern, World}
+import io.tuliplogic.raytracer.ops.model.{CameraModule, RasteringModule, WorldModule}
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.{console, App, UIO, ZEnv, ZIO}
+import zio.{App, UIO, ZEnv, ZIO, console}
 
 object Chapter9World extends App {
   val canvasFile    = "ppm/chapter-9-three-spheres-shadow-" + System.currentTimeMillis + ".ppm"
@@ -42,7 +42,7 @@ object Chapter9World extends App {
     s1         <- Sphere.make(Pt(-0.5, 1.2, 0.5), 1, defaultMat.copy(pattern = Pattern.Uniform(Color(0.1, 1, 0.5), idTf), diffuse = 0.7, specular = 0.3))
     s2         <- Sphere.make(Pt(1.5, 0.5, -0.5), 0.5, defaultMat.copy(pattern = Pattern.Uniform(Color(0.5, 1, 0.1), idTf), diffuse = 0.7, specular = 0.3))
     s3         <- Sphere.make(Pt(-1.5, 0.33, -0.75), 0.33, defaultMat.copy(pattern = Pattern.Uniform(Color(1, 0.8, 0.1), idTf), diffuse = 0.7, specular = 0.3))
-  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1, s2, s3, floorS, rightWallS, leftWallS))
+  } yield World(PointLight(lightPosition, Color.white), List[Shape](s1, s2, s3, floorS, rightWallS, leftWallS))
 
   val program = for {
     w      <- world

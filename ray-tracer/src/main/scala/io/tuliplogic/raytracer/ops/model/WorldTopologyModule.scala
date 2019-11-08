@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
-import io.tuliplogic.raytracer.ops.drawing.World
+import io.tuliplogic.raytracer.ops.model.data.{Intersection, Ray, RayModule, World}
 import zio.{UIO, ZIO}
 
 /**

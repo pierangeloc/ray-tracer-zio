@@ -6,9 +6,9 @@ import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.ops.drawing.{Pattern, World}
-import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, Material, RasteringModule, SceneObject, WorldModule}
+import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, PointLight, Shape, Sphere}
+import io.tuliplogic.raytracer.ops.model.data.{Color, Material, Pattern, World}
+import io.tuliplogic.raytracer.ops.model.{CameraModule, RasteringModule, WorldModule}
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import zio.blocking.Blocking
 import zio.{App, UIO, ZEnv, ZIO, console}
@@ -83,7 +83,7 @@ object Chapter11World extends App {
       )
     )
 
-  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](
+  } yield World(PointLight(lightPosition, Color.white), List[Shape](
 //    s1, s2,
     s3, floorS, leftWallS))
 

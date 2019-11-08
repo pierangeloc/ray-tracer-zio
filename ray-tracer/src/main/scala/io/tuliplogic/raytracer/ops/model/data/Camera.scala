@@ -1,8 +1,8 @@
-package io.tuliplogic.raytracer.ops.drawing
+package io.tuliplogic.raytracer.ops.model.data
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import zio.{DefaultRuntime, UIO, ZIO}
 

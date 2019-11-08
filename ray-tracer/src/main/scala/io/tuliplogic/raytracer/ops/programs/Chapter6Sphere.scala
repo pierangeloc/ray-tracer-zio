@@ -6,7 +6,7 @@
 //import io.tuliplogic.raytracer.geometry.affine.ATModule
 //import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 //import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
-//import io.tuliplogic.raytracer.ops.drawing.Pattern
+//import io.tuliplogic.raytracer.ops.model.data.Pattern
 //import io.tuliplogic.raytracer.ops.model.SceneObject.PointLight
 //import io.tuliplogic.raytracer.ops.model.{Canvas, Color, Material, NormalReflectModule, PhongReflectionModule, RayModule}
 //import io.tuliplogic.raytracer.ops.rendering.{CanvasRenderer, canvasRendering}

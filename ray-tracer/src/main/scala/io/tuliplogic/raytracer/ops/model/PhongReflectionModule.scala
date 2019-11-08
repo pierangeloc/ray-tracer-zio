@@ -3,7 +3,8 @@ package io.tuliplogic.raytracer.ops.model
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.ops.model.SceneObject.PointLight
+import io.tuliplogic.raytracer.ops.model.data.Scene.{PointLight, Shape}
+import io.tuliplogic.raytracer.ops.model.data.Color
 import zio.{IO, UIO, URIO, ZIO}
 
 trait PhongReflectionModule {
@@ -20,7 +21,7 @@ object PhongReflectionModule {
     * @param eyeV the eye vector, going from the eye to the surface point
     * @param rayReflectV the reflection vector of the RAY
     */
-  case class HitComps(obj: SceneObject, pt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec, n1: Double = 1, n2: Double = 1) {
+  case class HitComps(obj: Shape, pt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec, n1: Double = 1, n2: Double = 1) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
     def overPoint: Pt   = pt + normalV.*(HitComps.epsilon * (if(inside) -1 else 1))
     def underPoint: Pt  = pt + normalV.*(-HitComps.epsilon * (if(inside) -1 else 1))

@@ -2,9 +2,9 @@ package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.ops.drawing.{Camera, World}
 import io.tuliplogic.raytracer.ops.model.RasteringModule.ChunkRasteringModule
-import io.tuliplogic.raytracer.ops.model.SceneObject.PointLight
+import io.tuliplogic.raytracer.ops.model.data.Scene.PointLight
+import io.tuliplogic.raytracer.ops.model.data.{Camera, Color, ColoredPixel, Pixel, Ray, World}
 import zio.test.Assertion._
 import zio.test.mock.Expectation._
 import zio.test._

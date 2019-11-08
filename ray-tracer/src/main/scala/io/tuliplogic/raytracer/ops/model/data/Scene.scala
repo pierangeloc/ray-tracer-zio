@@ -1,50 +1,24 @@
-package io.tuliplogic.raytracer.ops.model
+package io.tuliplogic.raytracer.ops.model.data
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
-import io.tuliplogic.raytracer.ops.drawing.Pattern
+import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import zio.{UIO, URIO, ZIO}
 
-case class Material(
-    pattern: Pattern,
-    ambient: Double, //TODO refine Double > 0 && < 1
-    diffuse: Double, //TODO refine Double > 0 && < 1
-    specular: Double, //TODO refine Double > 0 && < 1 specularity of the surface to the light source
-    shininess: Double, //TODO refine Double > 10 && < 200 shininess of the surface to the light source
-    reflective: Double, //TODO refine Double [0, 1] generic reflectiveness of the surface, of generic rays not only coming from the light sourcex
-    transparency: Double, //TODO refine Double [0, 1] how transparent the material is
-    refractionIndex: Double //TODO refine Double [0, 1] the material refraction index (for vacuum it's 1)
-)
-
-object Material {
-  def default: URIO[ATModule, Material] =
-    ATModule.>.id.map{ tf =>
-      Material(Pattern.Uniform(Color.white, tf), ambient = 0.1, diffuse = 0.9, specular = 0.9, shininess = 200d, reflective = 0, transparency = 0, refractionIndex = 1)
-    }
-  val glass: URIO[ATModule, Material] =
-    ATModule.>.id.map { tf =>
-      Material(Pattern.Uniform(Color.white, tf), ambient = 0.0, diffuse = 0.0, specular = 0.1, shininess = 200d, reflective = 0.4, transparency = 0.95, refractionIndex = 1.5)
-    }
-  val air: URIO[ATModule, Material] =
-    ATModule.>.id.map { tf =>
-      Material(Pattern.Uniform(Color.white, tf), ambient = 0.0, diffuse = 0.0, specular = 0, shininess = 0, reflective = 0, transparency = 1, refractionIndex = 1)
-    }
-}
-
-sealed trait SceneObject {
-  def transformation: AT
-  def material: Material
-}
-object SceneObject {
+object Scene {
 
   case class PointLight(position: Pt, intensity: Color)
+
+  sealed trait Shape {
+    def transformation: AT
+    def material: Material
+  }
 
   /**
     * A unit sphere centered in (0, 0, 0) and a transformation on the sphere that puts it  into final position
     * This can be e.g. a chain of translate and shear
     */
-  case class Sphere(transformation: AT, material: Material) extends SceneObject
+  case class Sphere(transformation: AT, material: Material) extends Shape
   object Sphere {
     def withTransformAndMaterial(tf: AT, material: Material): UIO[Sphere] = UIO(tf).zipWith(UIO(material))(Sphere(_, _))
     val canonical: URIO[ATModule, Sphere] =
@@ -76,7 +50,7 @@ object SceneObject {
     } yield s
   }
 
-  case class Plane(transformation: AT, material: Material) extends SceneObject
+  case class Plane(transformation: AT, material: Material) extends Shape
   object Plane {
     val horizEpsilon: Double = 1e-4
 

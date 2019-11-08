@@ -6,7 +6,7 @@ import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.ops.model.{Canvas, Color}
+import io.tuliplogic.raytracer.ops.model.data.{Canvas, Color}
 import org.scalatest.WordSpec
 import zio.blocking.Blocking
 import zio.stream.{Sink, ZStream}

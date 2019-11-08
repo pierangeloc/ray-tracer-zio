@@ -1,9 +1,7 @@
-package io.tuliplogic.raytracer.ops.drawing
+package io.tuliplogic.raytracer.ops.model.data
 
 import io.tuliplogic.raytracer.geometry.affine.AT
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
-import io.tuliplogic.raytracer.ops.model.Color
-import zio.ZIO
 
 /**
   * A Pattern is a way to give a color to a surface point

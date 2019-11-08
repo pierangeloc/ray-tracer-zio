@@ -2,6 +2,8 @@ package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
 import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
+import io.tuliplogic.raytracer.ops.model.data.Scene.Shape
+import io.tuliplogic.raytracer.ops.model.data.{Intersection, Ray}
 import zio.{UIO, ZIO}
 
 
@@ -25,7 +27,7 @@ object WorldHitCompsModule {
     val worldHitCompsModule: WorldHitCompsModule.Service[Any] = new Service[Any] {
 
       override def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[Any, GenericError, HitComps] = {
-        type Z = (List[SceneObject], Option[Double], Option[Double])
+        type Z = (List[Shape], Option[Double], Option[Double])
 
         /**
           * We can calculate the n1, n2 for the hit, given the list of intersections. Each intersection carries the object, together with its material
@@ -34,7 +36,7 @@ object WorldHitCompsModule {
           */
         def n1n2: UIO[(Double, Double)] = {
 
-          val maybeN1N2: (List[SceneObject], Option[Double], Option[Double]) = intersections.foldLeft[Z]((Nil, None, None)) {
+          val maybeN1N2: (List[Shape], Option[Double], Option[Double]) = intersections.foldLeft[Z]((Nil, None, None)) {
             case (in@(xs, Some(n1), Some(n2)), _) =>
               in
             case ((conts, None, None), `hit`) =>

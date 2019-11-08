@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.drawing
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.ops.model.Color
+import io.tuliplogic.raytracer.ops.model.data.{Color, Pattern}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.DefaultRuntime

@@ -4,7 +4,8 @@ import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import mouse.all._
-import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, Sphere}
+import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, Sphere}
+import io.tuliplogic.raytracer.ops.model.data.{Intersection, Material, Ray, RayModule}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO, ZIO}
@@ -81,7 +82,7 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
         (for {
           p                  <- Plane.canonical
           intersectionPoints <- RayModule.>.intersect(ray, p)
-          _                  <- IO(intersectionPoints shouldEqual List(Intersection(1, p)))
+          _                  <- IO(intersectionPoints shouldEqual List(data.Intersection(1, p)))
         } yield ()).provide(rayEnv)
       }
     }
@@ -94,7 +95,7 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
           mat                <- Material.default
           s                  <- UIO(Sphere(tf, mat))
           intersectionPoints <- RayModule.>.intersect(ray, s)
-          _                  <- IO(intersectionPoints shouldEqual List(3d, 7d).map(Intersection(_, s)))
+          _                  <- IO(intersectionPoints shouldEqual List(3d, 7d).map(data.Intersection(_, s)))
         } yield ()).provide(rayEnv)
       }
     }
@@ -103,7 +104,7 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         (for {
           s             <- Sphere.canonical
-          intersections <- UIO.succeed(List(Intersection(5, s), Intersection(7, s), Intersection(-3, s), Intersection(2, s)))
+          intersections <- UIO.succeed(List(data.Intersection(5, s), data.Intersection(7, s), data.Intersection(-3, s), data.Intersection(2, s)))
           hit           <- RayModule.>.hit(intersections)
           _             <- IO(hit.get.t shouldEqual 2)
           _             <- IO(hit.get.sceneObject shouldEqual s)

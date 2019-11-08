@@ -4,12 +4,9 @@ import java.nio.file.{Path, Paths}
 
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.ops.drawing.{Pattern, World}
-import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, Material, RasteringModule, SceneObject, WorldModule}
+import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, PointLight, Shape, Sphere}
+import io.tuliplogic.raytracer.ops.model.data.{Color, Material, Pattern, World}
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
-import zio.blocking.Blocking
 import zio.{App, UIO, ZEnv, ZIO, console}
 
 
@@ -52,7 +49,7 @@ object Chapter11WorldRefraction extends App {
     s3Tf <- ATModule.>.scale(1, 1, 1)
     s3    <- Sphere.unitGlass.map(_.copy(transformation = s3Tf, material = glass))
 
-  } yield World(PointLight(lightPosition, Color.white), List[SceneObject](s1,
+  } yield World(PointLight(lightPosition, Color.white), List[Shape](s1,
     s2, s3,
     floorS))
 

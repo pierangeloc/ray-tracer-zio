@@ -1,11 +1,11 @@
 package io.tuliplogic.raytracer.ops.model
 
-import io.tuliplogic.raytracer.ops.drawing.World
 import zio.{UIO, ZIO}
 import cats.implicits._
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
 import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
+import io.tuliplogic.raytracer.ops.model.data.{Color, Ray, World}
 import zio.interop.catz._
 import zio.macros.annotation.mockable
 

@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.rendering
 import java.nio.file.{Path, StandardOpenOption}
 
 import io.tuliplogic.raytracer.commons.errors.IOError
-import io.tuliplogic.raytracer.ops.model.{Canvas, Color}
+import io.tuliplogic.raytracer.ops.model.data.{Canvas, Color}
 import zio.nio.channels.AsynchronousFileChannel
 import zio.stream._
 import zio.{Chunk, UIO, ZIO}

@@ -4,8 +4,9 @@ import io.tuliplogic.raytracer.geometry.TestUtils
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
-import io.tuliplogic.raytracer.ops.model.SceneObject.Sphere
-import io.tuliplogic.raytracer.ops.model.{Material, NormalReflectModule, spatialEntityOps}
+import io.tuliplogic.raytracer.ops.model.data.Scene.Sphere
+import io.tuliplogic.raytracer.ops.model.data.Material
+import io.tuliplogic.raytracer.ops.model.{NormalReflectModule, spatialEntityOps}
 import org.scalatest.Matchers._
 import org.scalatest.WordSpec
 import zio.{DefaultRuntime, UIO, ZIO}

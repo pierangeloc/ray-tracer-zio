@@ -2,7 +2,7 @@ package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, Sphere}
+import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, Shape, Sphere}
 import zio.{UIO, ZIO}
 
 trait NormalReflectModule {
@@ -14,7 +14,7 @@ trait NormalReflectModule {
 object NormalReflectModule {
 
   trait Service[R] {
-    def normal(p: Pt, o: SceneObject): ZIO[R, Nothing, Vec]
+    def normal(p: Pt, o: Shape): ZIO[R, Nothing, Vec]
     final def reflect(vec: Vec, normal: Vec): ZIO[R, Nothing, Vec] =
       ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
   }
@@ -25,12 +25,12 @@ object NormalReflectModule {
 
     val normalReflectModule: Service[Any] = new Service[Any] {
 
-      def canonicalNormal(p: Pt, o: SceneObject): UIO[Vec] = o match {
+      def canonicalNormal(p: Pt, o: Shape): UIO[Vec] = o match {
         case Sphere(_, _) => UIO.succeed(p - Pt(0, 0, 0))
         case Plane(_, _)  => UIO.succeed(Vec(0, 1, 0))
       }
 
-      def normal(p: Pt, o: SceneObject): ZIO[Any, Nothing, Vec] =
+      def normal(p: Pt, o: Shape): ZIO[Any, Nothing, Vec] =
         (for {
           inverseTf         <- aTModule.invert(o.transformation)
           objectPt          <- aTModule.applyTf(inverseTf, p)
@@ -45,6 +45,6 @@ object NormalReflectModule {
 }
 
 object spatialEntityOps extends NormalReflectModule.Service[NormalReflectModule] {
-  override def normal(p: Pt, o: SceneObject): ZIO[NormalReflectModule, Nothing, Vec] =
+  override def normal(p: Pt, o: Shape): ZIO[NormalReflectModule, Nothing, Vec] =
     ZIO.accessM(_.normalReflectModule.normal(p, o))
 }

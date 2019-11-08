@@ -1,4 +1,4 @@
-package io.tuliplogic.raytracer.ops.model
+package io.tuliplogic.raytracer.ops.model.data
 
 import zio.UIO
 

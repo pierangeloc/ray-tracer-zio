@@ -1,8 +1,8 @@
 package io.tuliplogic.raytracer.ops.model
 
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
-import io.tuliplogic.raytracer.ops.drawing.World
 import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
+import io.tuliplogic.raytracer.ops.model.data.{Color, Ray, World}
 import zio.{UIO, ZIO}
 
 /**
