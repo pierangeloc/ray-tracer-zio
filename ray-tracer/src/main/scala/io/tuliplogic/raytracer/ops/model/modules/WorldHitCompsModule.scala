@@ -1,9 +1,9 @@
-package io.tuliplogic.raytracer.ops.model
+package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
-import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
 import io.tuliplogic.raytracer.ops.model.data.Scene.Shape
 import io.tuliplogic.raytracer.ops.model.data.{Intersection, Ray}
+import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.HitComps
 import zio.{UIO, ZIO}
 
 

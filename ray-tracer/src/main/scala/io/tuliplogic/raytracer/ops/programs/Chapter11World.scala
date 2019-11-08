@@ -1,16 +1,13 @@
 package io.tuliplogic.raytracer.ops.programs
 
-import java.nio.file.{Path, Paths}
+  import java.nio.file.{Path, Paths}
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, PointLight, Shape, Sphere}
 import io.tuliplogic.raytracer.ops.model.data.{Color, Material, Pattern, World}
-import io.tuliplogic.raytracer.ops.model.{CameraModule, RasteringModule, WorldModule}
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
-import zio.blocking.Blocking
 import zio.{App, UIO, ZEnv, ZIO, console}
 
 

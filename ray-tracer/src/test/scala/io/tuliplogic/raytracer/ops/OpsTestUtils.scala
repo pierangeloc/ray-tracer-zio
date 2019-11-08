@@ -1,8 +1,8 @@
 package io.tuliplogic.raytracer.ops
 
 import io.tuliplogic.raytracer.geometry.TestUtils
-import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.data.{Color, Ray}
+import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.{HitComps, PhongComponents}
 import org.scalactic.TripleEquals._
 import org.scalactic.{Equality, Tolerance}
 

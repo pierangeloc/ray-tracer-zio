@@ -5,13 +5,9 @@ import java.nio.file.{Path, Paths}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, PointLight, Shape, Sphere}
 import io.tuliplogic.raytracer.ops.model.data.{Color, Material, Pattern, World}
-import io.tuliplogic.raytracer.ops.model.{CameraModule, RasteringModule, WorldHitCompsModule, WorldModule}
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
-import zio.blocking.Blocking
-import zio.console.Console
 import zio.{App, UIO, ZEnv, ZIO, console}
 
 object Chapter10World extends App {
@@ -57,7 +53,7 @@ object Chapter10World extends App {
     s2Tf  <- ATModule.>.compose(s2Tf2, s2Tf1)
     s2    <- UIO(Sphere(s2Tf, mat.copy(pattern = Pattern.Striped(Color.blue, Color.red, idTf), diffuse = 0.7, specular = 0.3)))
 
-  } yield World(PointLight(lightPosition, Color.white), List[Shape](s1, s2, floorS, leftWallS))
+  } yield World(PointLight(lightPosition, Color.white), List[Shape  ](s1, s2, floorS, leftWallS))
 
   val program = for {
     w      <- world

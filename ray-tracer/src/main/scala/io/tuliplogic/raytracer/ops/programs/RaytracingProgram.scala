@@ -4,7 +4,7 @@ import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.model.data.{Camera, Canvas, World}
-import io.tuliplogic.raytracer.ops.model.RasteringModule
+import io.tuliplogic.raytracer.ops.model.modules.RasteringModule
 import zio.ZIO
 import zio.stream.Sink
 

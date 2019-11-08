@@ -1,10 +1,10 @@
-package io.tuliplogic.raytracer.ops.model
+package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.ops.model.data.Scene.{PointLight, Shape}
 import io.tuliplogic.raytracer.ops.model.data.Color
+import io.tuliplogic.raytracer.ops.model.data.Scene.{PointLight, Shape}
 import zio.{IO, UIO, URIO, ZIO}
 
 trait PhongReflectionModule {

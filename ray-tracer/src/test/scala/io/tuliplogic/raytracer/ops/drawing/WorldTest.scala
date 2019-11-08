@@ -4,10 +4,10 @@ import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
-import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
+import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.HitComps
 import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.data.{Color, Intersection, Material, Pattern, Ray, RayModule, World}
-import io.tuliplogic.raytracer.ops.model.{LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule, WorldHitCompsModule, WorldModule, WorldReflectionModule, WorldRefractionModule, WorldTopologyModule, data}
+import io.tuliplogic.raytracer.ops.model.modules.{LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule, WorldHitCompsModule, WorldModule, WorldReflectionModule, WorldRefractionModule, WorldTopologyModule}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO}
@@ -51,7 +51,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
         (for {
           s   <- Plane.canonical
           ray <- UIO(Ray(Pt(0, 1, -1), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
-          i   <- UIO(data.Intersection(math.sqrt(2), s))
+          i   <- UIO(Intersection(math.sqrt(2), s))
           hc  <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
           _ <- IO {
             hc should ===(HitComps(s, Pt.origin, Vec(0, 1, 0), Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, math.sqrt(2) / 2, math.sqrt(2) / 2)))
@@ -70,7 +70,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray <- UIO(Ray(Pt(0, 0, -4), Vec.uz))
           is  <- UIO(
                   List(
-                    data.Intersection(2, sA), data.Intersection(2.75, sB), data.Intersection(3.25, sC), data.Intersection(4.75, sB), data.Intersection(5.25, sC), data.Intersection(6, sA)
+                    Intersection(2, sA), Intersection(2.75, sB), Intersection(3.25, sC), Intersection(4.75, sB), Intersection(5.25, sC), Intersection(6, sA)
                   )
                 )
           hc0  <- WorldHitCompsModule.>.hitComps(ray, is(0), is)
@@ -97,7 +97,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           r <- UIO(Ray(Pt(0, 0, -5), Vec.uz))
           w <- oneTransparentCanonicalSphereWorld
           s <- UIO(w.objects.head)
-          i <- UIO(data.Intersection(5, s))
+          i <- UIO(Intersection(5, s))
           hc <- WorldHitCompsModule.>.hitComps(r, i, List(i))
           _ <- IO{
             hc.underPoint.z > HitComps.epsilon / 2 shouldEqual true}
@@ -162,7 +162,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w         <- defaultWorld4_1
           ray       <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
           plane     <- UIO(w.objects(2)) //TODO make a method to access objects by index in a World
-          hit       <- UIO(data.Intersection(math.sqrt(2), plane))
+          hit       <- UIO(Intersection(math.sqrt(2), plane))
           hitComps  <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
           fullColor <- WorldModule.>.colorForRay(w, ray)
           _ <- IO {
@@ -264,7 +264,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w              <- defaultWorld4
           ray            <- UIO(Ray(Pt(0, 0, 0), Vec(0, 0, 1)))
           s              <- UIO(w.objects(1))
-          hit            <- UIO(data.Intersection(1, s))
+          hit            <- UIO(Intersection(1, s))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
           reflectedColor <- WorldReflectionModule.>.reflectedColor(w, hitComps)
           _ <- IO {
@@ -281,7 +281,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w              <- defaultWorld4_1
           ray            <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
           plane          <- UIO(w.objects(2)) //TODO make a method to access objects by index in a World
-          hit            <- UIO(data.Intersection(math.sqrt(2), plane))
+          hit            <- UIO(Intersection(math.sqrt(2), plane))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
           reflectedColor <- WorldReflectionModule.>.reflectedColor(w, hitComps)
           _ <- IO {
@@ -300,7 +300,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w              <- defaultWorld
           ray            <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           s              <- UIO(w.objects(0))
-          intersections  <- UIO(List(data.Intersection(4, s), data.Intersection(6, s)))
+          intersections  <- UIO(List(Intersection(4, s), Intersection(6, s)))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections.head, intersections)
           refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps)
           _ <- IO {
@@ -317,7 +317,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w              <- externalCanonicalTransparentInternalHalfOpaque
           ray            <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           s              <- UIO(w.objects(0))
-          intersections  <- UIO(List(data.Intersection(4, s), data.Intersection(6, s)))
+          intersections  <- UIO(List(Intersection(4, s), Intersection(6, s)))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections.head, intersections)
           refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps, 0)
           _ <- IO {
@@ -334,7 +334,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w              <- externalCanonicalTransparentInternalHalfOpaque
           ray            <- UIO(Ray(Pt(0, 0, math.sqrt(2) / 2), Vec(0, 1, 0)))
           s              <- UIO(w.objects(0))
-          intersections  <- UIO(List(data.Intersection(- math.sqrt(2) / 2, s), data.Intersection(math.sqrt(2) / 2, s)))
+          intersections  <- UIO(List(Intersection(- math.sqrt(2) / 2, s), Intersection(math.sqrt(2) / 2, s)))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections(1), intersections)
           refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps)
           _ <- IO {

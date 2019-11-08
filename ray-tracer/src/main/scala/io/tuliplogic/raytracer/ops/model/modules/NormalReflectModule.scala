@@ -1,4 +1,4 @@
-package io.tuliplogic.raytracer.ops.model
+package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}

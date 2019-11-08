@@ -4,9 +4,10 @@ import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.OpsTestUtils
-import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.{HitComps, PhongComponents}
 import io.tuliplogic.raytracer.ops.model.data.Scene.{PointLight, Sphere}
 import io.tuliplogic.raytracer.ops.model.data.{Color, Material, Pattern}
+import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.{HitComps, PhongComponents}
+import io.tuliplogic.raytracer.ops.model.modules.{LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO}

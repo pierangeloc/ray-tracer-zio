@@ -1,4 +1,4 @@
-package io.tuliplogic.raytracer.ops.model
+package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
 import io.tuliplogic.raytracer.ops.model.data.Color

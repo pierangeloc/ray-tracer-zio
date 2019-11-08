@@ -1,6 +1,7 @@
-package io.tuliplogic.raytracer.ops.model
+package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
+import io.tuliplogic.raytracer.ops.model.data
 import io.tuliplogic.raytracer.ops.model.data.{Camera, Color, ColoredPixel, Pixel, World}
 import zio.stream.ZStream
 import zio.{UIO, ZIO}

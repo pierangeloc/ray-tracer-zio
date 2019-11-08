@@ -4,8 +4,8 @@ import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.OpsTestUtils
-import io.tuliplogic.raytracer.ops.model.CameraModule
 import io.tuliplogic.raytracer.ops.model.data.{Camera, Ray}
+import io.tuliplogic.raytracer.ops.model.modules.CameraModule
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, Task}
