@@ -7,7 +7,7 @@ import io.tuliplogic.raytracer.ops.model.RasteringModule.ChunkRasteringModule
 import io.tuliplogic.raytracer.ops.model.SceneObject.PointLight
 import zio.test.Assertion._
 import zio.test.mock.Expectation._
-import zio.test.{DefaultRunnableSpec, suite, testM, _}
+import zio.test._
 import zio.{UIO, ZIO}
 
 object RasteringModuleTest extends DefaultRunnableSpec(

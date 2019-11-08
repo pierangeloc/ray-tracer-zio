@@ -51,8 +51,8 @@ object RasteringModule {
     override val rasteringModule: Service[Any] = new Service[Any] {
       override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] =
         UIO.succeed(for {
-          x <- ZStream.fromIterable(0 to camera.hRes)
-          y <- ZStream.fromIterable(0 to camera.vRes)
+          x <- ZStream.fromIterable(0 until camera.hRes)
+          y <- ZStream.fromIterable(0 until camera.vRes)
         } yield ColoredPixel(Pixel(x, y), Color.white))
     }
   }

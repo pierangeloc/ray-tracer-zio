@@ -8,7 +8,7 @@ import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.drawing.{Pattern, World}
 import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, Material, RasteringModule, SceneObject, WorldModule}
+import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, Material, RasteringModule, SceneObject, WorldHitCompsModule, WorldModule}
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import zio.blocking.Blocking
 import zio.console.Console
@@ -27,10 +27,7 @@ object Chapter10World extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasSerializer.PPMCanvasSerializer with FullModules with ATModule.Live with MatrixModule.BreezeMatrixModule
-          with WorldModule.Live with CameraModule.Live with RasteringModule.ChunkRasteringModule
-          with Blocking.Live with Console.Live
-         {
+        new CanvasSerializer.PPMCanvasSerializer with FullModules {
           override def path: Path = Paths.get(canvasFile)
         }
       }

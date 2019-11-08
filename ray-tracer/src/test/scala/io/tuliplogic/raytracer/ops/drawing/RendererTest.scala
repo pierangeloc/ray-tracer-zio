@@ -4,15 +4,15 @@ import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
-import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule, RayModule, WorldModule, WorldReflectionModule, WorldRefractionModule}
+import io.tuliplogic.raytracer.ops.model.{CameraModule, Color, LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule, RayModule, WorldHitCompsModule, WorldModule, WorldReflectionModule, WorldRefractionModule, WorldTopologyModule}
 import zio.stream.Sink
-import zio.{DefaultRuntime, IO, Task, UIO}
+import zio.{DefaultRuntime, Task, UIO}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 
 class RendererTest extends WordSpec with DefaultRuntime with OpsTestUtils {
 
-  val env = new WorldModule.Live
+  val env = new WorldModule.Live with WorldTopologyModule.Live with WorldHitCompsModule.Live
     with ATModule.Live with MatrixModule.BreezeMatrixModule with WorldReflectionModule.Live
     with LightReflectionModule.Live with LightDiffusionModule.Live
     with WorldRefractionModule.Live with PhongReflectionModule.Live with NormalReflectModule.Live with RayModule.Live

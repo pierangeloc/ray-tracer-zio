@@ -6,15 +6,15 @@ import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.OpsTestUtils
 import io.tuliplogic.raytracer.ops.model.PhongReflectionModule.HitComps
 import io.tuliplogic.raytracer.ops.model.SceneObject.{Plane, PointLight, Sphere}
-import io.tuliplogic.raytracer.ops.model.{Color, Intersection, LightDiffusionModule, LightReflectionModule, Material, NormalReflectModule, PhongReflectionModule, Ray, RayModule, WorldModule, WorldReflectionModule, WorldRefractionModule}
+import io.tuliplogic.raytracer.ops.model.{Color, Intersection, LightDiffusionModule, LightReflectionModule, Material, NormalReflectModule, PhongReflectionModule, Ray, RayModule, WorldHitCompsModule, WorldModule, WorldReflectionModule, WorldRefractionModule, WorldTopologyModule}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
 import zio.{DefaultRuntime, IO, UIO}
-
+//TODO: put all the tests for hitComps in worldhitcompstest
 class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
   import WorldTest._
 
-  val env = new WorldModule.Live
+  val env = new WorldModule.Live with WorldTopologyModule.Live with WorldHitCompsModule.Live
     with ATModule.Live with MatrixModule.BreezeMatrixModule with WorldReflectionModule.Live
     with LightReflectionModule.Live with LightDiffusionModule.Live
     with WorldRefractionModule.Live with PhongReflectionModule.Live with NormalReflectModule.Live with RayModule.Live
@@ -25,7 +25,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
         (for {
           w   <- defaultWorld
           ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
-          xs  <- WorldModule.>.intersections(w, ray)
+          xs  <- WorldTopologyModule.>.intersections(w, ray)
           _   <- IO { xs.map(_.t) shouldEqual List(4.0, 4.5, 5.5, 6.0) }
         } yield ()).provide(env)
       }
@@ -39,7 +39,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           s   <- Sphere.canonical
           i   <- UIO(Intersection(4, s))
           ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
-          hc  <- WorldModule.>.hitComps(ray, i, List(i))
+          hc  <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
           _   <- IO { hc shouldEqual HitComps(s, Pt(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1)) }
         } yield ()).provide(env)
       }
@@ -51,7 +51,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           s   <- Plane.canonical
           ray <- UIO(Ray(Pt(0, 1, -1), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
           i   <- UIO(Intersection(math.sqrt(2), s))
-          hc  <- WorldModule.>.hitComps(ray, i, List(i))
+          hc  <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
           _ <- IO {
             hc should ===(HitComps(s, Pt.origin, Vec(0, 1, 0), Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, math.sqrt(2) / 2, math.sqrt(2) / 2)))
           }
@@ -72,12 +72,12 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
                     Intersection(2, sA), Intersection(2.75, sB), Intersection(3.25, sC), Intersection(4.75, sB), Intersection(5.25, sC), Intersection(6, sA)
                   )
                 )
-          hc0  <- WorldModule.>.hitComps(ray, is(0), is)
-          hc1  <- WorldModule.>.hitComps(ray, is(1), is)
-          hc2  <- WorldModule.>.hitComps(ray, is(2), is)
-          hc3  <- WorldModule.>.hitComps(ray, is(3), is)
-          hc4  <- WorldModule.>.hitComps(ray, is(4), is)
-          hc5  <- WorldModule.>.hitComps(ray, is(5), is)
+          hc0  <- WorldHitCompsModule.>.hitComps(ray, is(0), is)
+          hc1  <- WorldHitCompsModule.>.hitComps(ray, is(1), is)
+          hc2  <- WorldHitCompsModule.>.hitComps(ray, is(2), is)
+          hc3  <- WorldHitCompsModule.>.hitComps(ray, is(3), is)
+          hc4  <- WorldHitCompsModule.>.hitComps(ray, is(4), is)
+          hc5  <- WorldHitCompsModule.>.hitComps(ray, is(5), is)
           _ <- IO {
             (hc0.n1, hc0.n2) shouldEqual 1.0 -> 1.5
             (hc1.n1, hc1.n2) shouldEqual 1.5 -> 2.0
@@ -97,7 +97,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w <- oneTransparentCanonicalSphereWorld
           s <- UIO(w.objects.head)
           i <- UIO(Intersection(5, s))
-          hc <- WorldModule.>.hitComps(r, i, List(i))
+          hc <- WorldHitCompsModule.>.hitComps(r, i, List(i))
           _ <- IO{
             hc.underPoint.z > HitComps.epsilon / 2 shouldEqual true}
           _ <- IO{(hc.pt.z < hc.underPoint.z) shouldEqual true}
@@ -162,7 +162,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray       <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
           plane     <- UIO(w.objects(2)) //TODO make a method to access objects by index in a World
           hit       <- UIO(Intersection(math.sqrt(2), plane))
-          hitComps  <- WorldModule.>.hitComps(ray, hit, List(hit))
+          hitComps  <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
           fullColor <- WorldModule.>.colorForRay(w, ray)
           _ <- IO {
             fullColor should ===(Color(0.87677, 0.92436, 0.82918))
@@ -206,7 +206,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w        <- defaultWorld
-          inShadow <- WorldModule.>.isShadowed(w, Pt(0, 10, 0))
+          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(0, 10, 0))
           _        <- IO { inShadow shouldEqual false }
         } yield ()).provide(env)
       }
@@ -216,7 +216,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w        <- defaultWorld
-          inShadow <- WorldModule.>.isShadowed(w, Pt(10, -10, 10))
+          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(10, -10, 10))
           _        <- IO { inShadow shouldEqual true }
         } yield ()).provide(env)
       }
@@ -226,7 +226,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w        <- defaultWorld
-          inShadow <- WorldModule.>.isShadowed(w, Pt(-20, 20, -20))
+          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(-20, 20, -20))
           _        <- IO { inShadow shouldEqual false }
         } yield ()).provide(env)
       }
@@ -236,7 +236,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w        <- defaultWorld
-          inShadow <- WorldModule.>.isShadowed(w, Pt(-2, 2, -2))
+          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(-2, 2, -2))
           _        <- IO { inShadow shouldEqual false }
         } yield ()).provide(env)
       }
@@ -264,7 +264,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray            <- UIO(Ray(Pt(0, 0, 0), Vec(0, 0, 1)))
           s              <- UIO(w.objects(1))
           hit            <- UIO(Intersection(1, s))
-          hitComps       <- WorldModule.>.hitComps(ray, hit, List(hit))
+          hitComps       <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
           reflectedColor <- WorldReflectionModule.>.reflectedColor(w, hitComps)
           _ <- IO {
             reflectedColor shouldEqual Color.black
@@ -281,7 +281,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray            <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
           plane          <- UIO(w.objects(2)) //TODO make a method to access objects by index in a World
           hit            <- UIO(Intersection(math.sqrt(2), plane))
-          hitComps       <- WorldModule.>.hitComps(ray, hit, List(hit))
+          hitComps       <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
           reflectedColor <- WorldReflectionModule.>.reflectedColor(w, hitComps)
           _ <- IO {
             reflectedColor should ===(Color(0.19032, 0.2379, 0.14274)) //it shoudl return these according to the book. they are actually proportional by 2.891
@@ -300,7 +300,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray            <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           s              <- UIO(w.objects(0))
           intersections  <- UIO(List(Intersection(4, s), Intersection(6, s)))
-          hitComps       <- WorldModule.>.hitComps(ray, intersections.head, intersections)
+          hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections.head, intersections)
           refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps)
           _ <- IO {
             refractedColor shouldEqual Color.black
@@ -317,7 +317,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray            <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           s              <- UIO(w.objects(0))
           intersections  <- UIO(List(Intersection(4, s), Intersection(6, s)))
-          hitComps       <- WorldModule.>.hitComps(ray, intersections.head, intersections)
+          hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections.head, intersections)
           refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps, 0)
           _ <- IO {
             refractedColor shouldEqual Color.black
@@ -334,7 +334,7 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           ray            <- UIO(Ray(Pt(0, 0, math.sqrt(2) / 2), Vec(0, 1, 0)))
           s              <- UIO(w.objects(0))
           intersections  <- UIO(List(Intersection(- math.sqrt(2) / 2, s), Intersection(math.sqrt(2) / 2, s)))
-          hitComps       <- WorldModule.>.hitComps(ray, intersections(1), intersections)
+          hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections(1), intersections)
           refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps)
           _ <- IO {
             refractedColor shouldEqual Color.black

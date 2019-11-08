@@ -1,6 +1,10 @@
 package io.tuliplogic.raytracer.ops.programs
 
-import io.tuliplogic.raytracer.ops.model.{LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule, RayModule, WorldReflectionModule, WorldRefractionModule}
+import io.tuliplogic.raytracer.geometry.affine.ATModule
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
+import io.tuliplogic.raytracer.ops.model.{CameraModule, LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule, RasteringModule, RayModule, WorldHitCompsModule, WorldModule, WorldReflectionModule, WorldRefractionModule, WorldTopologyModule}
+import zio.blocking.Blocking
+import zio.console.Console
 
 /**
  * 
@@ -15,3 +19,12 @@ trait FullModules
     with RayModule.Live
     with WorldReflectionModule.Live
     with WorldRefractionModule.Live
+    with ATModule.Live
+    with MatrixModule.BreezeMatrixModule
+    with WorldModule.Live
+    with WorldTopologyModule.Live
+    with WorldHitCompsModule.Live
+    with CameraModule.Live
+    with RasteringModule.ChunkRasteringModule
+    with Blocking.Live
+    with Console.Live

@@ -235,16 +235,16 @@ To unit test the rastering module, we make use of the mocking features provided 
 
 `Zio-test` generalizes this, and together with a couple of macro annotations it makes testing with mock straightforward, just follow these simple steps:
 
-1. Define what you want to test, leaving out the dependencies on the services you want to mock, in this case we want to test this
+1. Define what you want to test, leaving out the dependencies on the services you want to mock, in this case we want to test that our rastering module produces the (stream containing the) expected list of `ColoredPixel`
 
 ```scala
  val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
         RasteringModule.>.raster(world, camera).flatMap(_.runCollect)
 ```
 
-You can see that this effect needs to be provided with the implementation of `RasteringModule` we want to test. In this case we will produce a list of `ColoredPixel` that we can check later against expectations  
+You can see that this effect needs to be provided with the implementation of `RasteringModule` we want to test
 
-1. Annotate the _modules_ (not the services!!!) you want to mock with `@mockable` 
+2. Annotate the _modules_ (not the services!!!) you want to mock with `@mockable` 
 
 ```scala
 @mockable
@@ -254,7 +254,7 @@ trait CameraModule { ... }
 trait WorldModule { ... }
 ```
 
-1. In the unit test, prepare your mocks by defining the `Expectations` for the methods you want to mock, e.g. here we specify that when the call to `WorldModule.colorForRay` is done with `world, r1, 5` input, it should return `Color.red` 
+3. In the unit test, prepare your mocks by defining the `Expectations` for the methods you want to mock, e.g. here we specify that when the call to `WorldModule.colorForRay` is done with `world, r1, 5` input, it should return `Color.red` 
 
 ```scala
   val colorForRayExp = (WorldModule.colorForRay(equalTo((world, r1, 5))) returns value(Color.red)) *>
@@ -266,7 +266,7 @@ trait WorldModule { ... }
 
 Expectations are pure values and monads, so we can combine them, zip them like we are used to with other structures
 
-1. Provide the `appUnderTest` with a managed environment build using the expectations we just built 
+4. Provide the `appUnderTest` with a managed environment build using the expectations we just built 
 
 ```scala
 appUnderTest.provideManaged(
@@ -290,4 +290,15 @@ assert(res, equalTo(List(
 )
 ```
 
-The fact that we provide our effect with a `Managed` rather than just an environment, makes sure that the `release` process of the `Managed` is executed no matter what happens in the tests. The `release` will take care of asserting that all the mocks have been called as expected.
+_Observation_: The fact that we provide our dependencies with a `Managed` rather than just an environment, making sure that the `release` process of the `Managed` is executed no matter what happens in the tests. The `release` will take care of asserting that all the mocks have been called as expected.
+
+### 3.2 Implementing the `WorldModule`
+The key method in the `WorldModule` is
+
+```scala
+def colorForRay(world: World, ray: Ray, remaining: Int = 5): ZIO[Any, RayTracerError, Color]
+```
+
+To provide a sensible implementation of this module we need to find:
+1. the `intersections` between the ray and the objects in the world, in order to determine which object in the world is emitting that ray towards our camera
+1. 

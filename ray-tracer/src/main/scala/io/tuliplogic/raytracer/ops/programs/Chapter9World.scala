@@ -26,8 +26,7 @@ object Chapter9World extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasSerializer.PPMCanvasSerializer with FullModules with RasteringModule.ChunkRasteringModule with ATModule.Live
-        with MatrixModule.BreezeMatrixModule with CameraModule.Live with WorldModule.Live with Console.Live with Clock.Live with Blocking.Live {
+        new CanvasSerializer.PPMCanvasSerializer with FullModules {
           override def path: Path = Paths.get(canvasFile)
         }
       }

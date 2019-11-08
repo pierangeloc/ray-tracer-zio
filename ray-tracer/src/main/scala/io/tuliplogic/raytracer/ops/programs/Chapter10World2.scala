@@ -28,9 +28,7 @@ object Chapter10World2 extends App {
     program
       .provide {
         new CanvasSerializer.PPMCanvasSerializer with ATModule.Live
-        with FullModules
-        with WorldModule.Live with CameraModule.Live with RasteringModule.ChunkRasteringModule
-        with MatrixModule.BreezeMatrixModule with Blocking.Live  {
+        with FullModules {
           override def path: Path = Paths.get(canvasFile)
         }
       }
