@@ -15,6 +15,7 @@ object NormalReflectModule {
 
   trait Service[R] {
     def normal(p: Pt, o: Shape): ZIO[R, Nothing, Vec]
+
     final def reflect(vec: Vec, normal: Vec): ZIO[R, Nothing, Vec] =
       ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
   }
@@ -27,24 +28,24 @@ object NormalReflectModule {
 
       def canonicalNormal(p: Pt, o: Shape): UIO[Vec] = o match {
         case Sphere(_, _) => UIO.succeed(p - Pt(0, 0, 0))
-        case Plane(_, _)  => UIO.succeed(Vec(0, 1, 0))
+        case Plane(_, _) => UIO.succeed(Vec(0, 1, 0))
       }
 
       def normal(p: Pt, o: Shape): ZIO[Any, Nothing, Vec] =
         (for {
-          inverseTf         <- aTModule.invert(o.transformation)
-          objectPt          <- aTModule.applyTf(inverseTf, p)
-          objectNormal      <- canonicalNormal(objectPt, o)
-          inverseTransposed <- aTModule.transpose(inverseTf)
-          worldNormal       <- aTModule.applyTf(inverseTransposed, objectNormal)
-          normalized        <- worldNormal.normalized
+          inverseTf <- aTModule.invert(o.transformation)
+            objectPt <- aTModule.applyTf(inverseTf, p)
+            objectNormal <- canonicalNormal(objectPt, o)
+            inverseTransposed <- aTModule.transpose(inverseTf)
+            worldNormal <- aTModule.applyTf(inverseTransposed, objectNormal)
+            normalized <- worldNormal.normalized
         } yield normalized).orDie
     }
   }
 
-}
+  object > extends NormalReflectModule.Service[NormalReflectModule] {
+    override def normal(p: Pt, o: Shape): ZIO[NormalReflectModule, Nothing, Vec] =
+      ZIO.accessM(_.normalReflectModule.normal(p, o))
+  }
 
-object spatialEntityOps extends NormalReflectModule.Service[NormalReflectModule] {
-  override def normal(p: Pt, o: Shape): ZIO[NormalReflectModule, Nothing, Vec] =
-    ZIO.accessM(_.normalReflectModule.normal(p, o))
 }

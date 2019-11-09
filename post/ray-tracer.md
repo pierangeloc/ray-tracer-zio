@@ -320,3 +320,30 @@ object WorldHitCompsModule {
 ```
 
 <img src="images/hit-components.png" width="600">
+
+It is apparent from the image above that in order to calculate these components we must be able to compute the normal vector to the hitting point for a given surface, so we delegate this responsibility to a different module that calculates the normal, and the reflected vector
+
+```scala
+object NormalReflectModule {
+  trait Service[R] {
+    def normal(p: Pt, o: Shape): ZIO[R, Nothing, Vec]
+    
+    /**
+     * This is a derived method in this service
+     */
+    final def reflect(vec: Vec, normal: Vec): ZIO[R, Nothing, Vec] =
+      ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
+  }
+```
+
+With this module, looking at the picture above the `Live` implementation of the `HitComps` is pretty straightforward
+
+```scala
+  override def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[Any, GenericError, HitComps] = {
+    for {
+      pt <- UIO(ray.positionAt(hit.t))
+      normalV <- normalReflectModule.normal(pt, hit.sceneObject)
+      eyeV <- UIO(-ray.direction)
+      reflectV <- normalReflectModule.reflect(ray.direction, normalV)
+    } yield HitComps(hit.sceneObject, pt, normalV, eyeV, reflectV)
+```
