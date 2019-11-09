@@ -28,12 +28,12 @@ object WorldReflectionModule {
 
     val worldReflectionModule = new WorldReflectionModule.Service[Any] {
       def reflectedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[Any, RayTracerError, Color] =
-        if (hitComps.obj.material.reflective == 0) {
+        if (hitComps.shape.material.reflective == 0) {
           UIO(Color.black)
         } else {
           val reflRay = Ray(hitComps.overPoint, hitComps.rayReflectV)
           worldModule.colorForRay(world, reflRay, remaining).map(c =>
-            c * hitComps.obj.material.reflective
+            c * hitComps.shape.material.reflective
           )
         }
     }

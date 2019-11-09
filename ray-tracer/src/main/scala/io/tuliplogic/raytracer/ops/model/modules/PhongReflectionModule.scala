@@ -15,16 +15,16 @@ object PhongReflectionModule {
 
   /**
     *
-    * @param obj
-    * @param pt
+    * @param shape
+    * @param hitPt
     * @param normalV normal vector to the surface of $obj at $pt
     * @param eyeV the eye vector, going from the eye to the surface point
     * @param rayReflectV the reflection vector of the RAY
     */
-  case class HitComps(obj: Shape, pt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec, n1: Double = 1, n2: Double = 1) {
+  case class HitComps(shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec, n1: Double = 1, n2: Double = 1) {
     def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
-    def overPoint: Pt   = pt + normalV.*(HitComps.epsilon * (if(inside) -1 else 1))
-    def underPoint: Pt  = pt + normalV.*(-HitComps.epsilon * (if(inside) -1 else 1))
+    def overPoint: Pt   = hitPt + normalV.*(HitComps.epsilon * (if(inside) -1 else 1))
+    def underPoint: Pt  = hitPt + normalV.*(-HitComps.epsilon * (if(inside) -1 else 1))
   }
 
   object HitComps {
@@ -71,19 +71,19 @@ object PhongReflectionModule {
 
         def colorAtSurfacePoint: IO[AlgebraicError, Color] =
           for {
-            objectTf     <- UIO(hitComps.obj.transformation)
+            objectTf     <- UIO(hitComps.shape.transformation)
             objectTfInv  <- UIO.succeed(objectTf.inverted)
-            patternTf    <- UIO(hitComps.obj.material.pattern.transformation)
+            patternTf    <- UIO(hitComps.shape.material.pattern.transformation)
             patternTfInv <- UIO.succeed(patternTf.inverted)
             composed     <- aTModule.compose(objectTfInv, patternTfInv)
-            effectivePt  <- aTModule.applyTf(composed, hitComps.pt)
-          } yield hitComps.obj.material.pattern(effectivePt)
+            effectivePt  <- aTModule.applyTf(composed, hitComps.hitPt)
+          } yield hitComps.shape.material.pattern(effectivePt)
 
-        def lightV: UIO[Vec] = (pointLight.position - hitComps.pt).normalized.orDie
+        def lightV: UIO[Vec] = (pointLight.position - hitComps.hitPt).normalized.orDie
 
         def diffusRefl(effectiveColor: Color): UIO[PhongComponents] = lightV.flatMap{ lv =>
-            lightDiffusionModule.diffusion(effectiveColor, hitComps.obj.material.diffuse, lv, hitComps.normalV).zipPar(
-            lightReflectionModule.reflection(lv, hitComps.normalV, hitComps.eyeV, pointLight.intensity, hitComps.obj.material.specular, hitComps.obj.material.shininess)
+            lightDiffusionModule.diffusion(effectiveColor, hitComps.shape.material.diffuse, lv, hitComps.normalV).zipPar(
+            lightReflectionModule.reflection(lv, hitComps.normalV, hitComps.eyeV, pointLight.intensity, hitComps.shape.material.specular, hitComps.shape.material.shininess)
           ).map {
             case (d, r) => PhongComponents.diffuse(d) + PhongComponents.reflective(r)
           }
@@ -92,7 +92,7 @@ object PhongReflectionModule {
         for {
           color          <- colorAtSurfacePoint.orDie
           effectiveColor <- UIO.succeed(color * pointLight.intensity)
-          ambient        <- UIO(PhongComponents.ambient(effectiveColor * hitComps.obj.material.ambient))
+          ambient        <- UIO(PhongComponents.ambient(effectiveColor * hitComps.shape.material.ambient))
           res            <- if (inShadow) UIO(PhongComponents.allBlack) else  diffusRefl(effectiveColor)
           } yield ambient + res
       }

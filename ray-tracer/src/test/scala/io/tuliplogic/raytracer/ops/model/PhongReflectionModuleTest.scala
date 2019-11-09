@@ -45,7 +45,7 @@ class PhongReflectionModuleTest extends WordSpec with DefaultRuntime with OpsTes
       unsafeRun {
         (for {
           s          <- Sphere.canonical
-          hitComps   <- UIO(HitComps(s, pt = Pt(0, 0, 0), normalV = Vec(0, 0, -1), eyeV = Vec(0, 0, -1), rayReflectV = Vec(0, 0, 0)))
+          hitComps   <- UIO(HitComps(s, hitPt = Pt(0, 0, 0), normalV = Vec(0, 0, -1), eyeV = Vec(0, 0, -1), rayReflectV = Vec(0, 0, 0)))
           pointLight <- UIO(PointLight(Pt(0, 10, -10), Color.white))
           res        <- PhongReflectionModule.>.lighting(pointLight, hitComps, false)
           _          <- IO(res should ===(PhongComponents(Color.white * 0.1, Color.white * (0.9 * math.sqrt(2) / 2), Color.black)))

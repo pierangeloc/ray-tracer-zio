@@ -300,5 +300,23 @@ def colorForRay(world: World, ray: Ray, remaining: Int = 5): ZIO[Any, RayTracerE
 ```
 
 To provide a sensible implementation of this module we need to find:
-1. the `intersections` between the ray and the objects in the world, in order to determine which object in the world is emitting that ray towards our camera
-1. 
+1. the `intersections` between the ray and the objects in the world, in order to determine which object in the world is emitting that ray towards our camera. This will be computed by the `WorldTopologyModule`. Among all the intersections, the one we are interested in will be the first one hit by the ray. T
+```scala
+  case class Intersection(t: Double, sceneObject: Shape)
+```
+1. the `hitComponents` for the ray, i.e. the phisical characteristics that determine the ray behavior on the surface of our object:
+
+```scala
+HitComps(shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec)
+```
+
+The `WorldHitCompsModule` module will take care of computing these components for a given intersection. Notice that we pass one specific hit, plus the list of all the intersections computed for that ray, to cope with transparency rendering (more on that later) 
+
+```scala
+object WorldHitCompsModule {
+  trait Service[R] {
+    def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[R, GenericError, HitComps]
+  }
+```
+
+<img src="images/hit-components.png" width="600">

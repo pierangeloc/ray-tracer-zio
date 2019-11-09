@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.model.modules
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.{LiveFullATModule, OpsTestUtils}
 import io.tuliplogic.raytracer.ops.drawing.WorldTest
-import io.tuliplogic.raytracer.ops.model.data.{Intersection, Ray}
+import io.tuliplogic.raytracer.ops.model.data.{Color, Intersection, Ray}
 import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, Sphere}
 import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.HitComps
 import zio.{Managed, UIO}
@@ -20,10 +20,7 @@ object WorldHitCompsModuleSpec extends DefaultRunnableSpec(
         i   <- UIO(Intersection(4, s))
         ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
         hc  <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
-      } yield assert(
-        hc === HitComps(s, Pt(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1)),
-        equalTo(true)
-      )
+      } yield assertApproxEqual(hc, HitComps(s, Pt(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1)))
     ),
     testM("compute the components of a ray hitting the surface at a given intersection") (
       for {
@@ -31,10 +28,7 @@ object WorldHitCompsModuleSpec extends DefaultRunnableSpec(
           ray <- UIO(Ray(Pt(0, 1, -1), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
           i <- UIO(Intersection(math.sqrt(2), s))
           hc <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
-      } yield assert(
-          hc === HitComps(s, Pt.origin, Vec(0, 1, 0), Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, math.sqrt(2) / 2, math.sqrt(2) / 2)),
-          equalTo(true)
-        )
+      } yield assertApproxEqual(hc, HitComps(s, Pt.origin, Vec(0, 1, 0), Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, math.sqrt(2) / 2, math.sqrt(2) / 2)))
     ),
     testM("compute the n1, n2 correctly on all hits between transparent objects")(
       for {
@@ -69,11 +63,12 @@ object WorldHitCompsModuleSpec extends DefaultRunnableSpec(
         i <- UIO(Intersection(5, s))
         hc <- WorldHitCompsModule.>.hitComps(r, i, List(i))
       } yield assert(hc.underPoint.z > HitComps.epsilon / 2, equalTo(true)) &&
-          assert(hc.pt.z < hc.underPoint.z, equalTo(true))
+          assert(hc.hitPt.z < hc.underPoint.z, equalTo(true))
     }
   ).provideManagedShared(Managed.succeed(WorldHitCompsModuleSpecUtil.liveEnv))
 )
 
 object WorldHitCompsModuleSpecUtil {
   val liveEnv = new WorldHitCompsModule.Live with NormalReflectModule.Live with LiveFullATModule
+
 }

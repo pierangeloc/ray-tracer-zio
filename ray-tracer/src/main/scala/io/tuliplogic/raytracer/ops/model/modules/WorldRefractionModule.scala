@@ -24,14 +24,14 @@ object WorldRefractionModule {
         val cosTheta_i = (hitComps.eyeV dot hitComps.normalV)
         val sin2Theta_t = nRatio * nRatio * (1 - cosTheta_i * cosTheta_i)
 
-        if (hitComps.obj.material.transparency == 0) UIO.succeed(Color.black) // opaque surfaces don't refract
+        if (hitComps.shape.material.transparency == 0) UIO.succeed(Color.black) // opaque surfaces don't refract
         else if (remaining == 0) UIO.succeed(Color.black) // refraction recursion is done
         else if (sin2Theta_t > 1) UIO.succeed(Color.black) // total internal reflection reached
         else {
           val cosTheta_t: Double = math.sqrt(1 - sin2Theta_t)
           val direction: Vec = (hitComps.normalV * (nRatio * cosTheta_i - cosTheta_t)) - (hitComps.eyeV * nRatio)
           val refractedRay = Ray(hitComps.underPoint, direction)
-          worldModule.colorForRay(world, refractedRay, remaining - 1).map(_ * hitComps.obj.material.transparency)
+          worldModule.colorForRay(world, refractedRay, remaining - 1).map(_ * hitComps.shape.material.transparency)
         }
       }
     }

@@ -23,7 +23,6 @@ object WorldModule {
   }
 
   trait Live extends WorldModule {
-    val normalReflectModule: NormalReflectModule.Service[Any]
     val worldTopologyModule: WorldTopologyModule.Service[Any]
     val worldHitCompsModule: WorldHitCompsModule.Service[Any]
     val worldReflectionModule: WorldReflectionModule.Service[Any]
