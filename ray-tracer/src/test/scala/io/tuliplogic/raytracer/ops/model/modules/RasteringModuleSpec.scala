@@ -1,17 +1,16 @@
-package io.tuliplogic.raytracer.ops.model
+package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.model.data.Scene.PointLight
 import io.tuliplogic.raytracer.ops.model.data.{Camera, Color, ColoredPixel, Pixel, Ray, World}
-import io.tuliplogic.raytracer.ops.model.modules.{CameraModule, RasteringModule, WorldModule}
 import io.tuliplogic.raytracer.ops.model.modules.RasteringModule.ChunkRasteringModule
 import zio.test.Assertion._
-import zio.test.mock.Expectation._
 import zio.test._
+import zio.test.mock.Expectation._
 import zio.{UIO, ZIO}
 
-object RasteringModuleTest extends DefaultRunnableSpec(
+object RasteringModuleSpec extends DefaultRunnableSpec(
   suite("ChunkRasteringModule") {
     testM("raster should rely on cameraModule and world module") {
       val camera = Camera.makeUnsafe(Pt.origin, Pt(0, 0, -1), Vec.uy, math.Pi / 3, 2, 2)

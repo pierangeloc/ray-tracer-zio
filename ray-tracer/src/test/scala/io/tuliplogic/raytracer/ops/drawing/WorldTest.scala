@@ -20,92 +20,92 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     with LightReflectionModule.Live with LightDiffusionModule.Live
     with WorldRefractionModule.Live with PhongReflectionModule.Live with NormalReflectModule.Live with RayModule.Live
 
-  "intersect" should {
-    "compute intersections of a ray with all the objects of the world" in {
-      unsafeRun {
-        (for {
-          w   <- defaultWorld
-          ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
-          xs  <- WorldTopologyModule.>.intersections(w, ray)
-          _   <- IO { xs.map(_.t) shouldEqual List(4.0, 4.5, 5.5, 6.0) }
-        } yield ()).provide(env)
-      }
-    }
-  }
+//  "intersect" should {
+//    "compute intersections of a ray with all the objects of the world" in {
+//      unsafeRun {
+//        (for {
+//          w   <- defaultWorld
+//          ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
+//          xs  <- WorldTopologyModule.>.intersections(w, ray)
+//          _   <- IO { xs.map(_.t) shouldEqual List(4.0, 4.5, 5.5, 6.0) }
+//        } yield ()).provide(env)
+//      }
+//    }
+//  }
 
-  "hitComps" should {
-    "compute the components of a ray hitting the surface at a given intersection" in {
-      unsafeRun {
-        (for {
-          s   <- Sphere.canonical
-          i   <- UIO(Intersection(4, s))
-          ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
-          hc  <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
-          _   <- IO { hc shouldEqual HitComps(s, Pt(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1)) }
-        } yield ()).provide(env)
-      }
-    }
-
-    "compute the components of a ray hitting a plane at 45 degrees, especially the rayReflectV" in {
-      unsafeRun {
-        (for {
-          s   <- Plane.canonical
-          ray <- UIO(Ray(Pt(0, 1, -1), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
-          i   <- UIO(Intersection(math.sqrt(2), s))
-          hc  <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
-          _ <- IO {
-            hc should ===(HitComps(s, Pt.origin, Vec(0, 1, 0), Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, math.sqrt(2) / 2, math.sqrt(2) / 2)))
-          }
-        } yield ()).provide(env)
-      }
-    }
-
-    "compute the n1, n2 correctly on all hits between transparent objects" in {
-      unsafeRun {
-        (for {
-          w <- transparentSpheresWorld
-          sA = w.objects(0)
-          sB = w.objects(1)
-          sC = w.objects(2)
-          ray <- UIO(Ray(Pt(0, 0, -4), Vec.uz))
-          is  <- UIO(
-                  List(
-                    Intersection(2, sA), Intersection(2.75, sB), Intersection(3.25, sC), Intersection(4.75, sB), Intersection(5.25, sC), Intersection(6, sA)
-                  )
-                )
-          hc0  <- WorldHitCompsModule.>.hitComps(ray, is(0), is)
-          hc1  <- WorldHitCompsModule.>.hitComps(ray, is(1), is)
-          hc2  <- WorldHitCompsModule.>.hitComps(ray, is(2), is)
-          hc3  <- WorldHitCompsModule.>.hitComps(ray, is(3), is)
-          hc4  <- WorldHitCompsModule.>.hitComps(ray, is(4), is)
-          hc5  <- WorldHitCompsModule.>.hitComps(ray, is(5), is)
-          _ <- IO {
-            (hc0.n1, hc0.n2) shouldEqual 1.0 -> 1.5
-            (hc1.n1, hc1.n2) shouldEqual 1.5 -> 2.0
-            (hc2.n1, hc2.n2) shouldEqual 2.0 -> 2.5
-            (hc3.n1, hc3.n2) shouldEqual 2.5 -> 2.5
-            (hc4.n1, hc4.n2) shouldEqual 2.5 -> 1.5
-            (hc5.n1, hc5.n2) shouldEqual 1.5 -> 1.0
-          }
-        } yield ()).provide(env)
-      }
-    }
-
-    "compute the underpoint" in {
-      unsafeRun {
-        (for {
-          r <- UIO(Ray(Pt(0, 0, -5), Vec.uz))
-          w <- oneTransparentCanonicalSphereWorld
-          s <- UIO(w.objects.head)
-          i <- UIO(Intersection(5, s))
-          hc <- WorldHitCompsModule.>.hitComps(r, i, List(i))
-          _ <- IO{
-            hc.underPoint.z > HitComps.epsilon / 2 shouldEqual true}
-          _ <- IO{(hc.pt.z < hc.underPoint.z) shouldEqual true}
-        } yield ()).provide(env)
-      }
-    }
-  }
+//  "hitComps" should {
+//    "compute the components of a ray hitting the surface at a given intersection" in {
+//      unsafeRun {
+//        (for {
+//          s   <- Sphere.canonical
+//          i   <- UIO(Intersection(4, s))
+//          ray <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
+//          hc  <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
+//          _   <- IO { hc shouldEqual HitComps(s, Pt(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1), Vec(0, 0, -1)) }
+//        } yield ()).provide(env)
+//      }
+//    }
+//
+//    "compute the components of a ray hitting a plane at 45 degrees, especially the rayReflectV" in {
+//      unsafeRun {
+//        (for {
+//          s   <- Plane.canonical
+//          ray <- UIO(Ray(Pt(0, 1, -1), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
+//          i   <- UIO(Intersection(math.sqrt(2), s))
+//          hc  <- WorldHitCompsModule.>.hitComps(ray, i, List(i))
+//          _ <- IO {
+//            hc should ===(HitComps(s, Pt.origin, Vec(0, 1, 0), Vec(0, math.sqrt(2) / 2, -math.sqrt(2) / 2), Vec(0, math.sqrt(2) / 2, math.sqrt(2) / 2)))
+//          }
+//        } yield ()).provide(env)
+//      }
+//    }
+//
+//    "compute the n1, n2 correctly on all hits between transparent objects" in {
+//      unsafeRun {
+//        (for {
+//          w <- transparentSpheresWorld
+//          sA = w.objects(0)
+//          sB = w.objects(1)
+//          sC = w.objects(2)
+//          ray <- UIO(Ray(Pt(0, 0, -4), Vec.uz))
+//          is  <- UIO(
+//                  List(
+//                    Intersection(2, sA), Intersection(2.75, sB), Intersection(3.25, sC), Intersection(4.75, sB), Intersection(5.25, sC), Intersection(6, sA)
+//                  )
+//                )
+//          hc0  <- WorldHitCompsModule.>.hitComps(ray, is(0), is)
+//          hc1  <- WorldHitCompsModule.>.hitComps(ray, is(1), is)
+//          hc2  <- WorldHitCompsModule.>.hitComps(ray, is(2), is)
+//          hc3  <- WorldHitCompsModule.>.hitComps(ray, is(3), is)
+//          hc4  <- WorldHitCompsModule.>.hitComps(ray, is(4), is)
+//          hc5  <- WorldHitCompsModule.>.hitComps(ray, is(5), is)
+//          _ <- IO {
+//            (hc0.n1, hc0.n2) shouldEqual 1.0 -> 1.5
+//            (hc1.n1, hc1.n2) shouldEqual 1.5 -> 2.0
+//            (hc2.n1, hc2.n2) shouldEqual 2.0 -> 2.5
+//            (hc3.n1, hc3.n2) shouldEqual 2.5 -> 2.5
+//            (hc4.n1, hc4.n2) shouldEqual 2.5 -> 1.5
+//            (hc5.n1, hc5.n2) shouldEqual 1.5 -> 1.0
+//          }
+//        } yield ()).provide(env)
+//      }
+//    }
+//
+//    "compute the underpoint" in {
+//      unsafeRun {
+//        (for {
+//          r <- UIO(Ray(Pt(0, 0, -5), Vec.uz))
+//          w <- oneTransparentCanonicalSphereWorld
+//          s <- UIO(w.objects.head)
+//          i <- UIO(Intersection(5, s))
+//          hc <- WorldHitCompsModule.>.hitComps(r, i, List(i))
+//          _ <- IO{
+//            hc.underPoint.z > HitComps.epsilon / 2 shouldEqual true}
+//          _ <- IO{(hc.pt.z < hc.underPoint.z) shouldEqual true}
+//        } yield ()).provide(env)
+//      }
+//    }
+//  }
 
   "colorAt" should {
     "compute black for a ray that doesn't intersect any object" in {
@@ -202,47 +202,47 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
     }
   }
 
-  "isShadowed, with sphere of ray=1 around the origin and light at (-10, 10, -10)" should {
-    "return false for a point in LOS with point light" in {
-      unsafeRun {
-        (for {
-          w        <- defaultWorld
-          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(0, 10, 0))
-          _        <- IO { inShadow shouldEqual false }
-        } yield ()).provide(env)
-      }
-    }
-
-    "return true for a point at the antipodes of the light, with the sphere being around the origin" in {
-      unsafeRun {
-        (for {
-          w        <- defaultWorld
-          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(10, -10, 10))
-          _        <- IO { inShadow shouldEqual true }
-        } yield ()).provide(env)
-      }
-    }
-
-    "return false for a point on the other side of the sphere light, with respect to the sphere" in {
-      unsafeRun {
-        (for {
-          w        <- defaultWorld
-          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(-20, 20, -20))
-          _        <- IO { inShadow shouldEqual false }
-        } yield ()).provide(env)
-      }
-    }
-
-    "return false for a point between the light and the sphere" in {
-      unsafeRun {
-        (for {
-          w        <- defaultWorld
-          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(-2, 2, -2))
-          _        <- IO { inShadow shouldEqual false }
-        } yield ()).provide(env)
-      }
-    }
-  }
+//  "isShadowed, with sphere of ray=1 around the origin and light at (-10, 10, -10)" should {
+//    "return false for a point in LOS with point light" in {
+//      unsafeRun {
+//        (for {
+//          w        <- defaultWorld
+//          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(0, 10, 0))
+//          _        <- IO { inShadow shouldEqual false }
+//        } yield ()).provide(env)
+//      }
+//    }
+//
+//    "return true for a point at the antipodes of the light, with the sphere being around the origin" in {
+//      unsafeRun {
+//        (for {
+//          w        <- defaultWorld
+//          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(10, -10, 10))
+//          _        <- IO { inShadow shouldEqual true }
+//        } yield ()).provide(env)
+//      }
+//    }
+//
+//    "return false for a point on the other side of the sphere light, with respect to the sphere" in {
+//      unsafeRun {
+//        (for {
+//          w        <- defaultWorld
+//          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(-20, 20, -20))
+//          _        <- IO { inShadow shouldEqual false }
+//        } yield ()).provide(env)
+//      }
+//    }
+//
+//    "return false for a point between the light and the sphere" in {
+//      unsafeRun {
+//        (for {
+//          w        <- defaultWorld
+//          inShadow <- WorldTopologyModule.>.isShadowed(w, Pt(-2, 2, -2))
+//          _        <- IO { inShadow shouldEqual false }
+//        } yield ()).provide(env)
+//      }
+//    }
+//  }
 
   "color for a ray on a shadowed point" should {
     "equal the ambient light" in {

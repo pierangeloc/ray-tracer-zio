@@ -1,6 +1,8 @@
 package io.tuliplogic.raytracer.ops
 
 import io.tuliplogic.raytracer.geometry.TestUtils
+import io.tuliplogic.raytracer.geometry.affine.ATModule
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.model.data.{Color, Ray}
 import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.{HitComps, PhongComponents}
 import org.scalactic.TripleEquals._
@@ -47,3 +49,7 @@ trait OpsTestUtils extends TestUtils with Tolerance {
     }
   }
 }
+object OpsTestUtils extends OpsTestUtils
+
+trait LiveFullATModule extends ATModule.Live with MatrixModule.BreezeMatrixModule
+object LiveFullATModule extends LiveFullATModule
