@@ -384,6 +384,86 @@ With this module, looking at the picture above the `Live` implementation of the 
 
 
 #### 3.2.3 Getting a first version to work
-To put at work what we have built so far we can construct a simple world of 2 spheres, one huge one centered in the origin with radius 3, and a smaller one with radius 0.3, centered in `Pt(0, 0, -5)`. The point of light is along the at -15 on z axis. With a coloring that returns black if the ray doesn't hit any shape, or if the point being hit is shadowed by another shape, and returns white in any other case, we can already display an image where we can sense shapes and shadows
+Let's put these little modules we wrote at work, by writing a simple function to put the colored pixels in a canvas
 
+```scala
+def drawOnCanvasWithCamera(world: World, camera: Camera, canvas: Canvas): ZIO[RasteringModule, RayTracerError, Unit] = for {
+    coloredPointsStream <- RasteringModule.>.raster(world, camera)
+    _                   <- coloredPointsStream.mapM(cp => canvas.update(cp)).run(Sink.drain)
+  } yield ()
+```
+
+and then put it in our core program that will show us how the world look like from a given point of view
+
+```scala
+def program(viewFrom: Pt): ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] = for {
+    camera <- cameraFor(viewFrom: Pt)
+    w      <- world
+    canvas <- RaytracingProgram.drawOnCanvasWithCamera(w, camera)
+    _      <- CanvasSerializer.>.render(canvas, 255)
+  } yield ()
+```
+
+The signature of this program tells us all the requirements it has, so we must provide it with such an environment. This is where our environment shines, in that we can compose dependencies using inheritance. We define first a minimal set of environments that are required by all our implementations:
+
+```scala
+trait BasicModules
+  extends NormalReflectModule.Live
+  with RayModule.Live
+  with ATModule.Live
+  with MatrixModule.BreezeMatrixModule
+  with WorldModule.Live
+  with WorldTopologyModule.Live
+  with WorldHitCompsModule.Live
+  with CameraModule.Live
+  with RasteringModule.ChunkRasteringModule
+  with Blocking.Live
+  with Console.Live
+```
+
+No worries if this looks a bit daunting: I got to this point just by following the compiler suggestions (and your IDE can help as well):
+
+```
+[error] /Users/pierangelo.cecchetto/Documents/projects/scala/talks/ray-tracer-zio/ray-tracer/src/main/scala/io/tuliplogic/raytracer/ops/programs/SimpleWorld.scala:37:37: object creation impossible, since:
+[error] it has 4 unimplemented members.
+[error] /** As seen from <$anon: io.tuliplogic.raytracer.ops.model.modules.RasteringModule.ChunkRasteringModule with io.tuliplogic.raytracer.geometry.affine.ATModule.Live with io.tuliplogic.raytracer.ops.rendering.CanvasSerializer.PPMCanvasSerializer>, the missing signatures are as follows.
+[error]  *  For convenience, these are usable as stub implementations.
+[error]  */
+[error]   // Members declared in zio.blocking.Blocking
+[error]   val blocking: zio.blocking.Blocking.Service[Any] = ???
+[error]   
+[error]   // Members declared in io.tuliplogic.raytracer.ops.model.modules.RasteringModule.ChunkRasteringModule
+[error]   val cameraModule: io.tuliplogic.raytracer.ops.model.modules.CameraModule.Service[Any] = ???
+[error]   val worldModule: io.tuliplogic.raytracer.ops.model.modules.WorldModule.Service[Any] = ???
+[error]   
+[error]   // Members declared in io.tuliplogic.raytracer.geometry.affine.ATModule.Live
+[error]   val matrixModule: io.tuliplogic.raytracer.geometry.matrix.MatrixModule.Service[Any] = ???
+[error]   program(Pt(2, 2, -8)).provide(new RasteringModule.ChunkRasteringModule with ATModule.Live with CanvasSerializer.PPMCanvasSerializer {
+```
+
+
+We can compose a simple environment by addding inheritance on a black/white color provider, and we can close all the requirements for our program in our main zio `App`
+
+```scala
+  trait VerySimpleModules
+  extends BasicModules
+  with BlackWhiteColorModules
+
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
+  program(Pt(2, 2, -10))
+    .provide {
+      new CanvasSerializer.PPMCanvasSerializer with VerySimpleModules {
+        override def path: Path = Paths.get(s"$canvasFile-$z.ppm")
+      }
+    }.foldM(err => console.putStrLn(s"Execution failed with: ${err}").as(1), _ => UIO.succeed(0))
+```
+
+This "grouping modules" is something that would be pretty difficult to achieve in tagless final: `program[F[_]: NormalReflectModule : RayModule : ATModule]` can't be grouped so easily.
+
+In the `SimpleWorld` example you can find in the repo we  construct a simple world of 2 spheres, one huge one centered in the origin with radius 3, and a smaller one with radius 0.3, centered in `Pt(0, 0, -5)`. The point of light is along the at -15 on z axis. With our `BlackWhiteColorModules` we have a `black` pixel if the ray doesn't hit any shape or if the point being hit is shadowed by another shape, and a `white` in any other case, and we can already display an image where we can perceive our shapes and shadows
+
+<div>
 <img src="images/simple-world-shadows.png" width="600">
+<img src="images/simple-world-shadows-anim.gif" width="600">
+</div>
+

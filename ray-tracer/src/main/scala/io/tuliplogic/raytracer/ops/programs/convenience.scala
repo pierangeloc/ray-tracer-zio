@@ -9,11 +9,9 @@ import zio.blocking.Blocking
 import zio.console.Console
 
 /**
- * 
- * ray-tracer-zio - 28/10/2019
- * Created with ♥ in Amsterdam
+ * The minimal set of modules required for the ray tracer to work and produce ppm files
  */
-trait FullModules
+trait BasicModules
   extends NormalReflectModule.Live
   with RayModule.Live
   with ATModule.Live
@@ -25,6 +23,9 @@ trait FullModules
   with RasteringModule.ChunkRasteringModule
   with Blocking.Live
   with Console.Live
+
+trait FullModules
+  extends BasicModules
   with FullRenderingModules
 
 trait FullRenderingModules
@@ -34,19 +35,13 @@ trait FullRenderingModules
   with WorldReflectionModule.Live
   with WorldRefractionModule.Live
 
-trait VerySimpleModules
-  extends NormalReflectModule.Live
-  with RayModule.Live
-  with ATModule.Live
-  with MatrixModule.BreezeMatrixModule
-  with WorldModule.Live
-  with WorldTopologyModule.Live
-  with WorldHitCompsModule.Live
-  with CameraModule.Live
-  with RasteringModule.ChunkRasteringModule
-  with Blocking.Live
-  with Console.Live
-  with PhongReflectionModule.BlackWhite
+
+trait BlackWhiteColorModules extends
+  PhongReflectionModule.BlackWhite
   with WorldReflectionModule.NoWorldReflectionModule
   with WorldRefractionModule.NoWorldRefractionModule
+
+trait VerySimpleModules
+  extends BasicModules
+  with BlackWhiteColorModules
 
