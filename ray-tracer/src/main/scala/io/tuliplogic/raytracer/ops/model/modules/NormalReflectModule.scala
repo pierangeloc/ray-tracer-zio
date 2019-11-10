@@ -17,7 +17,7 @@ object NormalReflectModule {
     def normal(p: Pt, o: Shape): ZIO[R, Nothing, Vec]
 
     final def reflect(vec: Vec, normal: Vec): ZIO[R, Nothing, Vec] =
-      ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
+      ZIO.succeed(vec - (normal * (2 * (vec dot normal))))
   }
 
   trait Live extends NormalReflectModule {

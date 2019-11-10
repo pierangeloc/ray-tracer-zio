@@ -25,9 +25,9 @@ object WorldModule {
   trait Live extends WorldModule {
     val worldTopologyModule: WorldTopologyModule.Service[Any]
     val worldHitCompsModule: WorldHitCompsModule.Service[Any]
+    val phongReflectionModule: PhongReflectionModule.Service[Any]
     val worldReflectionModule: WorldReflectionModule.Service[Any]
     val worldRefractionModule: WorldRefractionModule.Service[Any]
-    val phongReflectionModule: PhongReflectionModule.Service[Any]
 
     override val worldModule: Service[Any] = new Service[Any] {
       def colorForRay(world: World, ray: Ray, remaining: Int = 5): ZIO[Any, RayTracerError, Color] =
@@ -37,11 +37,11 @@ object WorldModule {
           color <- maybeHitComps
             .map(hc =>
               for {
-                shadowed <- worldTopologyModule.isShadowed(world, hc.overPoint)
-                  color <- phongReflectionModule.lighting(world.pointLight, hc, shadowed).map(_.toColor)
-                  //invoke this only if remaining > 0. Also, reflected color and color can be computed in parallel
-                  reflectedColor <- if (remaining > 0) worldReflectionModule.reflectedColor(world, hc, remaining - 1) else UIO(Color.black)
-                  refractedColor <- worldRefractionModule.refractedColor(world, hc, remaining)
+                shadowed       <- worldTopologyModule.isShadowed(world, hc.overPoint)
+                color          <- phongReflectionModule.lighting(world.pointLight, hc, shadowed).map(_.toColor)
+                //invoke this only if remaining > 0. Also, reflected color and color can be computed in parallel
+                reflectedColor <- if (remaining > 0) worldReflectionModule.reflectedColor(world, hc, remaining - 1) else UIO(Color.black)
+                refractedColor <- worldRefractionModule.refractedColor(world, hc, remaining)
               } yield color + reflectedColor + refractedColor
             ).getOrElse(UIO(Color.black))
         } yield color

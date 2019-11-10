@@ -54,7 +54,6 @@ object PhongReflectionModule {
       * @return
       */
     def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[R, PhongComponents]
-
   }
 
   //TODO test the phongReflection in terms of the underlying dependencies
@@ -95,6 +94,16 @@ object PhongReflectionModule {
           ambient        <- UIO(PhongComponents.ambient(effectiveColor * hitComps.shape.material.ambient))
           res            <- if (inShadow) UIO(PhongComponents.allBlack) else  diffusRefl(effectiveColor)
           } yield ambient + res
+      }
+    }
+  }
+
+  trait BlackWhite extends PhongReflectionModule {
+    override val phongReflectionModule: Service[Any] = new Service[Any] {
+
+      override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
+        if (inShadow) UIO(PhongComponents.diffuse(Color.black))
+        else UIO(PhongComponents(Color.black, Color.white, Color.black))
       }
     }
   }

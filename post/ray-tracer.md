@@ -299,16 +299,50 @@ The key method in the `WorldModule` is
 def colorForRay(world: World, ray: Ray, remaining: Int = 5): ZIO[Any, RayTracerError, Color]
 ```
 
-To provide a sensible implementation of this module we need to find:
-1. the `intersections` between the ray and the objects in the world, in order to determine which object in the world is emitting that ray towards our camera. This will be computed by the `WorldTopologyModule`. Among all the intersections, the one we are interested in will be the first one hit by the ray. T
+To provide a sensible implementation of this module we need to find the intersection between a ray and the objects in the world, and then consider how the light acts on that intersection when interacting with the material.
+
+#### 3.2.1 Implementing `WorldTopologyModule`
+In this module we calculate he `intersections` between the ray and the objects in the world, in order to determine which object in the world is emitting that ray towards our camera. This will be computed by the `WorldTopologyModule`. Among all the intersections, the one we are particularly interested in is the first one hit by the ray. `Intersection` carries the object hit by the ray, together with the value of `t` parameter
+
 ```scala
   case class Intersection(t: Double, sceneObject: Shape)
 ```
-1. the `hitComponents` for the ray, i.e. the phisical characteristics that determine the ray behavior on the surface of our object:
+
+The implementation of the `intersections`  method just delegates the determination of the (possible) intersection between a ray and an object to a `RayModule` which, based on the shape, determines if the ray intersects the shape.
+
+```scala
+  def intersections(world: World, ray: Ray): ZIO[Any, Nothing, List[Intersection]] =
+    ZIO.traverse(world.objects)(rayModule.intersect(ray, _)).map(_.flatten.sortBy(_.t))
+```
+
+The live implementation of `RayModule` determines the intersection between a generic ray and a generic  sphere  by applying the inverse of the transformation that was applied to the sphere, to the ray, and then determine the intersection between this transformed ray and the _canonical sphere_, the spere centered in origin with unit radius. See the code for details.
+
+This module also provides us with a way to see if a hit point on a shape is shadowed by another shape. A point is shadowed if the segment between the point and the point of light  intersects any other shape. In other words, we can consider a ray outgoing from the hit point towards the point of light and find possible intersections between that ray and the other shapes in our world. If there's a hit within the distance between the point and the point of light, it's in shadow.
+
+<img src="images/shadow.png" width="600">
+
+In code:
+
+```scala
+def isShadowed(world: World, pt: Pt): ZIO[Any, Nothing, Boolean] =
+  for {
+    v        <- UIO(world.pointLight.position - pt)
+    distance <- v.norm
+    vNorm    <- v.normalized.orDie
+    xs       <- intersections(world, Ray(pt, vNorm))
+    hit      <- rayModule.hit(xs)
+  } yield hit.exists(i => i.t > 0 && i.t < distance)
+```
+
+#### 3.2.2 Implementing `WorldHitCompsModule`
+
+This module calculates the `hitComponents` for a ray hitting an object the  for the ray, i.e. the _geometrical_ characteristics that determine the ray behavior on the surface of our object:
 
 ```scala
 HitComps(shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec)
 ```
+
+_Note that we aren't yet dealing with material properties of the object_
 
 The `WorldHitCompsModule` module will take care of computing these components for a given intersection. Notice that we pass one specific hit, plus the list of all the intersections computed for that ray, to cope with transparency rendering (more on that later) 
 
@@ -332,7 +366,7 @@ object NormalReflectModule {
      * This is a derived method in this service
      */
     final def reflect(vec: Vec, normal: Vec): ZIO[R, Nothing, Vec] =
-      ZIO.succeed(vec.-(normal.*(2 * vec.dot(normal))))
+      ZIO.succeed(vec - (normal * (2 * (vec dot normal))))
   }
 ```
 
@@ -341,9 +375,15 @@ With this module, looking at the picture above the `Live` implementation of the 
 ```scala
   override def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[Any, GenericError, HitComps] = {
     for {
-      pt <- UIO(ray.positionAt(hit.t))
-      normalV <- normalReflectModule.normal(pt, hit.sceneObject)
-      eyeV <- UIO(-ray.direction)
+      pt       <- UIO(ray.positionAt(hit.t))
+      normalV  <- normalReflectModule.normal(pt, hit.sceneObject)
+      eyeV     <- UIO(-ray.direction)
       reflectV <- normalReflectModule.reflect(ray.direction, normalV)
     } yield HitComps(hit.sceneObject, pt, normalV, eyeV, reflectV)
 ```
+
+
+#### 3.2.3 Getting a first version to work
+To put at work what we have built so far we can construct a simple world of 2 spheres, one huge one centered in the origin with radius 3, and a smaller one with radius 0.3, centered in `Pt(0, 0, -5)`. The point of light is along the at -15 on z axis. With a coloring that returns black if the ray doesn't hit any shape, or if the point being hit is shadowed by another shape, and returns white in any other case, we can already display an image where we can sense shapes and shadows
+
+<img src="images/simple-world-shadows.png" width="600">

@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.ops.programs
 
-  import java.nio.file.{Path, Paths}
+import java.nio.file.{Path, Paths}
 
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
