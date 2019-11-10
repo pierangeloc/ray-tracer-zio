@@ -12,6 +12,7 @@ sealed trait Pattern extends (Pt => Color) {
 }
 
 object Pattern {
+  val epsilon: Double = 1e-6
 
   //TODO: see if we can separate better canonical patterns from patterns with transformation
   case class Uniform(c: Color, transformation: AT) extends Pattern {
@@ -39,7 +40,7 @@ object Pattern {
 
   case class Checker(c1: Color, c2: Color, transformation: AT) extends Pattern {
     override def apply(pt: Pt): Color = {
-      val edgesSum = math.floor(pt.x) + math.floor(pt.y) + math.floor(pt.z)
+      val edgesSum = math.floor(pt.x + epsilon) + math.floor(pt.y + epsilon) + math.floor(pt.z + epsilon)
       if (math.floor(edgesSum) % 2 == 0) c1 else c2
     }
   }

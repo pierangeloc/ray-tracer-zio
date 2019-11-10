@@ -319,7 +319,7 @@ The live implementation of `RayModule` determines the intersection between a gen
 
 This module also provides us with a way to see if a hit point on a shape is shadowed by another shape. A point is shadowed if the segment between the point and the point of light  intersects any other shape. In other words, we can consider a ray outgoing from the hit point towards the point of light and find possible intersections between that ray and the other shapes in our world. If there's a hit within the distance between the point and the point of light, it's in shadow.
 
-<img src="images/shadow.png" width="600">
+<img src="../images/shadow.png" width="600">
 
 In code:
 
@@ -467,3 +467,24 @@ In the `SimpleWorld` example you can find in the repo we  construct a simple wor
 <img src="images/simple-world-shadows-anim.gif" width="600">
 </div>
 
+# 3.3 Model light on material
+So far our model just considers if a surface is hit by light or not. To add some depth feeling to our images, we must model how the material of our spheres (or planes) reacts when hit by light. We will use the [Phong reflection model](https://en.wikipedia.org/wiki/Phong_reflection_model), that requires to model the material and to embed it into the shapes of our world
+
+Diffusion models the behavior of light hitting a matte material and assumes that the effect of light hitting a material at a give point is just depending on the projection of the ray of light on the normal vector to the surface at that point. This will affect any eye observing that point in LOS.
+
+Specularity/shininess model how the source of light is reflected by the material
+
+<div>
+    <img src="images/specular-shininess.png" width="600">
+</div>
+
+
+```scala
+case class Material(
+  color: Color, // the basic color
+  ambient: Double,  // ∈ [0, 1] ambient * color => the part of color due to ambient light (not to the specific source light)
+  diffuse: Double,  // ∈ [0, 1] lightV • normalV * diffuse * color
+  specular: Double, // ∈ [0, 1] 0 totally opaque, 1 totally reflective
+  shininess: Double, // ∈ [10, 200] how big and defined is the "stain of light" on the object
+ )
+```

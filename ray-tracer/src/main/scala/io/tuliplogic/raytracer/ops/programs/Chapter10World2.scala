@@ -35,15 +35,18 @@ object Chapter10World2 extends App {
   val world: ZIO[ATModule, AlgebraicError, World] = for {
     mat      <- Material.default
     idTf     <- ATModule.>.id
-    floorMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(1, 0.9, 0.9), Color(0.9, 1, 0.9), idTf), specular = 0))
+    scale4   <- ATModule.>.scale(4, 4, 4)
+    wallMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(0.8, 0.8, 0.8), Color(0.2, 0.2, 0.2), scale4), specular = 0))
+//    wallMat <- UIO(mat.copy(pattern = Pattern.Ring(Color(0.8, 0.8, 0.8), Color(0.2, 0.2, 0.2), scale4), specular = 0))
+//    wallMat <- UIO(mat.copy(pattern = Pattern.Uniform(Color(0.8, 0.8, 0.8), scale4), specular = 0))
 //    floorMat <- UIO(mat.copy(pattern = Pattern.Ring(Color(1, 0.9, 0.9), Color(0.9, 1, 0.9), idTf), specular = 0))
-    floorS <- Plane.canonical.map(_.copy(material = floorMat)) //grey, matte
+    floorS <- Plane.canonical.map(_.copy(material = wallMat)) //grey, matte
 
     leftWallTf2 <- ATModule.>.rotateX(math.Pi / 2)
     leftWallTf3 <- ATModule.>.rotateY(-math.Pi / 2)
     leftWallTf4 <- ATModule.>.translate(-10, 0, 0)
     leftWallTf  <- ATModule.>.compose(leftWallTf2, leftWallTf3).flatMap(ATModule.>.compose(_, leftWallTf4))
-    leftWallS   <- UIO(Plane(leftWallTf, floorMat))
+    leftWallS   <- UIO(Plane(leftWallTf, wallMat))
 
     s1Tf1 <- ATModule.>.translate(5, 2, 5)
     s1Tf2 <- ATModule.>.scale(2, 2, 2)
@@ -55,7 +58,8 @@ object Chapter10World2 extends App {
         mat.copy(
           pattern = Pattern.GradientX(Color(240 / 256.0, 121 / 256.0, 49 / 256.0), Color(145 / 256.0, 179 / 256.0, 87 / 256.0), idTf),
           diffuse = 0.7,
-          specular = 0.3)))
+          specular = 0.9,
+          shininess = 50)))
 
     s2Tf1 <- ATModule.>.translate(10, 4, 8)
     s2Tf2 <- ATModule.>.scale(3, 3, 3)
