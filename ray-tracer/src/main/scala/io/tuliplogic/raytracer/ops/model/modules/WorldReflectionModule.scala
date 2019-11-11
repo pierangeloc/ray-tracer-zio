@@ -39,7 +39,7 @@ object WorldReflectionModule {
     }
   }
 
-  trait NoWorldReflectionModule extends WorldReflectionModule {
+  trait NoReflectionModule extends WorldReflectionModule {
     val worldReflectionModule = new WorldReflectionModule.Service[Any] {
       def reflectedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[Any, RayTracerError, Color] = UIO.succeed(Color.black)
     }

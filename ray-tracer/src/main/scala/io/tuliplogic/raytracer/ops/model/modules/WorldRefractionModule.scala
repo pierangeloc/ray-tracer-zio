@@ -37,7 +37,7 @@ object WorldRefractionModule {
     }
   }
 
-  trait NoWorldRefractionModule extends WorldRefractionModule {
+  trait NoRefractionModule extends WorldRefractionModule {
     override val worldRefractionModule: Service[Any] = new Service[Any] {
       override def refractedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[Any, RayTracerError, Color] =
         UIO.succeed(Color.black)

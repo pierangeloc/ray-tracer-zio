@@ -38,10 +38,21 @@ trait FullRenderingModules
 
 trait BlackWhiteColorModules extends
   PhongReflectionModule.BlackWhite
-  with WorldReflectionModule.NoWorldReflectionModule
-  with WorldRefractionModule.NoWorldRefractionModule
+  with WorldReflectionModule.NoReflectionModule
+  with WorldRefractionModule.NoRefractionModule
+
+trait BWModules extends
+  PhongReflectionModule.Live
+  with LightDiffusionModule.NoDiffusion
+  with LightReflectionModule.NoReflection
+  with WorldRefractionModule.NoRefractionModule
+  with WorldReflectionModule.NoReflectionModule
 
 trait VerySimpleModules
   extends BasicModules
   with BlackWhiteColorModules
+
+trait VerySimpleModules2
+  extends BasicModules
+  with BWModules
 

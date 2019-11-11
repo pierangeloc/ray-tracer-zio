@@ -468,16 +468,19 @@ In the `SimpleWorld` example you can find in the repo we  construct a simple wor
 </div>
 
 # 3.3 Model light on material
-So far our model just considers if a surface is hit by light or not. To add some depth feeling to our images, we must model how the material of our spheres (or planes) reacts when hit by light. We will use the [Phong reflection model](https://en.wikipedia.org/wiki/Phong_reflection_model), that requires to model the material and to embed it into the shapes of our world
+So far our model just considers if a surface is hit by light or not. To add some depth feeling to our images, we must model how the material of our spheres (or planes) reacts when hit by light. We will use the [Phong reflection model](https://en.wikipedia.org/wiki/Phong_reflection_model), that requires to model the material and to embed it into the shapes of our world.
 
-Diffusion models the behavior of light hitting a matte material and assumes that the effect of light hitting a material at a give point is just depending on the projection of the ray of light on the normal vector to the surface at that point. This will affect any eye observing that point in LOS.
+- Ambient models the presence of an "ambient" light uniformly distributed in the world
+- Diffusion models the behavior of light hitting a matte material and assumes that the effect of light hitting a material at a give point is just depending on the projection of the ray of light on the normal vector to the surface at that point. This will affect any eye observing that point in LOS.
+- Specularity/shininess model how the source of light is reflected by the material, i.e. how you are going to see that lamp reflected on the object itself.
 
-Specularity/shininess model how the source of light is reflected by the material
+You can see them at work
 
 <div>
-    <img src="images/specular-shininess.png" width="600">
+  <img src="images/specular-shininess.png" width="600">
 </div>
 
+Let's model the material properties through the material of the shape (e.g. the sphere)
 
 ```scala
 case class Material(
@@ -486,5 +489,20 @@ case class Material(
   diffuse: Double,  // ∈ [0, 1] lightV • normalV * diffuse * color
   specular: Double, // ∈ [0, 1] 0 totally opaque, 1 totally reflective
   shininess: Double, // ∈ [10, 200] how big and defined is the "stain of light" on the object
- )
+)
 ```
+
+and have a module to combine the material with the hit components, to produce the 3 components (`PhongComponents`) outlined above
+
+```scala
+object PhongReflectionModule {
+  trait Service[R] {
+      def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[R, PhongComponents]
+    }
+```
+
+The live implementation of this module goes even further and delegates the calculation of diffusive and reflective components to 2 separate modules, check the code for reference.
+
+<div>
+  <img src="images/animated-spheres.gif" width="600">
+</div>
