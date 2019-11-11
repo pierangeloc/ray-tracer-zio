@@ -319,7 +319,7 @@ The live implementation of `RayModule` determines the intersection between a gen
 
 This module also provides us with a way to see if a hit point on a shape is shadowed by another shape. A point is shadowed if the segment between the point and the point of light  intersects any other shape. In other words, we can consider a ray outgoing from the hit point towards the point of light and find possible intersections between that ray and the other shapes in our world. If there's a hit within the distance between the point and the point of light, it's in shadow.
 
-<img src="../images/shadow.png" width="600">
+<img src="images/shadow.png" width="600">
 
 In code:
 
