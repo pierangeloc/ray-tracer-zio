@@ -32,9 +32,12 @@ object Camera {
 }
 ```
 
-This will create a(n `UIO` of a) `case class Camera( hRes: Int, vRes: Int, fieldOfViewRad: Double, tf: AT)`. While the first 3 parameters are obvious, what's the `tf` for? Actually, it is handy to start from a camera in a standard position (looking at the negative z axis, being located in the origin, looking up on the y axis), which we will call _canonical camera_. Any camera in the world (positioned in any arbitrary position, looking to an any point, oriented in any way) can be defined in terms of a transformation operated on the canonical camera. We take the _inverse_ of that transformation, and we carry it together with the camera. E.g. if I translate the camera to the point `Pt(0, 0, -5)` the transformation that must be carried along with our camera will be the transformation that must be applied to the world, in order to produce the same effect if the camera was the canonical one. That means if the real camera is positioned at `Pt(0, 0, -5)` it is the same thing to have a canonical camera, with the whole world translated by pf +5 on the `z` axis, i.e. a `translate(0, 0, 5)` transformation. This transformation will be carried along with the camera object.
+This will create a(n `UIO` of a) `case class Camera( hRes: Int, vRes: Int, fieldOfViewRad: Double, tf: AT)`. While the first 3 parameters are obvious, what's the `tf` for? Actually, it is handy to start from a camera in a standard position (looking at the negative z axis, being located in the origin, looking up on the y axis), which we will call _canonical camera_. Any camera in the world (positioned in any arbitrary position, looking to an any point, oriented in any way) can be defined in terms of a transformation operated on the canonical camera. We take the _inverse_ of that transformation, and we carry it together with the camera. E.g. if I translate the camera to the point `Pt(0, 0, -3)` the transformation that must be carried along with our camera will be the transformation that must be applied to the world, in order to produce the same effect if the camera was the canonical one. That means if the real camera is positioned at `Pt(0, 0, -3)` it is the same thing to have a canonical camera, with the whole world translated by pf +5 on the `z` axis, i.e. a `translate(0, 0, 3)` transformation. This transformation will be carried along with the camera object.
 
-![Show the effect of translating a camera](images/camera-translation.png)
+
+<div>
+  <img src="images/camera-translate.png" width="1200">
+</div>
 
 So we will start with the definition of a module that gives us the capability of applying, and defining, these transformations, that are called _affine transformations_ and are completely specified by a matrix 4 x 4.
 
