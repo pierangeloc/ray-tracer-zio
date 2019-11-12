@@ -22,7 +22,9 @@ case class Ray(origin: Pt, direction: Vec) {
 ## 1. Create a camera
 A camera in a 3d space is completely described by its resolution (`hRes`, `vRes`), the point where it is located (`viewFrom`), the point it is looking at (`viewTo`) and the direction of the vector "looking up" the camera, to distinguish how the camera is rotated. Moreover, the aperture angle of the camera determines uniquely the distance between the "eye" and the camera itself (see Fig 1)
 
-![Definition of a camera](images/camera.png)
+<div>
+  <img src="images/camera-definition.png" width="1200">
+</div>
 
 In terms of code we can create a camera through a method with this signature (`UIO` is an effect that can't fail and doesn't need any environment to be provided in order to run):
 
