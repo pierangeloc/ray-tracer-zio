@@ -27,8 +27,10 @@ object Chapter10World2 extends App {
         with FullModules {
           override def path: Path = Paths.get(canvasFile)
         }
-      }
-      .foldM(err => console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1), _ => UIO.succeed(0))
+      }.timed
+      .foldM(err =>
+        console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1),
+        {case (duration, _) => console.putStrLn(s"it took ${duration.toMillis}") *> UIO.succeed(0)})
 
   //TODO: make a DSL to build a world, this is too painful
 

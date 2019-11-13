@@ -3,7 +3,7 @@
 For an introduction to environmental effects, please refer to ZIO documentation, especially the [overview](https://zio.dev/docs/overview/overview_index) and the [module pattern](https://zio.dev/docs/howto/howto_use_module_pattern) sections.
 
 # Building a ray tracer
-A ray tracer simulates the behavior of rays of light as they hit the objects in a world, ending up hitting a camera sensors. There are a number of resources on the web to build ray tracers, but I followed [The Ray Tracer Challenge](https://pragprog.com/book/jbtracer/the-ray-tracer-challenge).
+A ray tracer simulates the behavior of rays of light as they hit the objects in a world, ending up hitting sensors on a camera. There are a number of resources on the web to build ray tracers, but I followed [The Ray Tracer Challenge](https://pragprog.com/book/jbtracer/the-ray-tracer-challenge).
 
 Since most of the rays acting upon a scene don't hit the camera, the most efficient process is to see how rays _outgoing_ from a camera hit the objects in the world, and then see how those rays actually originated, taking into account multiple effects such as shadows, light reflection and diffusion, and world reflection on reflective surfaces.
 
@@ -44,7 +44,7 @@ This will create a(n `UIO` of a) `case class Camera( hRes: Int, vRes: Int, field
 So we will start with the definition of a module that gives us the capability of applying, and defining, these transformations, that are called _affine transformations_ and are completely specified by a matrix 4 x 4.
 
 ### 1.1 Define an Affine Transformations module
-Affine transformations can be applied both to points and vectors. With the convention that a point `Pt(x, y, z)` is represented by a column vector $`[x, y, z, 1]^T`$, and a vector `Vec(x, y, z)` is represented by a vector $`[x, y, z, 0]`$, given an affine transformation matrix, applying that transformation to the vector or point means simply multiplying the transformation matrix by the vector representing the `Vec` or the `Pt`. To make things more efficient, given that often in our computations for every transformation we need the opposite one (think about changing perspective and observer relativity), we will compute the inverse at the moment of creation of an affine transformation.
+Affine transformations can be applied both to points and vectors. With the convention that a point `Pt(x, y, z)` is represented by a column vector $`[x, y, z, 1]^T`$, and a vector `Vec(x, y, z)` is represented by a vector $`[x, y, z, 0]^T`$, given an affine transformation matrix, applying that transformation to the vector or point means simply multiplying the transformation matrix by the vector representing the `Vec` or the `Pt`. To make things more efficient, given that often in our computations for every transformation we need the opposite one (think about changing perspective and observer relativity), we will compute the inverse at the moment of creation of an affine transformation.
 
 ```scala
 abstract sealed case class AT private (direct: M, inverse: M) {
@@ -93,6 +93,16 @@ val rotatedPt: ZIO[ATModule, AlgebraicError, Pt] = for {
 } yield  res
 ```
 
+and we can see the type inference at work when we start mixing modules
+
+```scala
+val rotatedPt: ZIO[ATModule with Log, AlgebraicError, Pt] = for {
+  rotateX <- ATModule.>.rotateX(math.Pi / 2)
+  _       <- Log.>.info("rotated of π/2")
+  res     <- ATModule.>.applyTf(rotateX, Pt(1, 1, 1))
+} yield  res
+```
+
 
 ### 1.2 Implement a Live `ATModule`
 
@@ -103,8 +113,6 @@ trait Live extends ATModule {
     val matrixModule: MatrixModule.Service[Any]
 
     val aTModule: ATModule.Service[Any] = new ATModule.Service[Any] {
-      import vectorizable.comp
-
       override def applyTf(tf: AT, vec: Vec): ZIO[Any, AlgebraicError, Vec] =
         for {
           col    <- PointVec.toCol(vec)
@@ -116,7 +124,7 @@ trait Live extends ATModule {
 The consequence of this is that given a computation that requires an `ATModule`, once provided with a `Live` implementation through `provide`, the compiler  will signal clearly which dependency is missing, and our naming convention makes it straightforward for us to provide the missing one
 
 ```scala
-rotatedPt.provide(new ATModule.Live{})
+val program = rotatedPt.provide(new ATModule.Live{})
 // Compiler error:
 // object creation impossible, since value matrixModule in trait Live of type io.tuliplogic.raytracer.geometry.matrix.MatrixModule.Service[Any] is not defined
 // [error]   rotatedPt.provide(new ATModule.Live{})
@@ -125,19 +133,36 @@ rotatedPt.provide(new ATModule.Live{})
 This error can be solved just by providing an implementation of the `MatrixModule` as suggested by the compiler, so we provide a Breeze-backed matrix operations module implementation, mixed in with our `ATModule`, and everything compiles.
 
 ```scala
-rotatedPt.provide(new ATModule.Live with MatrixModule.BreezeMatrixModule{}) 
+val program = rotatedPt.provide(new ATModule.Live with MatrixModule.BreezeMatrixModule{}) 
 // Compiles!
+runtime.unsafeRun(program)
+// Runs!
 ```
+
+#### 1.2.1 Why is it `Service[Any]` in the implementation?
+It is solely due to the contravariant position of `R` in `ZIO[-R, +E, +A]`. 
+
+```scala
+Module.Service[Any] <: Module.Service[R] forAll {type R}
+```
+
+This allows us to define any concrete implementation, and compose it later in anything that has more complicated requirements (`R <: Any`), giving us guarantees that this will compose.
+
 
 ### 1.3 Make a Camera
 With the capability of applying affine transformations, it is relatively easy to create a `Camera`, once we compute the transformation to be embedded in the camera (and for that we just need `ATModule` capabilities)
 
 ```scala
- def make(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): ZIO[ATModule, AlgebraicError, Camera] = for {
+  def viewTransform(from: Pt, to: Pt, up: Vec): ZIO[ATModule, AlgebraicError, AT] = for {
+    // some prepration ...
+    translateTf  <- ATModule.>.translate(-from.x, -from.y, -from.z)
+    composed     <- ATModule.>.compose(translateTf,  orientationAT)
+  } yield composed
+
+  def make(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): ZIO[ATModule, AlgebraicError, Camera] = for {
     cameraTf <- viewTransform(viewFrom, viewTo, upDirection)
   } yield new Camera(hRes, vRes, visualAngleRad, cameraTf)
 
-  def viewTransform(from: Pt, to: Pt, up: Vec): ZIO[ATModule, AlgebraicError, AT] = ??? // one translation plus one orientation combined
 ```
 
 # 2. Create a World

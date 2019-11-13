@@ -24,7 +24,7 @@ object RasteringModule {
     */
   trait ChunkRasteringModule extends RasteringModule {
     val chunkSize: Int = 4096
-    val parChunks: Int = 15 //nr cores - 1
+    val parChunks: Int = 7//15 //nr cores - 1
     val cameraModule: CameraModule.Service[Any]
     val worldModule: WorldModule.Service[Any]
 
@@ -35,7 +35,7 @@ object RasteringModule {
           y <- ZStream.fromIterable(0 until camera.vRes )
         } yield (x, y)
 
-        UIO.succeed(pixels.chunkN(4096).mapMPar(parChunks) { chunk =>
+        UIO.succeed(pixels.chunkN(chunkSize).mapMPar(parChunks) { chunk =>
           chunk.mapM {
             case (px, py) =>
               for {
