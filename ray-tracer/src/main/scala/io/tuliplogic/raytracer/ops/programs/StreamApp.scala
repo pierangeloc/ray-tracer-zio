@@ -8,7 +8,7 @@ import zio.clock.Clock
 import zio.duration.Duration
 import zio.internal.{Executor, NamedThreadFactory, PlatformLive}
 import zio.stream._
-import zio.{App, Schedule, UIO, ZEnvDefinition, ZIO, ZSchedule, blocking, clock, console}
+import zio.{App, DefaultRuntime, IO, Schedule, UIO, ZEnvDefinition, ZIO, ZSchedule, blocking, clock, console}
 
 object StreamApp extends App {
 
@@ -98,4 +98,32 @@ object Repro extends zio.App {
 //    stream.flatMap(list => ZIO.effectTotal(println(list))).as(0)
 //    ZIO.sequence(Range(0, 100).toList.map(x => ZIO.effectTotal(println(x)))).as(0)
   }
+}
+
+object TST {
+  sealed trait BakingError     extends Exception
+
+  case class WrongIngredients() extends BakingError
+  case class Overcooking()      extends BakingError
+
+  trait Dough
+  type Bread
+  trait MixerEnv
+  trait WarmRoomEnv
+  trait OvenEnv
+
+  val knead: ZIO[MixerEnv, WrongIngredients, Dough] = ???
+  def raise(dough: Dough): ZIO[WarmRoomEnv, Nothing, Dough] = ???
+  def cook(dough: Dough): ZIO[OvenEnv, Overcooking, Bread] = ???
+
+  val bread: ZIO[OvenEnv with WarmRoomEnv with MixerEnv, BakingError, Bread]
+
+  = for {
+    dough <- knead
+      risen <- raise(dough)
+      ready <- cook(risen)
+  } yield ready
+
+  val r: IO[BakingError, Bread] = bread.provide(new OvenEnv with WarmRoomEnv with MixerEnv)
+  new DefaultRuntime {}.unsafeRun(r)
 }

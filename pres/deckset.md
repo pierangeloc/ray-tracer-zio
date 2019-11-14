@@ -3,6 +3,7 @@ slidenumbers: false
 build-lists: true
 image: background-color: #FF0000
 
+
 # Environmental effects
 
 # A ray tracing exercise
@@ -30,7 +31,7 @@ image: background-color: #FF0000
 
 <br>
 
----
+
 <!--
 # Functional Effects
 
@@ -106,12 +107,15 @@ invert(
 ---
 -->
 
-^ In this case we see that Option helps us dealing with one concern, i.e. the presence or absence of a given value
-Another concern is to express the presence the success of an operation (producing a value of type A) vs a failure (producing an error of type E)
+---
+
+^ What is a functional effect? It is a data structure, plus some operations, to deal with a concern.
+E.g. if our concern is to express the presence or absence of a value, a functional effect we are using daily is `Option[A]`
+If our concern is expressing the success (producing a value of type A) vs a failure (producing an error of type E) of an operation we can use `Either[E,A]` 
 
 # Functional Effects
 
-Given a concern, build _**an immutable data structure**_ that provides a set of operations to deal with that concern (semiquoting JDG)
+Given a concern, build _**an immutable data structure**_ that provides a set of operations to deal with that concern[^1]
 
 [.code-highlight: none]
 [.code-highlight: 1]
@@ -121,10 +125,12 @@ Option[A]
 Either[E, A]  
 ```
 
+[^1]:  Semiquoting John De Goes (https://youtu.be/POUEz8XHMhE)
+
 ---
 
 # Functional Effects
-^ What do we do with these data structures? We can combine them (map, flatmap, zip), but ultimately we want to produce some workable value for our business case.
+^ What do we do with these data structures? We can combine them (map, flatmap, zip), but ultimately we want to produce some workable value for our business case. Usually we us pattern matching, but we'd better get used to `fold`.
 The interpretation phase takes these data structures, and extract the information and makes it usable
 
 Interpretation: Produce some outcome from the processing of these data structures
@@ -136,10 +142,10 @@ Interpretation: Produce some outcome from the processing of these data structure
 [.code-highlight: 1-5]
 ```scala
 val oa: Option[A]    
-  oa.fold(ifEmpty)(a => ifNonEmpty) 
+val res: B = oa.fold[B](ifEmpty)(a => ifNonEmpty) 
 
 val ea: Either[E, A] 
-  ea.fold(e => ifError)(a => ifSuccess)
+val res: B = ea.fold[B](e => ifError)(a => ifSuccess)
 ```
 
 ---
@@ -172,7 +178,7 @@ def bakeBread(): Unit = {
 ^ How do we deal with this in a functional way? We separate the description from the execution, having a data type that _describes_ what we want to do
 Then we provide this data type with (pretty standard) mechanism to chain/transform the computation, classical `map`/`flatMap`
 
-![left fit](img/bread.jpg) 
+<!-- ![original](img/bread.jpg)  -->
 
 #### Functional baking
 
@@ -180,7 +186,7 @@ Then we provide this data type with (pretty standard) mechanism to chain/transfo
 [.code-highlight: 1]
 [.code-highlight: 1-2]
 [.code-highlight: 1-3]
-[.code-highlight: 1-8]
+[.code-highlight: 1-9]
 ```scala
 val knead: IO[Dough]
 val raise(dough: Dough): IO[Dough]
@@ -196,9 +202,10 @@ val bakeBread: IO[Bread] = for {
 ---
 
 # Functional Effects
-^ ...and finally we get our bread by interpreting the data structure we just built
+^ ...and finally we get our bread by interpreting the data structure we just built.
+It _traverses_ the data structure, or our recipe, and executes the instructions written on those data structures
 
-![left fit](img/bread.jpg) 
+<!-- ![left fit](img/bread.jpg)  -->
 
 #### Functional baking
 
@@ -210,14 +217,22 @@ val bakeBread: IO[Bread] = for {
 
     val bread: Bread = unsafeRun(bakeBread)   
   }
+
+
+
+
+
+
+
+⠀
 ```
 
 ---
-
 # Functional Effects
 ^ But how do I get by bread? I need to interpret the data structure
 
-![left fit](img/bread.jpg) 
+[.list: alignment(left)]
+<!-- ![left fit](img/bread.jpg)  -->
 
 #### Functional baking
 
@@ -229,25 +244,26 @@ val bakeBread: IO[Bread] = for {
   }
 ```
 
-1. Build an immutable data structure to deal with side effects concern
+1. Build an immutable data structure
 1. Combine small data structures to more complex ones
 1. Interpret the final data structure
-1. Enjoy your bread
 
----
+<!-- 1. Enjoy your bread -->
+
+<!-- ---
 [.build-lists: false]
 
 # Functional Effects
-^ There are 2 concerns we didn't cover yet in this exercise. What if we add  salt too early and we kill the growth of our dough? What if our oven stops working halfway through this process?
+^ There are 2 concerns we didn't cover yet in this exercise. What if we put too much water in our dough? Can we recover from it? Should we retry somehow?
 
-![left fit](img/bread.jpg) 
+<!-- ![left fit](img/bread.jpg)  -->
+
+<!-- ---
 
 #### Functional baking
+[.list: alignment(left)]
 
-Unaddressed concerns:
-
-1. Errors
-
+Errors -->
 
 ---
 [.build-lists: false]
@@ -255,32 +271,41 @@ Unaddressed concerns:
 # Functional Effects
 ^ There are 2 concerns we didn't cover yet in this exercise. What if we cook too much our bread? What if our oven stops working halfway through? Well these are 2 different kinds of errors, one is what we call a failure (oven stops working), while the other one is what we call an error and we want to act upon (see talk from Francois Armand @ ScalaIO)
 
-![left fit](img/bread.jpg) 
+<!-- ![left fit](img/bread.jpg)  -->
 
 #### Functional baking
+[.list: alignment(left)]
 
-Unaddressed concerns:
+Errors
 
-1. Errors
+[.code-highlight: none]
+[.code-highlight: 1]
+[.code-highlight: 1-4]
+[.code-highlight: 1-7]
+[.code-highlight: 1-10]
 
 ```scala
   sealed trait BakingError     extends Exception
 
   case object WrongIngredients extends BakingError
   case object Overcooking      extends BakingError
+
+  val knead: IO[WrongIngredients, Dough] 
+  val cook(dough: Dough): IO[Overcooking, Bread]
+  
+  val bake: IO[BakingError, Bread] =
+    knead.flatMap(cook)  
 ```
 
 ---
-[.build-lists: false]
+
+<!-- [.build-lists: false]
 
 # Functional Effects
 ^ There are 2 concerns we didn't cover yet in this exercise. What if we cook too much our bread? What if our oven stops working halfway through? Well these are 2 different kinds of errors, one is what we call a failure (oven stops working), while the other one is what we call an error and we want to act upon (see talk from Francois Armand @ ScalaIO)
 
-![left fit](img/bread.jpg) 
-
 #### Functional baking
-
-Unaddressed concerns:
+[.list: alignment(left)]
 
 1. Errors
 
@@ -300,9 +325,9 @@ Unaddressed concerns:
 # Functional Effects
 ^ There are 2 concerns we didn't cover yet in this exercise. What if we cook too much our bread? What if our oven stops working halfway through? Well these are 2 different kinds of errors, one is what we call a failure (oven stops working), while the other one is what we call an error and we want to act upon (see talk from Francois Armand @ ScalaIO)
 
-![left fit](img/bread.jpg) 
 
 #### Functional baking
+[.list: alignment(left)]
 
 Unaddressed concerns:
 
@@ -321,32 +346,69 @@ Unaddressed concerns:
     knead.flatMap(cook)  
 ```
 
+--- -->
 
----
 [.build-lists: false]
 
 # Functional Effects
 ^ The second concern we need to deal with is the one of capabilities. What do I need in order to be able to knead my bread? What do I need to be able to cook it?
-ZIO[R, E, A] is an immutable data structure that expresses the concern of running a computation that might produce a value A, or fail with an error E, and requires a set of capabilities `R` in order to run
+* ZIO[R, E, A] is an immutable data structure that expresses the concern of running a computation that might produce a value A, or fail with an error E, and requires a set of capabilities `R` in order to run
+* So I define the methods in terms of the capabilities and then I chain them through the monadic operators. Notice that the contravariance in `R` is all the compiler need to do the `with` between environments
 
-![left fit](img/bread.jpg) 
+<!-- ![left fit](img/bread.jpg)  -->
 
 #### Functional baking
+[.list: alignment(left)]
 
-Unaddressed concerns:
+Capabilities
 
-1. Errors :white_check_mark:
-2. Capabilities
-
+[.code-highlight: none]
+[.code-highlight: 1]
+[.code-highlight: 1-5]
+[.code-highlight: 1-7, 9-13]
+[.code-highlight: 1-13]
 ```scala
   ZIO[-R, +E, +A] // R => IO[E, A]
 
-  val knead: ZIO[MixerEnv, WrongIngredients, Dough]
-  val raise(dough: Dough): ZIO[WarmRoomEnv, Nothing, Dough]
-  val cook(dough: Dough): ZIO[OvenEnv, Overcooking, Bread]
+  val knead:               ZIO[MixerEnv, WrongIngredients, Dough] = ???
+  def raise(dough: Dough): ZIO[WarmRoomEnv, Nothing, Dough] = ???
+  def cook(dough: Dough):  ZIO[OvenEnv, Overcooking, Bread] = ???
+
+  val bread
+    : ZIO[OvenEnv with WarmRoomEnv with MixerEnv, BakingError, Bread]
+  = for {
+    dough <- knead
+    risen <- raise(dough)
+    ready <- cook(risen)
+  } yield ready
 ```
 
 ---
+<!-- [.build-lists: false] -->
+
+# Functional Effects
+^ZIO effects must be interpreted, before that point they are just simple data structures. Default runtime environemnt can cope with effects that require standard JVM capabilities (console, random, system, clock and blocking), but if we have an effect that has richer requirements we must satisfy those requirements before running it.
+So we provide our bread baking instructions with all the requirements they have, and finally we are able to interpret our data structure and get our bread.
+The problem with this is that it's not immediate (not to me at least) how to make non-trivial applications, in a layered way, with dependencies of layer upon layer, or even with circular dependencies?
+
+#### Provide and run
+
+[.code-highlight: none]
+[.code-highlight: 1]
+[.code-highlight: 1-3]
+[.code-highlight: 1-5]
+```scala
+  val bread: ZIO[OvenEnv with WarmRoomEnv with MixerEnv, BakingError, Bread] = ???
+
+  val r: ZIO[Any, BakingError, Bread] = bread.provide(new OvenEnv with WarmRoomEnv with MixerEnv)
+  
+  val result:Bread = runtime.unsafeRun(bread)
+```
+
+- Nice, but how do we deal with non-trivial applications?
+
+---
+<!-- ---
 [.build-lists: false]
 
 # Environmental effects
@@ -480,7 +542,7 @@ Chaining errors and capabilities
 ```
 
 Full inference of Environment and errors
-
+ -->
 ---
 ![left fit](img/rt-world-light-eye.png) 
 
@@ -976,13 +1038,13 @@ Make sure the two directives start on the *first line* of your markdown file, an
 
 # Footnotes
 
-Manage your footnotes[^1] directly where you need them. Alongside numbers, you can also use text references[^Sample Footnote].
+Manage your footnotes[^2] directly where you need them. Alongside numbers, you can also use text references[^Sample Footnote].
 
 Include footnotes by inserting`[^Your Footnote]` within the text. The accompanying reference can appear anywhere in the document:
 
 `[^Your Footnote]: Full reference here`
 
-[^1]: This is the first footnote reference
+[^2]: This is the first footnote reference
 
 [^Sample Footnote]: This is the second footnote reference
 
