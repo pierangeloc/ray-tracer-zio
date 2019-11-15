@@ -407,7 +407,6 @@ The problem with this is that it's not immediate (not to me at least) how to mak
 
 - Nice, but how do we deal with non-trivial applications?
 
----
 <!-- ---
 [.build-lists: false]
 
@@ -550,6 +549,7 @@ Full inference of Environment and errors
 ^The problem we want to solve is rendering a scene by simulating how the light works when coming from a light source, or from an environment, and hits some objects in an environemnt (world)
 and finally hits the sensors in a camera, or the photosensitive cells in our retina
 
+[.list: alignment(left)]
 - Spheres (world), light source, eye
 
 ---
@@ -558,6 +558,7 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 [.build-lists: false]
 
 # Ray tracing
+[.list: alignment(left)]
 
 - Spheres (world), light source, eye
 - Incident rays    
@@ -571,6 +572,7 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 [.build-lists: false]
 
 # Ray tracing
+[.list: alignment(left)]
 
 - Spheres (world), light source, eye
 - Incident rays    
@@ -584,6 +586,7 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 [.build-lists: false]
 
 # Ray tracing
+[.list: alignment(left)]
 
 - Spheres (world), light source, eye
 - Incident rays    
@@ -597,6 +600,7 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 [.build-lists: false]
 
 # Ray tracing
+[.list: alignment(left)]
 
 - Spheres (world), light source, eye
 - Incident rays    
@@ -610,6 +614,7 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 [.build-lists: false]
 
 # Ray tracing
+[.list: alignment(left)]
 
 - Spheres (world), light source, eye
 - Incident rays    
@@ -623,6 +628,7 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 [.build-lists: false]
 
 # Ray tracing
+[.list: alignment(left)]
 
 - Spheres (world), light source, eye
 - Incident rays    
@@ -639,7 +645,8 @@ Another option is work on the reverse problem, i.e. have rays going out of the c
 # Ray tracing
 
 Options:
- 
+
+[.list: alignment(left)]
 1. Compute all the rays (and discard most of them)
 1. Compute only the rays outgoing the canvas, and determine how they behave on the surfaces
 
@@ -656,12 +663,59 @@ $$
 P(t) = P_0 + t \vec{D},   t > 0 
 $$
 
-[.code-highlight: none]
-[.code-highlight: 1-3]
+---
+^Let's start building our model. A ray is an infinite line with a starting point
+
+![left fit](img/pt-vec-combined.png) 
+
+# Ray tracing
+
+### Points and Vectors
+
+[.code-highlight: 1-6]
+[.code-highlight: 1-14]
 ```scala
-case class Ray(origin: Pt, direction: Vec) {
-  def positionAt(t: Double): Pt = origin + (direction * t)
+case class Vec(x: Double, y: Double, z: Double) {
+  def +(other: Vec): Vec   = 
+    Vec(x + other.x, y + other.y, z + other.z)
+  def unary_- : Vec = 
+    Vec(-x, -y, -z)
 }
+
+case class Pt(x: Double, y: Double, z: Double) {
+  def -(otherPt: Pt): Vec =
+    Vec(x - otherPt.x, y - otherPt.y, z - otherPt.z)
+  def +(vec: Vec)         = 
+    Pt(x + vec.x, y + vec.y, z + vec.z)
+}
+```
+
+---
+^Let's start building our model. A ray is an infinite line with a starting point
+
+![left fit](img/pt-vec-combined.png) 
+
+### Points and Vectors
+
+Properties
+
+[.code-highlight: 1-7]
+[.code-highlight: 1-14]
+```scala
+testM("vectors form a group")(
+  check(vecGen, vecGen, vecGen) { (v1, v2, v3) =>
+    assertApprox  (v1 + (v2 + v3), (v1 + v2) + v3) &&
+    assertApprox (v1 + v2 , v2 + v1) &&
+    assertApprox (v1 + Vec.zero , Vec.zero + v1)
+  }
+),
+
+
+testM("vectors and points form an affine space") (
+  check(ptGen, ptGen) { (p1, p2) =>
+    assertApprox (p2, p1 + (p2 - p1))
+  }
+)
 ```
 
 ---
@@ -669,35 +723,19 @@ case class Ray(origin: Pt, direction: Vec) {
 
 ![left fit](img/rt-ray-def-tex.png) 
 
-# Ray tracing
+### Ray
 
-### Points and Vectors
-
-```scala
-case class Vec(x: Double, y: Double, z: Double) {
-  def +(other: Vec): Vec   = Vec(x + other.x, y + other.y, z + other.z)
-  def unary_- : Vec = Vec(-x, -y, -z)
-}
-
-object Vec {
-  val zero = Vec(0, 0, 0)
-}
-```
-
-- `Vec, +, Vec.zero` form a monoid
-- `Vec, +, -v, Vec.zero` form a group
-- PBT :muscle:
+$$
+P(t) = P_0 + t \vec{D},   t > 0 
+$$
 
 [.code-highlight: none]
-[.code-highlight: 1-4]
+[.code-highlight: 1-3]
 ```scala
-case class Pt(x: Double, y: Double, z: Double) extends PointVec {
-    def -(otherPt: Pt): Vec = Vec(x - otherPt.x, y - otherPt.y, z - otherPt.z)
-    def +(vec: Vec)         = Pt(x + vec.x, y + vec.y, z + vec.z)
-  }
+case class Ray(origin: Pt, direction: Vec) {
+  def positionAt(t: Double): Pt = origin + (direction * t)
+}
 ```
-
-- `Vec`, `Pt` form an Affine space
 
 ---
 [.build-lists: false]
@@ -1038,7 +1076,7 @@ Make sure the two directives start on the *first line* of your markdown file, an
 
 # Footnotes
 
-Manage your footnotes[^2] directly where you need them. Alongside numbers, you can also use text references[^Sample Footnote].
+Manage your footnotes[^] directly where you need them. Alongside numbers, you can also use text references[^Sample Footnote].
 
 Include footnotes by inserting`[^Your Footnote]` within the text. The accompanying reference can appear anywhere in the document:
 
