@@ -1,13 +1,14 @@
 package io.tuliplogic.raytracer.commons.errors
 
 sealed trait RayTracerError extends Exception
+case class ATError(override val getMessage: String) extends RayTracerError
 
 /**
   * Errors for matrix handling
   */
 sealed trait AlgebraicError extends RayTracerError
 object AlgebraicError {
-  case class MatrixDimError(override val getMessage: String)        extends AlgebraicError
+  case class MatrixDimError(override val getMessage: String) extends AlgebraicError
   case class MatrixNotInvertible(override val getMessage: String)  extends AlgebraicError
   case class VectorNonNormalizable(override val getMessage: String) extends AlgebraicError
 

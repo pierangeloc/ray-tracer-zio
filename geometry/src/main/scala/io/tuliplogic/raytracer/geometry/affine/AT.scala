@@ -1,10 +1,10 @@
 package io.tuliplogic.raytracer.geometry.affine
 
-import io.tuliplogic.raytracer.commons.errors.AlgebraicError
-import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
+import io.tuliplogic.raytracer.commons.errors.ATError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import zio.{DefaultRuntime, UIO, ZIO}
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M, factory, vectorizable}
+import zio.{UIO, ZIO}
 
 import scala.math.{cos, sin}
 
@@ -20,17 +20,17 @@ trait ATModule {
 
 object ATModule {
   trait Service[R] {
-    def applyTf(tf: AT, vec: Vec): ZIO[R, AlgebraicError, Vec]
-    def applyTf(tf: AT, pt: Pt): ZIO[R, AlgebraicError, Pt]
-    def compose(first: AT, second: AT): ZIO[R, AlgebraicError, AT]
-    def invert(tf: AT): ZIO[R, AlgebraicError, AT]
-    def transpose(tf: AT): ZIO[R, AlgebraicError, AT]
+    def applyTf(tf: AT, vec: Vec): ZIO[R, Nothing, Vec]
+    def applyTf(tf: AT, pt: Pt): ZIO[R, Nothing, Pt]
+    def compose(first: AT, second: AT): ZIO[R, Nothing, AT]
+    def invert(tf: AT): ZIO[R, Nothing, AT]
+    def transpose(tf: AT): ZIO[R, Nothing, AT]
     def invertible(
       x11:Double, x12:Double, x13:Double, x14:Double,
       x21:Double, x22:Double, x23:Double, x24:Double,
       x31:Double, x32:Double, x33:Double, x34:Double,
       x41:Double, x42:Double, x43:Double, x44:Double
-    ): ZIO[R, AlgebraicError, AT]
+    ): ZIO[R, ATError, AT]
 
     def translate(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT] =
       invertible(
@@ -89,41 +89,41 @@ object ATModule {
     val aTModule: ATModule.Service[Any] = new ATModule.Service[Any] {
       import vectorizable.comp
 
-      private def transform(tf: AT, v: Col): ZIO[Any, AlgebraicError, Col] =
+      private def transform(tf: AT, v: Col): ZIO[Any, ATError, Col] =
         for {
           v_m <- v.m
           v_n <- v.n
           _ <- if (v_m != 4 || v_n != 1)
-            ZIO.fail(AlgebraicError.MatrixDimError(s"can't apply an affine transformation to a matrix $v_m x $v_n while expecting a matrix (vector) 4 x 1"))
+            ZIO.fail(ATError(s"can't apply an affine transformation to a matrix $v_m x $v_n while expecting a matrix (vector) 4 x 1"))
           else ZIO.unit
-          res <- matrixModule.mul(tf.direct, v)
+          res <- matrixModule.mul(tf.direct, v).orDie
         } yield res
 
-      override def applyTf(tf: AT, vec: Vec): ZIO[Any, AlgebraicError, Vec] =
+      override def applyTf(tf: AT, vec: Vec): ZIO[Any, Nothing, Vec] =
         for {
           col    <- PointVec.toCol(vec)
-          colRes <- transform(tf, col)
-          res    <- PointVec.colToVec(colRes)
+          colRes <- transform(tf, col).orDie
+          res    <- PointVec.colToVec(colRes).orDie
         } yield res
 
-      override def applyTf(tf: AT, pt: Pt): ZIO[Any, AlgebraicError, Pt] =
+      override def applyTf(tf: AT, pt: Pt): ZIO[Any, Nothing, Pt] =
         for {
           col    <- PointVec.toCol(pt)
-          colRes <- transform(tf, col)
-          res    <- PointVec.colToPt(colRes)
+          colRes <- transform(tf, col).orDie
+          res    <- PointVec.colToPt(colRes).orDie
         } yield res
 
-      override def compose(first: AT, second: AT): ZIO[Any, AlgebraicError, AT] =
+      override def compose(first: AT, second: AT): ZIO[Any, Nothing, AT] =
         for {
-          direct  <- matrixModule.mul(second.direct, first.direct)
-          inverse <- matrixModule.mul(first.inverse, second.inverse)
+          direct  <- matrixModule.mul(second.direct, first.direct).orDie
+          inverse <- matrixModule.mul(first.inverse, second.inverse).orDie
         } yield new AT(direct, inverse)
 
-      override def invert(tf: AT): ZIO[Any, AlgebraicError, AT] = UIO.succeed(AT(tf.inverse, tf.direct))
+      override def invert(tf: AT): ZIO[Any, Nothing, AT] = UIO.succeed(AT(tf.inverse, tf.direct))
 
-      override def transpose(tf: AT): ZIO[Any, AlgebraicError, AT] = for {
+      override def transpose(tf: AT): ZIO[Any, Nothing, AT] = for {
         direct <- tf.direct.transpose
-        inverse <- matrixModule.invert(direct)
+        inverse <- matrixModule.invert(direct).orDie
       } yield AT(direct, inverse)
 
       override def invertible(
@@ -131,7 +131,7 @@ object ATModule {
         x21:Double, x22:Double, x23:Double, x24:Double,
         x31:Double, x32:Double, x33:Double, x34:Double,
         x41:Double, x42:Double, x43:Double, x44:Double
-      ): ZIO[Any, AlgebraicError, AT] = for {
+      ): ZIO[Any, ATError, AT] = for {
         direct <- factory
           .fromRows(
             4,
@@ -142,34 +142,34 @@ object ATModule {
               comp(x31, x32, x33, x34),
               comp(x41, x42, x43, x44)
             )
-          )
-          inverse <- matrixModule.invert(direct).orDie
+          ).mapError(e => ATError(e.toString))
+          inverse <- matrixModule.invert(direct).mapError(e => ATError(e.toString))
       } yield AT(direct, inverse)
     }
   }
 
   object > extends Service[ATModule] {
-    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, AlgebraicError, Vec] =
+    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, Nothing, Vec] =
       ZIO.accessM(_.aTModule.applyTf(tf, vec))
-    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, AlgebraicError, Pt] =
+    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, Nothing, Pt] =
       ZIO.accessM(_.aTModule.applyTf(tf, pt))
-    def compose(first: AT, second: AT): ZIO[ATModule, AlgebraicError, AT] =
+    def compose(first: AT, second: AT): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.compose(first, second))
-    def invert(tf: AT): ZIO[ATModule, AlgebraicError, AT] =
+    def invert(tf: AT): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.invert(tf))
 
     override def invertible(
       x11: Double, x12: Double, x13: Double, x14: Double,
       x21: Double, x22: Double, x23: Double, x24: Double,
       x31: Double, x32: Double, x33: Double, x34: Double,
-      x41: Double, x42: Double, x43: Double, x44: Double): ZIO[ATModule, AlgebraicError, AT] =
+      x41: Double, x42: Double, x43: Double, x44: Double): ZIO[ATModule, ATError, AT] =
       ZIO.accessM(_.aTModule.invertible(
         x11, x12, x13, x14,
         x21, x22, x23, x24,
         x31, x32, x33, x34,
         x41, x42, x43, x44
       ))
-    override def transpose(tf: AT): ZIO[ATModule, AlgebraicError, AT] =
+    override def transpose(tf: AT): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.invert(tf))
     override def translate(x: Double, y: Double, z: Double): ZIO[ATModule, Nothing, AT] =
       ZIO.accessM(_.aTModule.translate(x, y, z))

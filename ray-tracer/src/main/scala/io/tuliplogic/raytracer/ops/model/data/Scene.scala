@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.ops.model.data
 
-import io.tuliplogic.raytracer.commons.errors.AlgebraicError
+import io.tuliplogic.raytracer.commons.errors.ATError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import zio.{UIO, URIO, ZIO}
@@ -36,13 +36,13 @@ object Scene {
         res    <- withTransformAndMaterial(tf, mat)
       } yield res
 
-    def make(center: Pt, radius: Double, mat: Material): ZIO[ATModule, AlgebraicError, Sphere] = for {
+    def make(center: Pt, radius: Double, mat: Material): ZIO[ATModule, ATError, Sphere] = for {
       scale     <- ATModule.>.scale(radius, radius, radius)
       translate <- ATModule.>.translate(center.x, center.y, center.z)
       composed  <- ATModule.>.compose(scale, translate)
     } yield Sphere(composed, mat)
 
-    def makeUniform(center: Pt, radius: Double, c: Color): ZIO[ATModule, AlgebraicError, Sphere] = for {
+    def makeUniform(center: Pt, radius: Double, c: Color): ZIO[ATModule, ATError, Sphere] = for {
       idTf       <- ATModule.>.id
       defaultMat <- Material.default
       newMat     <- UIO(defaultMat.copy(pattern = Pattern.Uniform(c, idTf)))
@@ -57,7 +57,7 @@ object Scene {
     def withTransformAndMaterial(tf: AT, material: Material): UIO[Plane] =
       UIO(Plane(tf, material))
 
-    def make(rotateX: Double, rotateY: Double, rotateZ: Double, passingBy: Pt, material: Material): ZIO[ATModule, AlgebraicError, Plane] = for {
+    def make(rotateX: Double = 0, rotateY: Double = 0, rotateZ: Double = 0, passingBy: Pt = Pt.origin, material: Material): ZIO[ATModule, ATError, Plane] = for {
       rotX <- ATModule.>.rotateX(rotateX)
       rotY <- ATModule.>.rotateY(rotateY)
       rotZ <- ATModule.>.rotateZ(rotateZ)

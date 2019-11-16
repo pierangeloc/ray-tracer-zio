@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.ops.model.data
 
-import io.tuliplogic.raytracer.commons.errors.AlgebraicError
+import io.tuliplogic.raytracer.commons.errors.{ATError, AlgebraicError}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
@@ -37,9 +37,9 @@ object Camera {
   *
   * we provide the equivalent transformation of the world needed to produce the same perspective
   */
-  def viewTransform(from: Pt, to: Pt, up: Vec): ZIO[ATModule, AlgebraicError, AT] = for {
-      fwd             <- (to - from).normalized
-      upNormalized  <- up.normalized
+  def viewTransform(from: Pt, to: Pt, up: Vec): ZIO[ATModule, ATError, AT] = for {
+      fwd             <- (to - from).normalized.mapError(e => ATError(e.toString))
+      upNormalized  <- up.normalized.orDie
       left          <- UIO(fwd cross upNormalized)
       trueUp        <- UIO(left cross fwd) //this makes a real reference system LTR with fwd, up, left really orthogonal with each other
       orientationAT <- ATModule.>.invertible(
@@ -62,7 +62,7 @@ object Camera {
     * @param vRes vertical resolution
     * @return
     */
-  def make(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): ZIO[ATModule, AlgebraicError, Camera] = for {
+  def make(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): ZIO[ATModule, ATError, Camera] = for {
     cameraTf <- viewTransform(viewFrom, viewTo, upDirection)
   } yield new Camera(hRes, vRes, visualAngleRad, cameraTf)
 
@@ -73,6 +73,6 @@ object Camera {
     )
 
   //this is just the `identity` transformation
-  val canonicalTransformation: ZIO[ATModule, AlgebraicError, AT] = viewTransform(Pt.origin, Pt(0, 0, -1), Vec.uy)
+  val canonicalTransformation: ZIO[ATModule, ATError, AT] = viewTransform(Pt.origin, Pt(0, 0, -1), Vec.uy)
 
 }

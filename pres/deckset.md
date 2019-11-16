@@ -1,6 +1,7 @@
 autoscale: true
 slidenumbers: false
 build-lists: true
+list: alignment(left)
 image: background-color: #FF0000
 
 
@@ -1041,15 +1042,100 @@ object Camera {
 ```
 
 ---
-[.build-lists: false]
 
-^Actually we want to do more interesting things than just adding points and vectors. We want to be able to scale, translate, rotate points and vectors
+^For shapes we follow the same approach we followed for camera, canonical + transformation
 
-![left fit](img/collage-2.png) 
+### World
+- `Sphere.canonical` $$ \{(x, y, z) : x^2 + y^2 + z^2 = 1\} $$
+- `Plane.canonical` $$\{(x, y, z) : y = 0\} $$
 
-# Ray tracing
+[.code-highlight: none]
+[.code-highlight: 1-4]
+[.code-highlight: 1-6]
+[.code-highlight: 1-7]
+```scala
+sealed trait Shape {
+  def transformation: AT
+  def material: Material
+}
 
-Move/scale: objects, view, light
+case class Sphere(transformation: AT, material: Material) extends Shape
+case class Plane(transformation: AT, material: Material) extends Shape
+```
+---
+^Let's see how we can make a generic sphere, a generic plane, and put them in the world
+
+### World
+
+##### Make a world
+
+[.code-highlight: none]
+[.code-highlight: 1-7]
+[.code-highlight: 1-11]
+[.code-highlight: 1-13]
+```scala
+object Sphere {
+  def make(center: Pt, radius: Double, mat: Material): ZIO[ATModule, ATError, Sphere] = for {
+    scale     <- ATModule.>.scale(radius, radius, radius)
+    translate <- ATModule.>.translate(center.x, center.y, center.z)
+    composed  <- ATModule.>.compose(scale, translate)
+  } yield Sphere(composed, mat)
+}
+
+object Plane {
+  def make(...): ZIO[ATModule, ATError, Plane] = ???
+}
+
+case class World(pointLight: PointLight, objects: List[Shape])
+```
+
+- Everything requires `ATModule`
+
+---
+^Rendering a world means producing an image that reprsents how the world looks like from our camera. So from the highest level I want to be able to produce a stream of colored pixels representing my image. So we define the module, make it accessible, and provide a trivial implementation that produces white pixels no matter what
+
+### World Rendering - Top Down
+#### Rastering
+
+[.code-highlight: 1-4]
+[.code-highlight: 1-9]
+[.code-highlight: 1-18]
+```scala
+@accessible(">")
+trait RasteringModule {
+  val rasteringModule: RasteringModule.Service[Any]
+}
+object RasteringModule {
+  trait Service[R] {
+    def raster(world: World, camera: Camera): 
+      ZIO[R, Nothing, ZStream[R, RayTracerError, ColoredPixel]]
+  }
+  trait AllWhiteTestRasteringModule extends RasteringModule {
+    val rasteringModule: Service[Any] = new Service[Any] {
+      def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] =
+        UIO.succeed(for {
+          x <- ZStream.fromIterable(0 until camera.hRes)
+          y <- ZStream.fromIterable(0 until camera.vRes)
+        } yield ColoredPixel(Pixel(x, y), Color.white))
+    }
+  }
+```
+
+---
+^Now what do we need to provide a LIVE implementation of this? We need to be able to provide one ray for each pixel of the camera, plus
+
+### World Rendering - Top Down
+#### Camera module - One ray per pixel
+<!-- #### World moduld -->
+
+```scala
+object CameraModule {
+  trait Service[R] {
+    def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[R, AlgebraicError, Ray]
+  }
+```
+
+---
 
 ### Affine Transformations
 - Scale vectors and points
