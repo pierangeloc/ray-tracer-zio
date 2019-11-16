@@ -972,70 +972,72 @@ val program = rotatedPt.provide(
 runtime.unsafeRun(program)
 // Runs!
 ```
+---
+^So now we have a tool that allows us to perform the std transformations on our points and vectors, so we are ready to build a camera
+
+### Layer 1: Affine transformations
+
+![inline 80%](img/rotate-animated.gif)![inline 80%](img/translate-animated.gif)![inline 80%](img/scale-animated.gif)
 
 ---
-^ The transformations we are interested in are not exotic things, but the minimal requirements we might ask from something representing the reality, i.e. translations, rotations, scaling of vectors and points. At the end all of this boils down to multiplying matrices.
-So provided 
-* we have an AT type, 
-* let's write our first ZIO module that allows us to operate on affine transformations. 
-* apply them to point, vectors, and chain/compose them
+^The first thing to consider is that everything is relative. If my standard position as observer is x=0, and I want to see how things look like from x = -3, what I can do is translate the world of +3 and keep on sitting at x = 0. We call this the canonical position
+### Camera 
 
-### Affine transformations
+##### Everything is relative!
 
-[.code-highlight: 1]
-[.code-highlight: 1, 7, 9-14]
-[.code-highlight: 1, 3-5, 7, 9-14]
-[.code-highlight: 1, 3-5, 7, 9-14, 16-26]
-[.code-highlight: 1-5, 7, 9-14, 16-26]
-[.code-highlight: 1-14, 16-26]
-[.code-highlight: 1-26]
+![inline](img/camera-translate.png) 
+
+- Observe always from `x = 0` and translate the world by `+3`
+
+---
+^In the same spirit, let's define our canonical camera
+
+![left fit](img/canonical-camera.png) 
+
+### Camera - canonical
+
+[.code-highlight: 1-4, 6]
 ```scala
-trait AT
-/* Module */
-trait ATModule {
-  val aTModule: ATModule.Service[Any]
-}
-
-object ATModule {
-  /* Service */
-  trait Service[R] {
-    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
-    def applyTf(tf: AT, pt: Pt): ZIO[R, ATError, Pt]
-    def compose(first: AT, second: AT): ZIO[R, ATError, AT]
-  }
-
-  /* Accessor */
-  object > extends Service[ATModule] {
-    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, ATError, Vec] =
-      ZIO.accessM(_.aTModule.applyTf(tf, vec))
-    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, ATError, Pt] =
-      ZIO.accessM(_.aTModule.applyTf(tf, pt))
-    def compose(first: AT, second: AT): ZIO[ATModule, ATError, AT] =
-      ZIO.accessM(_.aTModule.compose(first, second))
-  }
-}
+case class Camera (
+  hRes: Int,
+  vRes: Int,
+  fieldOfViewRad: Double,
+  tf: AT
+)
 ```
 
 ---
-^Now that we have the components to describe points and vectors in space, let's start building a camera
 
-![left fit](img/rt-ray-def-tex.png) 
+### Camera - generic
+^Then I can consider any other camera in terms of this canonical, applying to the world the opposite of the transformation that brought my canonical camear to become the actual camera I'm using
 
-### Camera
+![left fit](img/rotated-camera.png) 
 
-[.code-highlight: none]
-[.code-highlight: 1-3]
+[.code-highlight: 1]
+[.code-highlight: 1, 10-16]
+[.code-highlight: 1-16]
+[.code-highlight: 1-20]
 ```scala
 object Camera {
+
+  def viewTransform(from: Pt, to: Pt, up: Vec):
+    ZIO[ATModule, AlgebraicError, AT] = for {
+    // some prepration ...
+    translateTf  <- ATModule.>.translate(-from.x, -from.y, -from.z)
+    composed     <- ATModule.>.compose(translateTf,  orientationAT)
+  } yield composed
+
   def make(
     viewFrom: Pt, 
     viewTo: Pt, 
     upDirection: Vec, 
     visualAngleRad: Double, 
     hRes: Int, 
-    vRes: Int
-  ): UIO[Camera] = //ZIO[Any, Nothing, Camera]
-}
+    vRes: Int): 
+    ZIO[ATModule, AlgebraicError, Camera] =
+    viewTransform(viewFrom, viewTo, upDirection).map { 
+      worldTf => Camera(hRes, vRes, visualAngleRad, worlfTf)
+    }
 ```
 
 ---
@@ -1052,309 +1054,7 @@ Move/scale: objects, view, light
 ### Affine Transformations
 - Scale vectors and points
 
----
-[.build-lists: false]
 
-^Actually we want to do more interesting things than just adding points and vectors. We want to be able to scale, translate, rotate points and vectors
-
-![left fit](img/collage-1.png) 
-
-# Ray tracing
-
-Move/scale: objects, view, light
-
-### Affine Transformations
-- Scale vectors and points
-- Translate points (vectors don't translate)
-
----
-[.build-lists: false]
-
-^Actually we want to do more interesting things than just adding points and vectors. We want to be able to scale, translate, rotate points and vectors
-
-![left fit](img/collage.png) 
-
-# Ray tracing
-
-Move/scale: objects, view, light
-
-### Affine Transformations
-- Scale vectors and points
-- Translate points (vectors don't translate)
-- Rotate vectors and points
-
----
-
-[.build-lists: false]
-
-^Actually we want to do more interesting things than just adding points and vectors. We want to be able to scale, translate, rotate points and vectors
-
-![left fit](img/collage.png) 
-
-# Ray tracing
-
-Move/scale: objects, view, light
-
-### Affine Transformations
-- Scale vectors and points
-- Translate points (vectors don't translate)
-- Rotate vectors and points
-- Chain transformations
-
----
-
-^It turns out that all we need for this, is matrices 4x4 and matrix product, and a little convention
-
-![left fit](img/collage.png) 
-
-# Convention
-
-- Vectors are column matrices with 0 as 4th element
-`Vec(x, y, z)`  $$ \Rightarrow [x, y, z, 0]^T$$ 
-
-- Points are column matrices with 1 as 4th element
-`Pt(x, y, z)`  $$ \Rightarrow [x, y, z, 1]^T$$ 
-
----
-
-^It turns out that all we need for this, is matrices 4x4 and matrix product
-
-![left fit](img/collage.png) 
-
-# Example: Rotation
-
-- `rotate_z(pi/2, Vec(x, y, z))`
-
-$$
-\begin{pmatrix}
-\cos \pi/2 & -\sin \pi/2 & 0 & 0\\
-\sin \pi/2 & \cos \pi/2 & 0 & 0\\
-0 & 0 & 1 & 0 \\
-0 & 0 & 0 & 1 \\
-\end{pmatrix}
-\begin{pmatrix}
-x\\
-y\\
-z \\
-0\\
-\end{pmatrix}
-$$
-
-- Same for all the other transformations
-
----
-
-^It turns out that all we need for this, is matrices 4x4 and matrix product
-
-![left fit](img/collage.png) 
-
-# Composition
-
-- Chaining 2 transformations equals multiplying the last one with the first one
-
-- `translate` and then `rotate_z` 
-
-- `rotate_z_matrix * translate_matrix`
-
----
-
-
----
-
-^Enough of theory, let's build this. Let's start defining our matrix data type
-The whole type is quite heavy to digest, so to forgive ourselves for the definition of such an abominion, we'll refer to matrix just as `M`
-# Matrix Module
-
-Matrix 
-
-```scala
-sealed abstract case class Matrix private (m: Int, n: Int, rows: Chunk[Chunk[Double]]) {
-  def get(i: Int, j: Int): IO[IndexExceedMatrixDimension, Double] //ZIO[Any, ...]
-  //... transpose etc
-}
-
-object Matrix {
- def fromRows(m: Int, n: Int, rows: L[L[Double]]): IO[MatrixConstructionError, Matrix[L]]
-}
-
-type M = Matrix
-```
-
----
-
-^Now let's define the operations we want to perform on matrices. These represent capabilities that are progressively required in our application,
-so we model them through the module pattern. Module pattern provides a nice namespace separation between different capabilities that might be required
-That namespace is in the `val` in the trait
-# Matrix Module
-
-Operations on matrix
-
-[.code-highlight: 1,3]
-[.code-highlight: 1, 3, 5-12]
-[.code-highlight: 1-12]
-```scala
-trait MatrixModule {
-  val matrixModule: MatrixModule.Service[Any]
-}
-
-object MatrixModule {
-  trait Service[R] {
-    def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
-    def mul(m1: M, m2: M): ZIO[R, AlgebraicError, M]
-    def invert(m: M): ZIO[R, AlgebraicError, M]
-    //... a few others
-  }
-}
-```
-
----
-
-
-^We can define a live implementation of our module, that delegates to Breeze the matrix operations
-# Matrix Module
-
-Live implementation (backed by Breeze)
-
-```scala
-trait MatrixModule {
-  val matrixModule: MatrixModule.Service[Any]
-}
-
-object MatrixModule {
-  trait BreezeLive extends MatrixModule {
-    import breeze.linalg._
-    override val matrixModule: Service[Any] = new Service[Any] {
-      def invert(m: M): ZIO[Any, AlgebraicError, M] = for {
-         //... 
-        bm            <- ZIO.effectTotal(DenseMatrix.create(nrRows, nrCols, arrayElems))
-        breezeInverse <- ZIO.effect(inv(bm)).mapError(_ => AlgebraicError.MatrixNotInvertible)
-        res           <- M.create(breezeInverse)
-      } yield res  
-    }
-  }
-}
-```
-
----
-# Matrix Module
-
-Recap:
-
-- We defined a module with the definition of the capabilities to operate on matrices
-- We provided an implementation of that service backed by Breeze
-- We can define as many implementations as we want
- 
----
-^ Now that we have capability of operating on matrices (of any size), next step is to work with our 4 x 4 matrices to implement our transformatiosn
-So we define an affine transformation data type, that we require to travel along with its inverse, for efficiency reasons
-And then we define the module for affine transformations
-The convention that makes everything work smooth, is to name your service instance in the module just like the module, with first letter lower case 
-# Affine transformations module
-
-[.code-highlight: 1-3]
-[.code-highlight: 1-3, 9-10]
-[.code-highlight: 1-3, 9-12]
-[.code-highlight: 1-3, 9-15]
-[.code-highlight: 1-3, 9-19]
-[.code-highlight: 1-3, 9-19, 23]
-[.code-highlight: 1-3, 5-7, 9-19, 23]
-
-```scala
-case class AT(direct: M, inverse: M) {
-  def inverted: AT = AT(inverse, direct)
-}
-
-trait ATModule {
-  val aTModule: ATModule.Service[Any]
-}
-
-object ATModule {
-  trait Service[R] {
-    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
-    def applyTf(tf: AT, pt: Pt): ZIO[R, AlgebraicError, Pt]
-    def compose(first: AT, second: AT): ZIO[R, AlgebraicError, AT]
-    def invert(tf: AT): ZIO[R, AlgebraicError, AT]
-    def transpose(tf: AT): ZIO[R, AlgebraicError, AT]
-
-    def translate(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT]
-    def scale(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT]
-    def rotateX(θ: Double): ZIO[R, Nothing, AT]
-    def rotateY(θ: Double): ZIO[R, Nothing, AT]
-    def rotateZ(θ: Double): ZIO[R, Nothing, AT]
-    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): ZIO[R, Nothing, AT]
-    def id: ZIO[R, Nothing, AT]
-  }
-}
-```
----
-^ Now that we have capability of operating on matrices (of any size), next step is to work with our 4 x 4 matrices to implement our transformatiosn
-So we define an affine transformation data type, that we require to travel along with its inverse, for efficiency reasons
-And then we define the module for affine transformations
-# Affine transformations module
-
-- Live implementation
-
-[.code-highlight: none]
-[.code-highlight: 1-10]
-[.code-highlight: 1-18]
-```scala
-  trait Live extends ATModule {
-    val matrixModule: MatrixModule.Service[Any]
-
-    val aTModule: ATModule.Service[Any] = new ATModule.Service[Any] {
-      override def applyTf(tf: AT, vec: Vec): ZIO[Any, AlgebraicError, Vec] =
-        for {
-          col    <- toCol(vec)
-          colRes <- matrixModule.mul(tf.direct, v) // case class AT(direct: M, inverse: M)
-          res    <- colToVec(colRes)
-        } yield res
-
-      override def compose(first: AT, second: AT): ZIO[Any, AlgebraicError, AT] =
-        for {
-          direct  <- matrixModule.mul(second.direct, first.direct)
-          inverse <- matrixModule.mul(first.inverse, second.inverse)
-        } yield AT(direct, inverse)
-    }
-  }
-```
-- Dependency on `MatrixModule`
-
----
-
-- capability accessor method
-- unit tests
-- functional testing
-- functional mocking
-- macros
-- add layers to the onion
-
----
-
-Plan for the talk
-^ Top down approach. Start from the camera, raster, render on canvas
-Continue with how to produce the ray for the pixel and the color for the ray
-Delegate the color computation to the World module
-Live world module can rely further on Phong, LightReflection, Refraction etc...
-
----
-# Functional Effects
-^ Now let's consider another function, that given a matrix, inverts it
-
-FP: Programming with values and functions
-
-```scala
-def invert(m: Matrix): Matrix = ???
-
-val m = Matrix( 
-    1, 2, 
-    1, 2
-)
-
-invert(m) // Exception!
-```
-
-This function is not total. How do we deal with that?
----
 
 
 ## Preparing slides for your class doesn’t have to be an endless chore.
