@@ -30,7 +30,7 @@ object RasteringModule {
 
     override val rasteringModule: Service[Any] = new Service[Any] {
       override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] = {
-        val pixels = for {
+        val pixels: ZStream[Any, Nothing, (Int, Int)] = for {
           x <- ZStream.fromIterable(0 until camera.hRes )
           y <- ZStream.fromIterable(0 until camera.vRes )
         } yield (x, y)
@@ -44,6 +44,30 @@ object RasteringModule {
               } yield data.ColoredPixel(Pixel(px, py), color)
           }
         }.flatMap(ZStream.fromChunk))
+      }
+    }
+  }
+
+  trait SlowRasteringModule extends RasteringModule {
+    val cameraModule: CameraModule.Service[Any]
+    val worldModule: WorldModule.Service[Any]
+
+    override val rasteringModule: Service[Any] = new Service[Any] {
+      override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] = {
+        val pixels: zio.stream.Stream[Nothing, (Int, Int)] = for {
+          x <- ZStream.fromIterable(0 until camera.hRes )
+          y <- ZStream.fromIterable(0 until camera.vRes )
+        } yield (x, y)
+
+        UIO(
+          pixels.mapM{
+            case (px, py) =>
+              for {
+                ray   <- cameraModule.rayForPixel(camera, px, py)
+                  color <- worldModule.colorForRay(world, ray)
+              } yield data.ColoredPixel(Pixel(px, py), color)
+          }
+        )
       }
     }
   }

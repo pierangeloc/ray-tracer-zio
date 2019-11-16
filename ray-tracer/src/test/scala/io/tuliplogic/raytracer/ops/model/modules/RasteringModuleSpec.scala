@@ -7,6 +7,7 @@ import io.tuliplogic.raytracer.ops.model.data.{Camera, Color, ColoredPixel, Pixe
 import io.tuliplogic.raytracer.ops.model.modules.RasteringModule.ChunkRasteringModule
 import zio.test.Assertion._
 import zio.test._
+import zio.test.mock.Expectation
 import zio.test.mock.Expectation._
 import zio.{UIO, ZIO}
 
@@ -44,7 +45,7 @@ object RasteringModuleMocks {
     r2 <- (Pt(-1, 1, -1) - Pt.origin).normalized.map(Ray(Pt.origin, _))
     r3 <- (Pt(-1, -1, -1) - Pt.origin).normalized.map(Ray(Pt.origin, _))
     r4 <- (Pt(1, -1, -1) - Pt.origin).normalized.map(Ray(Pt.origin, _))
-    cameraModuleExp <- UIO {
+    cameraModuleExp <- UIO.succeed[Expectation[CameraModule, Nothing, Ray]] {
       (CameraModule.rayForPixel(equalTo((camera, 0, 0))) returns value(r1)) *>
       (CameraModule.rayForPixel(equalTo((camera, 0, 1))) returns value(r2)) *>
       (CameraModule.rayForPixel(equalTo((camera, 1, 0))) returns value(r3)) *>

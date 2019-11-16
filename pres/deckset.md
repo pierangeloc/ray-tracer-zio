@@ -1,4 +1,4 @@
-autoscale: true
+  autoscale: true
 slidenumbers: false
 build-lists: true
 list: alignment(left)
@@ -1095,7 +1095,7 @@ case class World(pointLight: PointLight, objects: List[Shape])
 ^Rendering a world means producing an image that reprsents how the world looks like from our camera. So from the highest level I want to be able to produce a stream of colored pixels representing my image. So we define the module, make it accessible, and provide a trivial implementation that produces white pixels no matter what
 
 ### World Rendering - Top Down
-#### Rastering
+#### Rastering - Dummy
 
 [.code-highlight: 1-4]
 [.code-highlight: 1-9]
@@ -1110,6 +1110,7 @@ object RasteringModule {
     def raster(world: World, camera: Camera): 
       ZIO[R, Nothing, ZStream[R, RayTracerError, ColoredPixel]]
   }
+
   trait AllWhiteTestRasteringModule extends RasteringModule {
     val rasteringModule: Service[Any] = new Service[Any] {
       def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] =
@@ -1122,16 +1123,233 @@ object RasteringModule {
 ```
 
 ---
-^Now what do we need to provide a LIVE implementation of this? We need to be able to provide one ray for each pixel of the camera, plus
+^Now what do we need to provide a LIVE implementation of this? We need to be able to provide one ray for each pixel of the camera, and for each ray we need to compute the color. Let's introduce 2 modules with these responsibilities
 
 ### World Rendering - Top Down
-#### Camera module - One ray per pixel
-<!-- #### World moduld -->
 
+- Camera module - Ray per pixel
+
+[.code-highlight: none]
+[.code-highlight: 1-5]
 ```scala
 object CameraModule {
   trait Service[R] {
-    def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[R, AlgebraicError, Ray]
+    def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[R, Nothing, Ray]
+  }
+}
+```
+
+- World module - Color per ray
+
+[.code-highlight: none]
+[.code-highlight: 1-5]
+```scala
+object WorldModule {
+  trait Service[R] {
+    def colorForRay(world: World, ray: Ray): ZIO[R, RayTracerError, Color]
+  }
+}
+```
+
+---
+^And with these 2 modules we can provide a live implementation of the rastering logic. We declare dependencies on the *services* of our modules, and then we access them in the implmentation
+
+### World Rendering - Top Down
+#### Rastering - Live
+
+[.code-highlight: 1-3]
+[.code-highlight: 1-6, 11-14]
+[.code-highlight: 1-20]
+```scala
+trait LiveRasteringModule extends RasteringModule {
+  val cameraModule: CameraModule.Service[Any]
+  val worldModule: WorldModule.Service[Any]
+
+  override val rasteringModule: Service[Any] = new Service[Any] {
+    override def raster(world: World, camera: Camera): UIO[ZStream[Any, RayTracerError, ColoredPixel]] = {
+      val pixels: Stream[Nothing, (Int, Int)] = ???
+      UIO(
+        pixels.mapM{
+          case (px, py) =>
+            for {
+              ray   <- cameraModule.rayForPixel(camera, px, py)
+              color <- worldModule.colorForRay(world, ray)
+            } yield data.ColoredPixel(Pixel(px, py), color)
+        }
+      )
+    }
+  }
+}
+```
+
+---
+^To unit test this we should mock the dependencies. The pure way of doing this, in tagless-final is to use state monad, or use a `Ref` to preload our mocks and track assertions on the calls that have been performed. This can be done  with ZIO as well, but the process is pretty standard, so standard that ZIO provides a feature to make this feel almost natural. The first thing to do is defining the logic we want to test, e.g. here we want to check all the colored pixels produced by a raster
+
+[.build-lists: false]
+
+### Test `LiveRasteringModule` 
+1 - Define the method under test
+
+```scala
+val world = /* prepare a world */
+val camera = /* prepare a camera */
+
+val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
+  RasteringModule.>.raster(world, camera)
+    .flatMap(_.runCollect)
+```
+
+---
+^The second step is make our dependencies mockable, just annotate them
+
+[.build-lists: false]
+
+### Test `LiveRasteringModule` 
+2 - Annotate the modules as mockable
+
+```scala
+@mockable
+trait CameraModule { ... }
+
+@mockable
+trait WorldModule { ... }
+```
+
+---
+^Step nr 3: define your expectations. We expect rayForPixel, when called for pixel 0, 0 to return ray r1
+And we expect `colorForRay` when called for ray r1, to return red
+
+[.build-lists: false]
+
+### Test `LiveRasteringModule` 
+3 - Build the expectations
+
+```scala
+val rayForPixelExp: Expectation[CameraModule, Nothing, Ray] =
+  (CameraModule.rayForPixel(equalTo((camera, 0, 0))) returns value(r1)) *>
+  (CameraModule.rayForPixel(equalTo((camera, 0, 1))) returns value(r2))
+
+val colorForRayExp: Expectation[WorldModule, Nothing, Color] = 
+  (WorldModule.colorForRay(equalTo((world, r1, 5))) returns value(Color.red)) *>
+  (WorldModule.colorForRay(equalTo((world, r2, 5))) returns value(Color.green))
+```
+
+---
+^Let's go back to the code we wanted to test. We must take all the expectations, flatmap/zip them and build a managed environment for our environmental effect under test. We turn the expectations into managed environments, which are similar to the environments but they have also strong guarantees of executing a release step, no matter what. Think of them as a try with resources on steroids, that works on asynchronous code as well. We'll see shortly why we have to make these expectations `Managed`
+
+### Test `LiveRasteringModule` 
+4 - Build the environment for the code under test
+
+[.code-highlight: 1-3]
+[.code-highlight: 1-20]
+```scala
+val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
+  RasteringModule.>.raster(world, camera)
+    .flatMap(_.runCollect)
+
+appUnderTest.provideManaged(
+  worldModuleExp.managedEnv.zipWith(cameraModuleExp.managedEnv) { (wm, cm) =>
+    new LiveRasteringModule {
+      override val cameraModule: CameraModule.Service[Any] = cm.cameraModule
+      override val worldModule: WorldModule.Service[Any] = wm.worldModule
+        }
+      }
+    )
+```
+
+---
+^turn the expectations into managed environments, which are similar to the environments but they have also strong guarantees of executing a release step, no matter what. Think of them as a try with resources on steroids, that works on asynchronous code as well. We'll see shortly why we have to make these expectations `Managed`
+
+### Test `LiveRasteringModule` 
+5 - Assert on the results
+
+```scala
+assert(res, equalTo(List(
+  ColoredPixel(Pixel(0, 0), Color.red),
+  ColoredPixel(Pixel(0, 1), Color.green),
+  ColoredPixel(Pixel(1, 0), Color.blue),
+  ColoredPixel(Pixel(1, 1), Color.white),
+  ))
+)
+```
+
+---
+^Here's how the whole test looks like
+
+### Test `LiveRasteringModule`
+
+```scala
+suite("LiveRasteringModule") {
+  testM("raster should rely on cameraModule and world module") {
+    val camera = Camera.makeUnsafe(Pt.origin, Pt(0, 0, -1), Vec.uy, math.Pi / 3, 2, 2)
+    val world = World(PointLight(Pt(5, 5, 5), Color.white), List())
+    val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
+      RasteringModule.>.raster(world, camera).flatMap(_.runCollect)
+
+    for {
+      (worldModuleExp, cameraModuleExp) <- RasteringModuleMocks.mockExpectations(world, camera)
+      res <- appUnderTest.provideManaged(
+        worldModuleExp.managedEnv.zipWith(cameraModuleExp.managedEnv) { (wm, cm) =>
+          new LiveRasteringModule {
+            override val cameraModule: CameraModule.Service[Any] = cm.cameraModule
+            override val worldModule: WorldModule.Service[Any] = wm.worldModule
+              }
+            }
+          )
+      } yield assert(res, equalTo(List(
+          ColoredPixel(Pixel(0, 0), Color.red),
+          ColoredPixel(Pixel(0, 1), Color.green)
+          )))
+  }
+}
+```
+
+---
+^So the takeaway of this is...
+
+### Test
+
+#### Takeaway: Implement and test every layer only in terms of the immediately underlying layer
+
+---
+^So the takeaway of this is...
+
+### Test
+
+#### Takeaway: Implement and test every layer only in terms of the immediately underlying layer
+
+---
+^And now that we got warmed up with this, let's go on and implement all the logic through modules
+
+## Modules all the way down
+
+---
+^Let's give an implementation to our CameraModule. I don't want to go through this in depth but remember that we compute the rays for a canonical camera, whose rays all start at (0, 0, 0) and look at (0, 0, -1) 
+Implementation: the canonical camera has the eye in Pt.origin, and the screen on the plane z = -1,
+therefore after computing the coordinates of the point in the screen, we have to apply the _inverse of the camera transformation_
+because the camera transformation is the transformation to be applied to thw world in order to produce the effect of moving/orienting the camera around
+This transformation must be applied both to the point in the camera, and to the origin. Then the computation of the ray is trivial.
+
+### Live `CameraModule`
+```scala
+trait Live extends CameraModule {
+  val aTModule: ATModule.Service[Any]
+
+  val cameraModule: CameraModule.Service[Any] = new Service[Any] {
+    
+    override def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[Any, Nothing, Ray] =
+      for {
+        xOffset   <- UIO((px + 0.5) * camera.pixelXSize)
+        yOffset   <- UIO((py + 0.5) * camera.pixelYSize)
+        //coordinates of the canvas point before the transformation
+        origX     <- UIO(camera.halfWidth - xOffset)
+        origY     <- UIO(camera.halfHeight - yOffset)
+        //transform the coordinates by the inverse
+        inverseTf <- aTModule.invert(camera.tf)
+        pixel     <- aTModule.applyTf(inverseTf, Pt(origX, origY, -1))
+        origin    <- aTModule.applyTf(inverseTf, Pt.origin)
+        direction <- (pixel - origin).normalized.orDie
+      } yield Ray(origin, direction)
   }
 ```
 

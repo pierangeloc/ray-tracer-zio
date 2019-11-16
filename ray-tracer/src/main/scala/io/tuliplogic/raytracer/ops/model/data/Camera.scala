@@ -1,6 +1,6 @@
 package io.tuliplogic.raytracer.ops.model.data
 
-import io.tuliplogic.raytracer.commons.errors.{ATError, AlgebraicError}
+import io.tuliplogic.raytracer.commons.errors.ATError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
