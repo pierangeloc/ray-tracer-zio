@@ -80,5 +80,5 @@ trait OpsTestUtils extends TestUtils with Tolerance {
 }
 object OpsTestUtils extends OpsTestUtils
 
-trait LiveFullATModule extends ATModule.Live with MatrixModule.BreezeMatrixModule
+trait LiveFullATModule extends ATModule.Live with MatrixModule.BreezeLive
 object LiveFullATModule extends LiveFullATModule

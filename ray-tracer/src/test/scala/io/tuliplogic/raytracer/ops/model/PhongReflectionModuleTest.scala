@@ -14,7 +14,7 @@ import zio.{DefaultRuntime, IO, UIO}
 
 class PhongReflectionModuleTest extends WordSpec with DefaultRuntime with OpsTestUtils {
 
-  val env = new PhongReflectionModule.Live with ATModule.Live with LightDiffusionModule.Live with LightReflectionModule.Live with MatrixModule.BreezeMatrixModule with NormalReflectModule.Live
+  val env = new PhongReflectionModule.Live with ATModule.Live with LightDiffusionModule.Live with LightReflectionModule.Live with MatrixModule.BreezeLive with NormalReflectModule.Live
 
   "phong reflection model live" should {
     "give correct phong components when eye is in LOS with source and aligned with normal" in {

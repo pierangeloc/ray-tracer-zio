@@ -12,7 +12,7 @@ import zio.{DefaultRuntime, IO, Task}
 
 class CameraTest extends WordSpec with OpsTestUtils with DefaultRuntime {
 
-  val env = new CameraModule.Live with ATModule.Live with MatrixModule.BreezeMatrixModule
+  val env = new CameraModule.Live with ATModule.Live with MatrixModule.BreezeLive
 
   "A Camera" should {
     "compute the ray for pixel when the pixel is (halfWidth, halfHeight)" in {

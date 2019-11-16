@@ -4,6 +4,10 @@ import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{ExecutorService, Executors, LinkedBlockingQueue, ThreadFactory, ThreadPoolExecutor, TimeUnit}
 
+import io.tuliplogic.raytracer.commons.errors.AlgebraicError
+import io.tuliplogic.raytracer.geometry.affine.ATModule
+import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import zio.clock.Clock
 import zio.duration.Duration
 import zio.internal.{Executor, NamedThreadFactory, PlatformLive}
@@ -126,4 +130,11 @@ object TST {
 
   val r: IO[BakingError, Bread] = bread.provide(new OvenEnv with WarmRoomEnv with MixerEnv)
   new DefaultRuntime {}.unsafeRun(r)
+
+  val rotated: ZIO[ATModule, AlgebraicError, Vec] = for {
+    rotateX <- ATModule.>.rotateZ(math.Pi/2)
+      res     <- ATModule.>.applyTf(rotateX, Vec(1, 2, 3))
+  } yield res
+
+  rotated.provide(new ATModule.Live with MatrixModule.BreezeLive)
 }

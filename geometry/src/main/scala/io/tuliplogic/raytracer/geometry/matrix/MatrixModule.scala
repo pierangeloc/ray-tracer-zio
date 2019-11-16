@@ -45,7 +45,7 @@ object MatrixModule {
     def invert(m: M): ZIO[R, AlgebraicError, M]
   }
 
-  trait BreezeMatrixModule extends MatrixModule {
+  trait BreezeLive extends MatrixModule {
 
     override val matrixModule: Service[Any] = new Service[Any] {
 
@@ -142,7 +142,7 @@ object MatrixModule {
     }
   }
 
-  object BreezeMatrixModule extends BreezeMatrixModule
+  object BreezeLive extends BreezeLive
 
 
   case class MatrixTestService(ref: Ref[MatrixTestService.State]) extends MatrixModule.Service[Any] {

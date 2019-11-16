@@ -56,7 +56,7 @@
 //  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
 //    program
 //      .provide {
-//        new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixModule.BreezeMatrixModule with Console.Live with Clock.Live
+//        new CanvasRenderer.PPMCanvasRenderer with RichRayOperations.Live with Blocking.Live with MatrixModule.BreezeLive with Console.Live with Clock.Live
 //        with AffineTransformationOps.BreezeMatrixOps$ {
 //          override def path: Path = Paths.get(canvasFile)
 //        }

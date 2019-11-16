@@ -72,7 +72,7 @@
 //  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
 //    program
 //      .provide {
-//        new CanvasSerializer.PPMCanvasSerializer with RayModule.Live with ATModule.Live with MatrixModule.BreezeMatrixModule
+//        new CanvasSerializer.PPMCanvasSerializer with RayModule.Live with ATModule.Live with MatrixModule.BreezeLive
 //        with Clock.Live with Console.Live with Blocking.Live {
 //          override def path: Path = Paths.get(canvasFile)
 //        }

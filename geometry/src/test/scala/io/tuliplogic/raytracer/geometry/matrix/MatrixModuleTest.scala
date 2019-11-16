@@ -12,7 +12,7 @@ class MatrixModuleTest extends WordSpec with GeneratorDrivenPropertyChecks with 
   import vectorizable.comp
 
   "LiveMatrixOps" should {
-    val env = MatrixModule.BreezeMatrixModule
+    val env = MatrixModule.BreezeLive
     "add correctly 2 matrices" in {
       unsafeRun {
         (for {

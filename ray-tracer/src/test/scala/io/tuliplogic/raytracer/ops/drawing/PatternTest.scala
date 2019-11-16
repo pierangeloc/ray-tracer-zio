@@ -10,7 +10,7 @@ import zio.DefaultRuntime
 
 class PatternTest extends WordSpec with DefaultRuntime {
 
-  val env = new ATModule.Live with MatrixModule.BreezeMatrixModule
+  val env = new ATModule.Live with MatrixModule.BreezeLive
   "Striped pattern" should {
     val p = unsafeRun(ATModule.>.id.map(Pattern.Striped(Color.white, Color.black, _)).provide(env))
     "be constant in y" in {

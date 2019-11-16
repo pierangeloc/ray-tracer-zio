@@ -49,6 +49,6 @@ object WorldTopologyModuleSpec
   )
 
 object WorldTopologyModuleSpecUtil {
-  val liveEnv = new WorldTopologyModule.Live with RayModule.Live with ATModule.Live with MatrixModule.BreezeMatrixModule
+  val liveEnv = new WorldTopologyModule.Live with RayModule.Live with ATModule.Live with MatrixModule.BreezeLive
 
 }

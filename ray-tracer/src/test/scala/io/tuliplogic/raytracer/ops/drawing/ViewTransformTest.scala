@@ -12,7 +12,7 @@ import zio.{DefaultRuntime, IO}
 
 class ViewTransformTest extends WordSpec with DefaultRuntime with TestUtils with GeneratorDrivenPropertyChecks with Generators {
 
-  val env = new ATModule.Live with MatrixModule.BreezeMatrixModule
+  val env = new ATModule.Live with MatrixModule.BreezeLive
 
   //TODO: property of this transform is that a view with proportional `to - from` vectors should give the same transformation
 

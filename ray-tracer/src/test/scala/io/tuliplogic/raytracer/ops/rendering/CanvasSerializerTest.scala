@@ -18,7 +18,7 @@ class CanvasSerializerTest extends WordSpec with DefaultRuntime {
   val w          = 5
   val h          = 4
 
-  val env = new ATModule.Live with MatrixModule.BreezeMatrixModule
+  val env = new ATModule.Live with MatrixModule.BreezeLive
 
   "canvas renderer" should {
     "write canvas as PPM file" in {

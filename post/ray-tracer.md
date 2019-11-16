@@ -133,7 +133,7 @@ val program = rotatedPt.provide(new ATModule.Live{})
 This error can be solved just by providing an implementation of the `MatrixModule` as suggested by the compiler, so we provide a Breeze-backed matrix operations module implementation, mixed in with our `ATModule`, and everything compiles.
 
 ```scala
-val program = rotatedPt.provide(new ATModule.Live with MatrixModule.BreezeMatrixModule{}) 
+val program = rotatedPt.provide(new ATModule.Live with MatrixModule.BreezeLive{}) 
 // Compiles!
 runtime.unsafeRun(program)
 // Runs!
@@ -441,7 +441,7 @@ trait BasicModules
   extends NormalReflectModule.Live
   with RayModule.Live
   with ATModule.Live
-  with MatrixModule.BreezeMatrixModule
+  with MatrixModule.BreezeLive
   with WorldModule.Live
   with WorldTopologyModule.Live
   with WorldHitCompsModule.Live

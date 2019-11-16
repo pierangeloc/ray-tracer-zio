@@ -15,7 +15,7 @@ trait BasicModules
   extends NormalReflectModule.Live
   with RayModule.Live
   with ATModule.Live
-  with MatrixModule.BreezeMatrixModule
+  with MatrixModule.BreezeLive
   with WorldModule.Live
   with WorldTopologyModule.Live
   with WorldHitCompsModule.Live

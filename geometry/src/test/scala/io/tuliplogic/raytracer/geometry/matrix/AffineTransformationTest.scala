@@ -10,7 +10,7 @@ import zio.{DefaultRuntime, IO, UIO}
 
 class AffineTransformationTest extends WordSpec with GeneratorDrivenPropertyChecks with Generators with DefaultRuntime {
   import Types._
-  val env = new ATModule.Live with MatrixModule.BreezeMatrixModule
+  val env = new ATModule.Live with MatrixModule.BreezeLive
 
   "identity transformation " should {
     "identity.apply(point) === point" in {

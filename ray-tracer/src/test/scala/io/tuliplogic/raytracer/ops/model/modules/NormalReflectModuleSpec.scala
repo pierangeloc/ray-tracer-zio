@@ -40,5 +40,5 @@ object NormalReflectModuleSpec extends DefaultRunnableSpec(
 )
 
 object NormaReflectModuleSpecUtil {
-  val liveEnv = new NormalReflectModule.Live with ATModule.Live with MatrixModule.BreezeMatrixModule
+  val liveEnv = new NormalReflectModule.Live with ATModule.Live with MatrixModule.BreezeLive
 }

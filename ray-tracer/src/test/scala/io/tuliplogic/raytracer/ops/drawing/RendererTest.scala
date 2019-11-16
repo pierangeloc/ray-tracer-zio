@@ -13,7 +13,7 @@
 //class RendererTest extends WordSpec with DefaultRuntime with OpsTestUtils {
 //
 //  val env = new WorldModule.Live with WorldTopologyModule.Live with WorldHitCompsModule.Live
-//    with ATModule.Live with MatrixModule.BreezeMatrixModule with WorldReflectionModule.Live
+//    with ATModule.Live with MatrixModule.BreezeLive with WorldReflectionModule.Live
 //    with LightReflectionModule.Live with LightDiffusionModule.Live
 //    with WorldRefractionModule.Live with PhongReflectionModule.Live with NormalReflectModule.Live with RayModule.Live
 //    with CameraModule.Live

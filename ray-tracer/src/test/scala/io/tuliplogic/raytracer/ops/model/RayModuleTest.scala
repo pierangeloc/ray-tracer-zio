@@ -38,11 +38,11 @@ class RayModuleTest extends WordSpec with DefaultRuntime {
               )
             )
             .flatMap(deltas => IO(deltas.forall(_ == true) shouldEqual true))
-        } yield ()).provide(new MatrixModule.BreezeMatrixModule{})
+        } yield ()).provide(new MatrixModule.BreezeLive{})
       }
     }
 
-    val rayEnv = new RayModule.Live with ATModule.Live with MatrixModule.BreezeMatrixModule
+    val rayEnv = new RayModule.Live with ATModule.Live with MatrixModule.BreezeLive
     "calculate intersection ray-unit sphere" in {
       unsafeRun {
         val ray = Ray(Pt(0, 0, -5), Vec(0, 0, 1))

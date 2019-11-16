@@ -407,6 +407,8 @@ The problem with this is that it's not immediate (not to me at least) how to mak
 
 - Nice, but how do we deal with non-trivial applications?
 
+- TODO: basic intro just to ZIO, R, E, A, access, accessM, provide, unsafeRun. Just use console and clock.
+
 <!-- ---
 [.build-lists: false]
 
@@ -651,7 +653,7 @@ Options:
 1. Compute only the rays outgoing the canvas, and determine how they behave on the surfaces
 
 ---
-^Let's start building our model. A ray is an infinite line with a starting point
+^Let's start building our model. A ray is an infinite line with a starting point. So let's start with the components we need to represent it, i.e. points and vectors
 
 ![left fit](img/rt-ray-def-tex.png) 
 
@@ -664,11 +666,23 @@ P(t) = P_0 + t \vec{D},   t > 0
 $$
 
 ---
-^Let's start building our model. A ray is an infinite line with a starting point
+
+# Minimal theory
+^ We need to cover a bit of theory here to be able to cope with the fact we are in a 3D space where objects and rays are living
+So we will cover points and vectors, and affine transformations, which are just translation/scaling/rotation and their combinations
 
 ![left fit](img/pt-vec-combined.png) 
 
-# Ray tracing
+[.list: alignment(left)]
+- Points and Vectors
+- Affine transformations
+
+---
+^ * Vectors are tuples of 3 coordinates, they can be added, every vector has an opposite, and there's a vector that is neutral element
+* Points are also tuples of 3, representing the position of a point with respect to a reference frame. I can't add 2 points, but subtracting 2 points gives mme a vector. In particular, a vector has infinite representations in terms of pairs of points
+
+![left fit](img/pt-vec-combined.png) 
+
 
 ### Points and Vectors
 
@@ -691,7 +705,10 @@ case class Pt(x: Double, y: Double, z: Double) {
 ```
 
 ---
-^Let's start building our model. A ray is an infinite line with a starting point
+^The first thing we do when we build our representation is to establish properties, so we write some PBT to check that 
+* `(Vec, +)` form a group, 
+* `(Vec, Pt, +, -)` form an affine space
+* `approx` is due to double finite precision
 
 ![left fit](img/pt-vec-combined.png) 
 
@@ -719,21 +736,305 @@ testM("vectors and points form an affine space") (
 ```
 
 ---
-^Let's start building our model. A ray is an infinite line with a starting point
+^ The transformations we are interested in are not exotic things, but the minimal requirements we might ask from something representing the reality, i.e. translations, rotations, scaling of vectors and points. At the end all of this boils down to multiplying matrices.
+So provided 
+* we have an AT type for our affine transformation 
+* let's write our first ZIO module that allows us to operate on affine transformations, so we start defining a Service to apply them to point, vectors, and chain/compose them. The methods have a generic capability R required, in order to run
+* Define a trait that has a val with the same name of the module, pointing to the service we just created
+* Define an object extending the Service, parameterized on the module itself. This allows us to build from anywhere an effect that has as a requirement our module itself
+* This process is very repetitive and mechanical, so an annotation can do the boring stuff for us (the same way simulacrum does for typeclasses)
+
+### Affine transformations
+
+[.code-highlight: 1]
+[.code-highlight: 1, 7, 9-14]
+[.code-highlight: 1, 3-5, 7, 9-14]
+[.code-highlight: 1, 3-5, 7, 9-14, 16-26]
+[.code-highlight: 1-5, 7, 9-14, 16-26]
+[.code-highlight: 1-14, 16-26]
+[.code-highlight: 1-26]
+```scala
+trait AT
+/* Module */
+trait ATModule {
+  val aTModule: ATModule.Service[Any]
+}
+
+object ATModule {
+  /* Service */
+  trait Service[R] {
+    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
+    def applyTf(tf: AT, pt: Pt): ZIO[R, ATError, Pt]
+    def compose(first: AT, second: AT): ZIO[R, ATError, AT]
+  }
+
+  /* Accessor */
+  object > extends Service[ATModule] {
+    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, ATError, Vec] =
+      ZIO.accessM(_.aTModule.applyTf(tf, vec))
+    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, ATError, Pt] =
+      ZIO.accessM(_.aTModule.applyTf(tf, pt))
+    def compose(first: AT, second: AT): ZIO[ATModule, ATError, AT] =
+      ZIO.accessM(_.aTModule.compose(first, second))
+  }
+}
+```
+
+---
+### Affine transformations
+
+[.code-highlight: 1-26]
+```scala
+trait AT
+/* Module */
+@accessible(">")
+trait ATModule {
+  val aTModule: ATModule.Service[Any]
+}
+
+object ATModule {
+  /* Service */
+  trait Service[R] {
+    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
+    def applyTf(tf: AT, pt: Pt): ZIO[R, ATError, Pt]
+    def compose(first: AT, second: AT): ZIO[R, ATError, AT]
+  }
+
+  /* Accessor is generated 
+  object > extends Service[ATModule] {
+    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, ATError, Vec] =
+      ZIO.accessM(_.aTModule.applyTf(tf, vec))
+    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, ATError, Pt] =
+      ZIO.accessM(_.aTModule.applyTf(tf, pt))
+    def compose(first: AT, second: AT): ZIO[ATModule, ATError, AT] =
+      ZIO.accessM(_.aTModule.compose(first, second))
+  }
+  */
+}
+```
+
+---
+^ This accessor object allows us to summon our module wherever necessary
+### Affine transformations
+
+[.code-highlight: 1-26]
+```scala
+trait AT
+/* Module */
+@accessible(">")
+trait ATModule {
+  val aTModule: ATModule.Service[Any]
+}
+
+object ATModule {
+  /* Service */
+  trait Service[R] {
+    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
+    def applyTf(tf: AT, pt: Pt): ZIO[R, ATError, Pt]
+    def compose(first: AT, second: AT): ZIO[R, ATError, AT]
+  }
+}
+```
+
+---
+^ This accessor object allows us to summon our module wherever necessary, and build something like this, where I'm summoning capabilities from different modules, not only, but the compiler is able to infer and mix these capabilities for us
+### Affine transformations
+
+[.code-highlight: 1-26]
+```scala
+val rotatedPt = 
+  for {
+    rotateX <- ATModule.>.rotateX(math.Pi / 2)
+    _       <- Log.>.info("rotated of π/2")
+    res     <- ATModule.>.applyTf(rotateX, Pt(1, 1, 1))
+  } yield  res
+```
+---
+
+^ This accessor object allows us to summon our module wherever necessary, and build something like this, where I'm summoning capabilities from different modules
+### Affine transformations
+
+[.code-highlight: 1-26]
+```scala
+val rotatedPt: ZIO[ATModule with Log, ATError, Pt] =
+  for {
+    rotateX <- ATModule.>.rotateX(math.Pi / 2)
+    _       <- Log.>.info("rotated of π/2")
+    res     <- ATModule.>.applyTf(rotateX, Pt(1, 1, 1))
+  } yield  res
+```
+---
+
+
+^ This accessor object allows us to summon our module wherever necessary, and build something like this
+### Affine transformations
+
+[.code-highlight: 1-26]
+```scala
+val rotatedPt: ZIO[ATModule with Log, ATError, Pt] = for {
+  rotateX <- ATModule.>.rotateX(math.Pi / 2)
+  _       <- Log.>.info("rotated of π/2")
+  res     <- ATModule.>.applyTf(rotateX, Pt(1, 1, 1))
+} yield  res
+```
+
+---
+
+^ Now we want to provide an implementation of this module. Going back to the rotation example, with the conventions vec/pt => column matrix, all we need is being able to multiply matrices, so we have one dependency on another capability, the capability of multiplying matrices. 
+### Affine transformations - Live
+
+```scala
+val rotated: ZIO[ATModule, ATError, Vec] = for {
+  rotateX <- ATModule.>.rotateZ(math.Pi/2)
+  res     <- ATModule.>.applyTf(rotateX, Vec(x, y, z))
+} yield res
+```
+
+[.list: alignment(left)]
+- `Vec(x, y, z)`  $$ \Rightarrow [x, y, z, 0]^T$$ 
+
+- `Pt(x, y, z)`  $$ \Rightarrow [x, y, z, 1]^T$$ 
+
+- ⠀
+$$
+\mathtt{rotated} = \begin{pmatrix}
+\cos \pi/2 & -\sin \pi/2 & 0 & 0\\
+\sin \pi/2 & \cos \pi/2 & 0 & 0\\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 \\
+\end{pmatrix}
+\begin{pmatrix}
+x\\
+y\\
+z \\
+0\\
+\end{pmatrix}
+$$
+
+---
+
+^ Given that we defined somewhere else another module to handle matrices
+### Affine transformations - Live
+
+[.code-highlight: 1-6]
+[.code-highlight: 1-18]
+```scala
+// Defined somewhere else
+object MatrixModule {
+  trait Service[R] {
+     def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
+    def mul(m1: M, m2: M): ZIO[R, AlgebraicError, M]
+  }
+}
+
+trait Live extends ATModule {
+  val matrixModule: MatrixModule.Service[Any]
+
+  val aTModule: ATModule.Service[Any] = new ATModule.Service[Any] {
+    override def applyTf(tf: AT, vec: Vec): ZIO[Any, AlgebraicError, Vec] =
+      for {
+        col    <- PointVec.toCol(vec)
+        colRes <- matrixModule.mul(tf, col)
+        res    <- PointVec.colToVec(colRes)
+      } yield res
+```
+
+---
+
+^ Now that we have a live implementation of our AT, let's see if we can run our rotation
+### Affine transformations - running
+
+[.code-highlight: 1]
+[.code-highlight: 1-2]
+[.code-highlight: 1-6]
+```scala
+val rotated: ZIO[ATModule, ATError, Vec]  = ...
+val program = rotatedPt.provide(new ATModule.Live{})
+// Compiler error:
+// object creation impossible, since value matrixModule 
+// in trait Live of t ype matrix.MatrixModule.Service[Any] is not defined
+// [error]   rotatedPt.provide(new ATModule.Live{})
+```
+---
+
+^ Now that we have a live implementation of our AT, let's see if we can run our rotation
+### Affine transformations - running
+
+[.code-highlight: 1]
+[.code-highlight: 1-5]
+[.code-highlight: 1-7]
+```scala
+val rotated: ZIO[ATModule, ATError, Vec]  = ...
+val program = rotatedPt.provide(
+  new ATModule.Live with MatrixModule.BreezeLive
+) 
+// Compiles!
+runtime.unsafeRun(program)
+// Runs!
+```
+
+---
+^ The transformations we are interested in are not exotic things, but the minimal requirements we might ask from something representing the reality, i.e. translations, rotations, scaling of vectors and points. At the end all of this boils down to multiplying matrices.
+So provided 
+* we have an AT type, 
+* let's write our first ZIO module that allows us to operate on affine transformations. 
+* apply them to point, vectors, and chain/compose them
+
+### Affine transformations
+
+[.code-highlight: 1]
+[.code-highlight: 1, 7, 9-14]
+[.code-highlight: 1, 3-5, 7, 9-14]
+[.code-highlight: 1, 3-5, 7, 9-14, 16-26]
+[.code-highlight: 1-5, 7, 9-14, 16-26]
+[.code-highlight: 1-14, 16-26]
+[.code-highlight: 1-26]
+```scala
+trait AT
+/* Module */
+trait ATModule {
+  val aTModule: ATModule.Service[Any]
+}
+
+object ATModule {
+  /* Service */
+  trait Service[R] {
+    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
+    def applyTf(tf: AT, pt: Pt): ZIO[R, ATError, Pt]
+    def compose(first: AT, second: AT): ZIO[R, ATError, AT]
+  }
+
+  /* Accessor */
+  object > extends Service[ATModule] {
+    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, ATError, Vec] =
+      ZIO.accessM(_.aTModule.applyTf(tf, vec))
+    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, ATError, Pt] =
+      ZIO.accessM(_.aTModule.applyTf(tf, pt))
+    def compose(first: AT, second: AT): ZIO[ATModule, ATError, AT] =
+      ZIO.accessM(_.aTModule.compose(first, second))
+  }
+}
+```
+
+---
+^Now that we have the components to describe points and vectors in space, let's start building a camera
 
 ![left fit](img/rt-ray-def-tex.png) 
 
-### Ray
-
-$$
-P(t) = P_0 + t \vec{D},   t > 0 
-$$
+### Camera
 
 [.code-highlight: none]
 [.code-highlight: 1-3]
 ```scala
-case class Ray(origin: Pt, direction: Vec) {
-  def positionAt(t: Double): Pt = origin + (direction * t)
+object Camera {
+  def make(
+    viewFrom: Pt, 
+    viewTo: Pt, 
+    upDirection: Vec, 
+    visualAngleRad: Double, 
+    hRes: Int, 
+    vRes: Int
+  ): UIO[Camera] = //ZIO[Any, Nothing, Camera]
 }
 ```
 
@@ -920,7 +1221,7 @@ trait MatrixModule {
 }
 
 object MatrixModule {
-  trait BreezeMatrixModule extends MatrixModule {
+  trait BreezeLive extends MatrixModule {
     import breeze.linalg._
     override val matrixModule: Service[Any] = new Service[Any] {
       def invert(m: M): ZIO[Any, AlgebraicError, M] = for {
@@ -969,7 +1270,7 @@ trait ATModule {
 
 object ATModule {
   trait Service[R] {
-    def applyTf(tf: AT, vec: Vec): ZIO[R, AlgebraicError, Vec]
+    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
     def applyTf(tf: AT, pt: Pt): ZIO[R, AlgebraicError, Pt]
     def compose(first: AT, second: AT): ZIO[R, AlgebraicError, AT]
     def invert(tf: AT): ZIO[R, AlgebraicError, AT]
