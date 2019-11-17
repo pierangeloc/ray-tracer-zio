@@ -9,6 +9,8 @@ import zio.stream._
 import zio.{Chunk, UIO, ZIO}
 import mouse.all._
 import zio.blocking.Blocking
+import zio.clock.Clock
+import zio.console.Console
 
 import scala.math.min
 //TODO: rename this package "serializing"
@@ -21,7 +23,7 @@ object CanvasSerializer {
     def serialize(canvas: Canvas, maxColor: Int): ZIO[R, IOError, Unit]
   }
 
-  trait PPMCanvasSerializer extends CanvasSerializer with Blocking { self =>
+  trait PPMCanvasSerializer extends CanvasSerializer with Blocking with Console with Clock { self =>
     def path: Path
     override def canvasSerializer: Service[Any] = new Service[Any] {
 
@@ -62,11 +64,12 @@ object CanvasSerializer {
             .mapError(e => IOError.CanvasRenderingError("Error opening file", e)).provide(self).use{
             channel =>
               (for {
-                _ <- (
+                (duration, _) <- (
                   Stream.fromEffect(headers(canvas, maxColor).map(Chunk(_))) ++
                     rowsStream(canvas, maxColor)
                   ).map(_.flatMap(_.getBytes |> Chunk.fromArray))
-                  .run(channelSink(channel))
+                  .run(channelSink(channel)).timed.provide(self)
+                _ <- console.putStr(s"Canvas serialization took ${duration.toMillis} millis")
               } yield ()).mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
           }
     }

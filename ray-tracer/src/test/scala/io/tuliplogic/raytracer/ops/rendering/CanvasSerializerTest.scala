@@ -9,6 +9,8 @@ import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.model.data.{Canvas, Color}
 import org.scalatest.WordSpec
 import zio.blocking.Blocking
+import zio.clock.Clock
+import zio.console.Console
 import zio.stream.{Sink, ZStream}
 import zio.{DefaultRuntime, IO, ZIO}
 
@@ -22,7 +24,7 @@ class CanvasSerializerTest extends WordSpec with DefaultRuntime {
 
   "canvas renderer" should {
     "write canvas as PPM file" in {
-      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live {
+      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live with Clock.Live with Console.Live {
         override def path: Path = Paths.get(canvasFile)
       }
       unsafeRun {
@@ -34,7 +36,7 @@ class CanvasSerializerTest extends WordSpec with DefaultRuntime {
     }
 
     "show that a point can rotate in the plane" in {
-      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live {
+      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live with Clock.Live with Console.Live {
         override def path: Path = Paths.get(canvasFile)
       }
 

@@ -1196,7 +1196,7 @@ trait LiveRasteringModule extends RasteringModule {
 
 [.build-lists: false]
 
-### Test `LiveRasteringModule` 
+### Test **LiveRasteringModule**
 1 - Define the method under test
 
 ```scala
@@ -1213,7 +1213,7 @@ val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
 
 [.build-lists: false]
 
-### Test `LiveRasteringModule` 
+### Test **LiveRasteringModule** 
 2 - Annotate the modules as mockable
 
 ```scala
@@ -1246,7 +1246,7 @@ val colorForRayExp: Expectation[WorldModule, Nothing, Color] =
 ---
 ^Let's go back to the code we wanted to test. We must take all the expectations, flatmap/zip them and build a managed environment for our environmental effect under test. We turn the expectations into managed environments, which are similar to the environments but they have also strong guarantees of executing a release step, no matter what. Think of them as a try with resources on steroids, that works on asynchronous code as well. We'll see shortly why we have to make these expectations `Managed`
 
-### Test `LiveRasteringModule` 
+### Test **LiveRasteringModule** 
 4 - Build the environment for the code under test
 
 [.code-highlight: 1-3]
@@ -1269,7 +1269,7 @@ appUnderTest.provideManaged(
 ---
 ^turn the expectations into managed environments, which are similar to the environments but they have also strong guarantees of executing a release step, no matter what. Think of them as a try with resources on steroids, that works on asynchronous code as well. We'll see shortly why we have to make these expectations `Managed`
 
-### Test `LiveRasteringModule` 
+### Test **LiveRasteringModule**
 5 - Assert on the results
 
 ```scala
@@ -1285,7 +1285,7 @@ assert(res, equalTo(List(
 ---
 ^Here's how the whole test looks like
 
-### Test `LiveRasteringModule`
+### Test **LiveRasteringModule**
 
 ```scala
 suite("LiveRasteringModule") {
@@ -1332,7 +1332,7 @@ therefore after computing the coordinates of the point in the screen, we have to
 because the camera transformation is the transformation to be applied to thw world in order to produce the effect of moving/orienting the camera around
 This transformation must be applied both to the point in the camera, and to the origin. Then the computation of the ray is trivial.
 
-### Live `CameraModule`
+### Live **CameraModule**
 ```scala
 trait Live extends CameraModule {
   val aTModule: ATModule.Service[Any]
@@ -1359,7 +1359,7 @@ trait Live extends CameraModule {
 ^To provide a color for a ray, first thing to do is to see if that ray hits something. This responsibility is delegated to another module, responsible to deal with the topological structure of our world. 
 * Let's define an intersection for a ray that hits a given shape
 
-### Live `WorldModule`
+### Live **WorldModule**
 [.code-highlight: 1]
 [.code-highlight: 1-9]
 [.code-highlight: 1-10]
@@ -1388,13 +1388,14 @@ trait Live extends WorldModule {
 * For the intersections, we need to traverse all the objects of the world, and look for the intersection between that object and the ray. This is delegated to the ray module that deals with all the possible shapes we want to handle (atm planes and spheres, but we can add cylinders, triangles, etc). I think you got the mechanism by now
 * Topology is also about finding if a point is shadowed by another shape, and for this we take the vector that goes from the point intersected by the ray, pointing towards the light source, and see if that ray has intersections. If it has, the point is in shadow, otherwise it is clear.
 
-### Live `WorldModule`
+### Live **WorldModule**
 #### `WorldTopologyModule`
 ![left fit](img/shadow.png) 
 
 [.code-highlight: 6-7]
 [.code-highlight: 1-7]
 [.code-highlight: 1-11]
+[.code-highlight: 1-18]
 ```scala
 trait Live extends WorldTopologyModule {
   val rayModule: RayModule.Service[Any]
@@ -1418,7 +1419,7 @@ trait Live extends WorldTopologyModule {
 
 ---
 ^ If we go back to our world module, the next thing to do is finding the hit components 
-### Live `WorldModule`
+### Live **WorldModule**
 ```scala
 case class Intersection(t: Double, sceneObject: Shape) 
 
@@ -1510,7 +1511,7 @@ trait Live extends WorldModule {
 ---
 ^The simplest implementation of the phong reflection model, is something that when in shadow displays black, and when in light displays white
 ### Determine the color
-#### `PhongReflectionModule` - Dummy implementation
+#### **PhongReflectionModule** - Dummy implementation
 
 ```scala
 trait BlackWhite extends PhongReflectionModule {
@@ -1599,9 +1600,148 @@ program(Pt(2, 2, -10))
 ```
 
 ---
-^
-### Display the first canvas - complete
-TODO: here show the picture with shadows, so something works. Show also how big is the final working environment for this
+^One nice thing of using simple intersection types is that we can create modules that satisfy multiple dependencies, e.g.
+### Display the first canvas - /4
+
+Group modules in **trait**
+
+```scala
+trait BasicModules
+  extends NormalReflectModule.Live
+  with RayModule.Live
+  with ATModule.Live
+  with MatrixModule.BreezeLive
+  with WorldModule.Live
+  with WorldTopologyModule.Live
+  with WorldHitCompsModule.Live
+  with CameraModule.Live
+  with RasteringModule.Live
+  with Blocking.Live
+```
+
+---
+^Given that definition, we can just provide our program with the missing module, which is the phong reflection module, and we are done
+### Display the first canvas - /4
+
+Group modules
+
+```scala
+def program(viewFrom: Pt):
+  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
+
+program(Pt(2, 2, -10))
+  .provide(new BasicModules with PhongReflectionModule.BlackWhite)
+```
+
+---
+^We can now see if we produce something slightly meaningful, running in sequence a program for different points of view
+### Display the first canvas - /4
+![left fit](img/simple-world-shadows-anim.gif) 
+
+Group modules
+
+```scala
+def program(viewFrom: Pt):
+  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
+
+program(Pt(2, 2, -10))
+  .provide(new BasicModules with PhongReflectionModule.BlackWhite)
+
+override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
+    ZIO.traverse(-18 to -6)(z => program(Pt(2, 2, z))
+      .provide(
+        new BasicModules with PhongReflectionModule.BlackWhite
+      )
+    ).foldM(err =>
+      console.putStrLn(s"Execution failed with: $err").as(1),
+      _ => UIO.succeed(0)
+    )
+```
+
+---
+^So far we didn't look at the color of objects, or their material properties, but that's what makes the colors of an object. So we define a data type that collects the material properties that make how it looks like
+*Ambient models the presence of an "ambient" light uniformly distributed in the world
+*Diffusion models the behavior of light hitting a matte material and assumes that the effect of light hitting a material at a give point is just depending on the projection of the ray of light on the normal vector to the surface at that point. This will affect any eye observing that point in LOS.
+*Specularity/shininess model how the source of light is reflected by the material, i.e. how you are going to see that lamp reflected on the object itself.
+
+
+![left fit](img/specular-shininess.png) 
+### Color the scene
+
+Describe material properties
+
+```scala
+case class Material(
+  color: Color, // the basic color
+  ambient: Double,  // ∈ [0, 1] 
+  diffuse: Double,  // ∈ [0, 1]
+  specular: Double, // ∈ [0, 1]
+  shininess: Double, // ∈ [10, 200]
+)
+```
+
+---
+^Without diving into further details, we implement handling of these components in terms of separate modules
+
+```scala
+trait Live extends PhongReflectionModule {
+  val aTModule: ATModule.Service[Any]
+  val normalReflectModule: NormalReflectModule.Service[Any]
+  val lightDiffusionModule: LightDiffusionModule.Service[Any]
+  val lightReflectionModule: LightReflectionModule.Service[Any]
+
+override val phongReflectionModule: Service[Any] = new Service[Any] {
+  override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
+    /* ... */
+    for {
+      color          <- colorAtSurfacePoint
+      effectiveColor <- UIO.succeed(color * pointLight.intensity)
+      ambient        <- UIO(PhongComponents.ambient(effectiveColor * hitComps.shape.material.ambient))
+      res            <- if (inShadow) UIO(PhongComponents.allBlack) else diffuseAndRefl(effectiveColor)
+    } yield ambient + res
+  }
+```
+
+---
+^Without diving into further details, we implement handling of these components in terms of separate modules
+
+![left fit](img/phong-animated.gif) 
+
+#### Use the live module
+
+[.code-highlight: 1-1]
+[.code-highlight: 1-2]
+[.code-highlight: 1-3]
+[.code-highlight: 1-6]
+```scala
+program(Pt(2, 2, -10))
+  .provide(
+    new BasicModules 
+    with PhongReflectionModule.Live
+    // with PhongReflectionModule.BlackWhite
+  )
+```
+
+---
+^ With what we developed so far (plus some tricks to handle patterns, but they don't need anything more than just affine transformation) we are able to put together a scene like this, which is not too bad.  
+
+![left fit](img/three-spheres-opaque.png) 
+
+
+#### Render 3 spheres
+
+[.code-highlight: 1-6]
+[.code-highlight: 1-8]
+```scala
+case class Material(
+  pattern: Pattern, // the color pattern
+  ambient: Double,  // ∈ [0, 1] 
+  diffuse: Double,  // ∈ [0, 1]
+  specular: Double, // ∈ [0, 1]
+  shininess: Double, // ∈ [10, 200]
+  reflective: Double, // ∈ [0, 1]
+)
+```
 
 ---
 

@@ -69,7 +69,7 @@ object PhongReflectionModule {
 
       override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
 
-        def colorAtSurfacePoint: IO[AlgebraicError, Color] =
+        def colorAtSurfacePoint: UIO[Color] =
           for {
             objectTf     <- UIO(hitComps.shape.transformation)
             objectTfInv  <- UIO.succeed(objectTf.inverted)
@@ -81,7 +81,7 @@ object PhongReflectionModule {
 
         def lightV: UIO[Vec] = (pointLight.position - hitComps.hitPt).normalized.orDie
 
-        def diffuseRefl(effectiveColor: Color): UIO[PhongComponents] = lightV.flatMap{ lv =>
+        def diffuseAndRefl(effectiveColor: Color): UIO[PhongComponents] = lightV.flatMap{ lv =>
             lightDiffusionModule.diffusion(effectiveColor, hitComps.shape.material.diffuse, lv, hitComps.normalV).zipPar(
             lightReflectionModule.reflection(lv, hitComps.normalV, hitComps.eyeV, pointLight.intensity, hitComps.shape.material.specular, hitComps.shape.material.shininess)
           ).map {
@@ -90,10 +90,10 @@ object PhongReflectionModule {
         }
 
         for {
-          color          <- colorAtSurfacePoint.orDie
+          color          <- colorAtSurfacePoint
           effectiveColor <- UIO.succeed(color * pointLight.intensity)
           ambient        <- UIO(PhongComponents.ambient(effectiveColor * hitComps.shape.material.ambient))
-          res            <- if (inShadow) UIO(PhongComponents.allBlack) else diffuseRefl(effectiveColor)
+          res            <- if (inShadow) UIO(PhongComponents.allBlack) else diffuseAndRefl(effectiveColor)
           } yield ambient + res
       }
     }
