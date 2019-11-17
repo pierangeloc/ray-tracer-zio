@@ -1,9 +1,9 @@
-  autoscale: true
+autoscale: true
 slidenumbers: false
 build-lists: true
 list: alignment(left)
 image: background-color: #FF0000
-
+theme: Fira, 3
 
 # Environmental effects
 
