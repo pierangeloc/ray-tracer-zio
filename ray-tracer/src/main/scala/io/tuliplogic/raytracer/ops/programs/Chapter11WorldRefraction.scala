@@ -56,7 +56,7 @@ object Chapter11WorldRefraction extends App {
   val program = for {
     w      <- world
       canvas <- RaytracingProgram.drawOnCanvas(w, cameraFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
-      _      <- CanvasSerializer.>.render(canvas, 255)
+      _      <- CanvasSerializer.>.serialize(canvas, 255)
   } yield ()
 
 }

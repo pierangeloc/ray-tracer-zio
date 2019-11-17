@@ -737,6 +737,15 @@ testM("vectors and points form an affine space") (
 ```
 
 ---
+^once we define points and vectors, the definition of a ray is immediate:
+
+```scala
+case class Ray(origin: Pt, direction: Vec) {
+  def positionAt(t: Double): Pt = origin + (direction * t)
+}
+```
+
+---
 ^ The transformations we are interested in are not exotic things, but the minimal requirements we might ask from something representing the reality, i.e. translations, rotations, scaling of vectors and points. At the end all of this boils down to multiplying matrices.
 So provided 
 * we have an AT type for our affine transformation 
@@ -1312,13 +1321,6 @@ suite("LiveRasteringModule") {
 #### Takeaway: Implement and test every layer only in terms of the immediately underlying layer
 
 ---
-^So the takeaway of this is...
-
-### Test
-
-#### Takeaway: Implement and test every layer only in terms of the immediately underlying layer
-
----
 ^And now that we got warmed up with this, let's go on and implement all the logic through modules
 
 ## Modules all the way down
@@ -1352,6 +1354,271 @@ trait Live extends CameraModule {
       } yield Ray(origin, direction)
   }
 ```
+
+---
+^To provide a color for a ray, first thing to do is to see if that ray hits something. This responsibility is delegated to another module, responsible to deal with the topological structure of our world. 
+* Let's define an intersection for a ray that hits a given shape
+
+### Live `WorldModule`
+[.code-highlight: 1]
+[.code-highlight: 1-9]
+[.code-highlight: 1-10]
+[.code-highlight: 1-12]
+[.code-highlight: 1-15]
+```scala
+case class Intersection(t: Double, sceneObject: Shape) 
+
+trait Live extends WorldModule {
+  val worldTopologyModule: WorldTopologyModule.Service[Any]
+
+  override val worldModule: Service[Any] = new Service[Any] {
+    def colorForRay(world: World, ray: Ray, remaining: Int = 5): ZIO[Any, RayTracerError, Color] =
+      for {
+        intersections <- worldTopologyModule.intersections(world, ray)
+        maybeHitComps <- intersections.find(_.t > 0).traverse(i => hitComps(i))
+        color <- maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) { hc =>
+          worldTopologyModule.isShadowed(world, hc.overPoint).flatMap(process(hc, _))
+        }
+        /* ... */
+      } yield color
+```
+
+---
+^Let's look directly at the Live implementation of the `WorldTopologyModule`
+* For the intersections, we need to traverse all the objects of the world, and look for the intersection between that object and the ray. This is delegated to the ray module that deals with all the possible shapes we want to handle (atm planes and spheres, but we can add cylinders, triangles, etc). I think you got the mechanism by now
+* Topology is also about finding if a point is shadowed by another shape, and for this we take the vector that goes from the point intersected by the ray, pointing towards the light source, and see if that ray has intersections. If it has, the point is in shadow, otherwise it is clear.
+
+### Live `WorldModule`
+#### `WorldTopologyModule`
+![left fit](img/shadow.png) 
+
+[.code-highlight: 6-7]
+[.code-highlight: 1-7]
+[.code-highlight: 1-11]
+```scala
+trait Live extends WorldTopologyModule {
+  val rayModule: RayModule.Service[Any]
+
+  override val worldTopologyModule: Service[Any] = new Service[Any] {
+
+    def intersections(world: World, ray: Ray): ZIO[Any, Nothing, List[Intersection]] =
+      ZIO.traverse(world.objects)(rayModule.intersect(ray, _)).map(_.flatten.sortBy(_.t))
+
+    def isShadowed(world: World, pt: Pt): ZIO[Any, Nothing, Boolean] =
+      for {
+        v        <- UIO(world.pointLight.position - pt)
+        distance <- v.norm
+        vNorm    <- v.normalized.orDie
+        xs       <- intersections(world, Ray(pt, vNorm))
+        hit      <- rayModule.hit(xs)
+      } yield hit.exists(i => i.t > 0 && i.t < distance)
+  }
+} 
+```
+
+---
+^ If we go back to our world module, the next thing to do is finding the hit components 
+### Live `WorldModule`
+```scala
+case class Intersection(t: Double, sceneObject: Shape) 
+
+trait Live extends WorldModule {
+  val worldTopologyModule: WorldTopologyModule.Service[Any]
+  val worldHitCompsModule: WorldHitCompsModule.Service[Any]
+
+  override val worldModule: Service[Any] = new Service[Any] {
+    def colorForRay(world: World, ray: Ray, remaining: Int = 5): ZIO[Any, RayTracerError, Color] =
+      for {
+        intersections <- worldTopologyModule.intersections(world, ray)
+        maybeHitComps <- intersections.find(_.t > 0).traverse(i => worldHitCompsModule.hitComps(i))
+        color <- maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) { hc =>
+          worldTopologyModule.isShadowed(world, hc.overPoint).flatMap(process(hc, _))
+        }
+        /* ... */
+      } yield color
+```
+
+
+---
+^ Let's implement the hit components module. We need to be able to compute the normal to our shape in a given hit point, and we give this responsibility to a different module, the ` NormalReflectModule`
+### Live `WorldModule`
+#### `HitCompsModule`
+
+![left fit](img/hit-components.png) 
+
+```scala
+case class HitComps(
+  shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec
+)
+
+trait Live extends WorldHitCompsModule {
+  val normalReflectModule: NormalReflectModule.Service[Any]
+
+  val worldHitCompsModule: WorldHitCompsModule.Service[Any] = new Service[Any] {
+    def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]):
+     ZIO[Any, GenericError, HitComps] =
+    for {
+      pt       <- UIO(ray.positionAt(hit.t))
+      normalV  <- normalReflectModule.normal(pt, hit.sceneObject)
+      eyeV     <- UIO(-ray.direction)
+      reflectV <- normalReflectModule.reflect(ray.direction, normalV)
+    } yield HitComps(hit.sceneObject, pt, normalV, eyeV, reflectV)
+  }
+}
+```
+
+---
+^ So going back to our WorldModule, first we get the intersections
+* then we get the hit components. If no hit, display black
+* If hit, calculate the hit components (those 4 vectors we saw before), determine if the point is shadowed, and then deterine the color. To determine the color, let's introduce another module that, from the hit components, can determine the color to be displayed for our ray. 
+Usual procedure: Add the dependency, use it, provide an implementation. We use for this the Phong reflection model
+### Determine the color
+#### `PhongReflectionModule`
+
+
+[.code-highlight: 1-10]
+[.code-highlight: 1-12]
+[.code-highlight: 1-13]
+[.code-highlight: 1-24]
+```scala
+trait Live extends WorldModule {
+    val worldTopologyModule: WorldTopologyModule.Service[Any]
+    val worldHitCompsModule: WorldHitCompsModule.Service[Any]
+    val phongReflectionModule: PhongReflectionModule.Service[Any]
+
+    override val worldModule: Service[Any] = new Service[Any] {
+      def colorForRay(world: World, ray: Ray, remaining: Int = 5):
+        ZIO[Any, RayTracerError, Color] =
+        for {
+          intersections <- worldTopologyModule.intersections(world, ray)
+          maybeHitComps <- intersections.find(_.t > 0)
+            .traverse(worldHitCompsModule.hitComps(ray, _, intersections))
+          color <- maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) {
+            hc =>
+              for {
+                shadowed <- worldTopologyModule
+                  .isShadowed(world, hc.overPoint)
+                color <- phongReflectionModule
+                  .lighting(world.pointLight, hc, shadowed).map(_.toColor)
+              } yield color
+          }
+        } yield color
+    }
+  }
+```
+
+---
+^The simplest implementation of the phong reflection model, is something that when in shadow displays black, and when in light displays white
+### Determine the color
+#### `PhongReflectionModule` - Dummy implementation
+
+```scala
+trait BlackWhite extends PhongReflectionModule {
+  override val phongReflectionModule: Service[Any] = new Service[Any] {
+
+    override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
+      if (inShadow) UIO(PhongComponents.allBlack)
+      else UIO(PhongComponents.allWhite)
+    }
+  }
+}
+```
+
+---
+^We have enough elements now to build a first version of our program
+### Display the first canvas / 1
+
+```scala
+def drawOnCanvasWithCamera(world: World, camera: Camera, canvas: Canvas):
+  ZIO[RasteringModule, RayTracerError, Unit] = 
+  for {
+    coloredPointsStream <- RasteringModule.>.raster(world, camera)
+    _                   <- coloredPointsStream.mapM(cp => canvas.update(cp)).run(Sink.drain)
+  } yield ()
+
+def program(viewFrom: Pt):
+  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] =
+  for {
+    camera <- cameraFor(viewFrom: Pt)
+    w      <- world
+    canvas <- drawOnCanvasWithCamera(w, camera)
+    _      <- CanvasSerializer.>.serialize(canvas, 255)
+  } yield ()
+```
+
+---
+^If we try to provide environments to our program, we see that the compiler guides us to close the holes
+### Display the first canvas / 2
+
+```scala
+def program(viewFrom: Pt):
+  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
+
+program(Pt(2, 2, -10))
+  .provide(
+    new CanvasSerializer.PPMCanvasSerializer 
+    with RasteringModule.ChunkRasteringModule 
+    with ATModule.Live
+  )
+// Members declared in zio.blocking.Blocking
+// [error]   val blocking: zio.blocking.Blocking.Service[Any] = ???
+// [error]
+// [error]   // Members declared in modules.RasteringModule.ChunkRasteringModule
+// [error]   val cameraModule: modules.CameraModule.Service[Any] = ???
+// [error]   val worldModule: modules.WorldModule.Service[Any] = ???
+// [error]
+// [error]   // Members declared in geometry.affine.ATModule.Live
+// [error]   val matrixModule: geometry.matrix.MatrixModule.Service[Any] = ???
+```
+
+---
+^We can close the holes bit by bit following the compiler
+I find this more readable than implicits not found thrown when a typeclass lookup is not successful when adopting tagless final technique
+### Display the first canvas / 3
+
+```scala
+def program(viewFrom: Pt):
+  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
+
+program(Pt(2, 2, -10))
+  .provide(
+    new CanvasSerializer.PPMCanvasSerializer 
+    with RasteringModule.ChunkRasteringModule 
+    with ATModule.Live 
+    with CameraModule.Live 
+    with MatrixModule.BreezeLive 
+    with WorldModule.Live
+    )
+  )
+// [error]   // Members declared in io.tuliplogic.raytracer.ops.model.modules.WorldModule.Live
+// [error]   val phongReflectionModule: io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.Service[Any] = ???
+// [error]   val worldHitCompsModule: io.tuliplogic.raytracer.ops.model.modules.WorldHitCompsModule.Service[Any] = ???
+// [error]   val worldReflectionModule: io.tuliplogic.raytracer.ops.model.modules.WorldReflectionModule.Service[Any] = ???
+// [error]   val worldRefractionModule: io.tuliplogic.raytracer.ops.model.modules.WorldRefractionModule.Service[Any] = ???
+// [error]   val worldTopologyModule: io.tuliplogic.raytracer.ops.model.modules.WorldTopologyModule.Service[Any] = ???
+```
+
+---
+^
+### Display the first canvas - complete
+TODO: here show the picture with shadows, so something works. Show also how big is the final working environment for this
+
+---
+
+^One nice characteristic of environmental effects is that they allow:
+* Grouping environments by `with`
+* Provide partial implementation. E.g. We will rarely change the Rastering/CanvasSerializer/CameraModule/MatrixModule/AtModule. We will likely change the implementation of our reflection/refraction etc
+* and then we can swap stuff around achieving different visual effects
+
+### Providing partial environments
+---
+^We can close the holes bit by bit following the compiler
+I find this more readable than implicits not found thrown when a typeclass lookup is not successful when adopting tagless final technique
+### Display the first canvas / 3
+---
+^We can close the holes bit by bit following the compiler
+I find this more readable than implicits not found thrown when a typeclass lookup is not successful when adopting tagless final technique
+### Display the first canvas / 3
 
 ---
 

@@ -34,11 +34,11 @@ object NormalReflectModule {
       def normal(p: Pt, o: Shape): ZIO[Any, Nothing, Vec] =
         (for {
           inverseTf <- aTModule.invert(o.transformation)
-            objectPt <- aTModule.applyTf(inverseTf, p)
-            objectNormal <- canonicalNormal(objectPt, o)
-            inverseTransposed <- aTModule.transpose(inverseTf)
-            worldNormal <- aTModule.applyTf(inverseTransposed, objectNormal)
-            normalized <- worldNormal.normalized
+          objectPt <- aTModule.applyTf(inverseTf, p)
+          objectNormal <- canonicalNormal(objectPt, o)
+          inverseTransposed <- aTModule.transpose(inverseTf)
+          worldNormal <- aTModule.applyTf(inverseTransposed, objectNormal)
+          normalized <- worldNormal.normalized
         } yield normalized).orDie
     }
   }

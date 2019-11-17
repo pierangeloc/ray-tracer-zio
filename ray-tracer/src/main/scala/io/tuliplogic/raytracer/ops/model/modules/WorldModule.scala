@@ -5,7 +5,7 @@ import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.ops.model.data.{Color, Ray, World}
 import zio.interop.catz._
 import zio.macros.annotation.mockable
-import zio.{UIO, ZIO}
+import zio.{IO, UIO, ZIO}
 
 @mockable
 trait WorldModule {
@@ -34,18 +34,17 @@ object WorldModule {
         for {
           intersections <- worldTopologyModule.intersections(world, ray)
           maybeHitComps <- intersections.find(_.t > 0).traverse(worldHitCompsModule.hitComps(ray, _, intersections))
-          color <- maybeHitComps
-            .map(hc =>
+          color <- maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) {
+            hc =>
               for {
-                shadowed       <- worldTopologyModule.isShadowed(world, hc.overPoint)
-                color          <- phongReflectionModule.lighting(world.pointLight, hc, shadowed).map(_.toColor)
+                shadowed <- worldTopologyModule.isShadowed(world, hc.overPoint)
+                color <- phongReflectionModule.lighting(world.pointLight, hc, shadowed).map(_.toColor)
                 //invoke this only if remaining > 0. Also, reflected color and color can be computed in parallel
                 reflectedColor <- if (remaining > 0) worldReflectionModule.reflectedColor(world, hc, remaining - 1) else UIO(Color.black)
                 refractedColor <- worldRefractionModule.refractedColor(world, hc, remaining)
               } yield color + reflectedColor + refractedColor
-            ).getOrElse(UIO(Color.black))
+          }
         } yield color
-
     }
   }
 

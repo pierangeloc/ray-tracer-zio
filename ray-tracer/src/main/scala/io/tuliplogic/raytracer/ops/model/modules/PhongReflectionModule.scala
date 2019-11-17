@@ -38,6 +38,7 @@ object PhongReflectionModule {
 
   object PhongComponents {
     def allBlack = PhongComponents(Color.black, Color.black, Color.black) //the zero of PhongComponents monoid
+    def allWhite = PhongComponents(Color.white, Color.white, Color.white) //the zero of PhongComponents monoid
 
     def ambient(c: Color) = PhongComponents(c, Color.black, Color.black)
     def diffuse(c: Color) = PhongComponents(Color.black, c, Color.black)

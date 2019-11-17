@@ -28,7 +28,7 @@ class CanvasSerializerTest extends WordSpec with DefaultRuntime {
       unsafeRun {
         for {
           newCanvas <- Canvas.create(w, h)
-          _         <- cr.canvasSerializer.render(newCanvas, 256)
+          _         <- cr.canvasSerializer.serialize(newCanvas, 256)
         } yield ()
       }
     }
@@ -62,7 +62,7 @@ class CanvasSerializerTest extends WordSpec with DefaultRuntime {
               }
             }
             .run(Sink.collectAll[Unit])
-          _ <- cr.canvasSerializer.render(c, 256)
+          _ <- cr.canvasSerializer.serialize(c, 256)
         } yield ()).provide(env)
       }
     }

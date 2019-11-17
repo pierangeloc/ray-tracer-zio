@@ -18,7 +18,7 @@ trait CanvasSerializer {
 
 object CanvasSerializer {
   trait Service[R] {
-    def render(canvas: Canvas, maxColor: Int): ZIO[R, IOError, Unit]
+    def serialize(canvas: Canvas, maxColor: Int): ZIO[R, IOError, Unit]
   }
 
   trait PPMCanvasSerializer extends CanvasSerializer with Blocking { self =>
@@ -57,7 +57,7 @@ object CanvasSerializer {
           channel.write(chunk, pos).flatMap(written => UIO(pos + written))
         }
 
-      override def render(canvas: Canvas, maxColor: Int): ZIO[Any, IOError, Unit] =
+      override def serialize(canvas: Canvas, maxColor: Int): ZIO[Any, IOError, Unit] =
           AsynchronousFileChannel.open(zio.nio.file.Path.fromJava(path), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
             .mapError(e => IOError.CanvasRenderingError("Error opening file", e)).provide(self).use{
             channel =>
@@ -73,8 +73,8 @@ object CanvasSerializer {
   }
 
   object > extends CanvasSerializer.Service[CanvasSerializer] {
-    override def render(canvas: Canvas, maxColor: Int): ZIO[CanvasSerializer, IOError, Unit] =
-      ZIO.accessM(_.canvasSerializer.render(canvas, maxColor))
+    override def serialize(canvas: Canvas, maxColor: Int): ZIO[CanvasSerializer, IOError, Unit] =
+      ZIO.accessM(_.canvasSerializer.serialize(canvas, maxColor))
   }
 
 }

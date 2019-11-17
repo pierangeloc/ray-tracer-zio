@@ -11,6 +11,7 @@ import java.nio.file.Path
 
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
+import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.ops.model.modules.{CameraModule, RasteringModule, WorldModule}
 
 object SimpleWorld extends App{
@@ -31,7 +32,7 @@ object SimpleWorld extends App{
   def program(viewFrom: Pt): ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] = for {
     w      <- world
     canvas <- RaytracingProgram.drawOnCanvas(w, viewFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
-    _      <- CanvasSerializer.>.render(canvas, 255)
+    _      <- CanvasSerializer.>.serialize(canvas, 255)
   } yield ()
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =

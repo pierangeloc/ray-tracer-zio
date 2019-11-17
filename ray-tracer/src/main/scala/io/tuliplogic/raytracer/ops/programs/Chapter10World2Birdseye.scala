@@ -76,7 +76,7 @@ object Chapter10World2Birdseye extends App {
   def program(from: Pt) = for {
     w      <- world
       canvas <- RaytracingProgram.drawOnCanvas(w, from, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
-      _      <- CanvasSerializer.>.render(canvas, 255)
+      _      <- CanvasSerializer.>.serialize(canvas, 255)
   } yield ()
 
 }
