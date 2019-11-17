@@ -1853,6 +1853,12 @@ trait NoReflectionModule extends WorldReflectionModule {
 
 #### Handling reflection - Noop module
 
+![left fit](img/reflective-spheres-with-non-reflective-environment.png) 
+
+[.build-lists: false]
+- Red: reflective = 0.9
+- Green/white: reflective = 0.6
+
 ```scala
 program(
   from = Pt(57, 20, z),
@@ -1860,12 +1866,93 @@ program(
 ).provide {
   new BasicModules 
   with PhongReflectionModule.Live
-  with 
+  with WorldReflectionModule.NoReflectionModule
+}
+```
+
+--- 
+
+#### Handling reflection - Live module
+
+![left fit](img/reflective-spheres-with-reflective-environment.pbm) 
+
+[.build-lists: false]
+- Red: reflective = 0.9
+- Green/white: reflective = 0.6
+
+```scala
+program(
+  from = Pt(57, 20, z),
+  to = Pt(20, 0, 20)
+).provide {
+  new BasicModules 
+  with PhongReflectionModule.Live
+  with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 }
 ```
 
 ---
 
+### Alternative approach
+#### Provide partial environments
+
+```scala
+val program: ZIO[RasteringModule, Nothing, Unit]
+
+val partial = program
+  .provideSome[WorldReflectionModule](
+    f: WorldReflectionModule => RasteringModule
+  ): ZIO[WorldReflectionModule, E, A]
+
+partial.provide(new WorldReflectionModule.Live)
+```
+
+---
+
+### Conclusion - **Environmental Effects**
+```scala
+ZIO[R, E, A]
+```
+
+- Do not require HKT, typeclasses, etc
+- Do not abuse typeclasses (coherence?)
+- Can group capabilities (very difficult with TF)
+- Can provide capabilities one at a time
+- Are not dependent on implicits (survive refactoring)
+
+---
+
+### Conclusion - **Environmental Effects** - ZIO
+```scala
+ZIO[R, E, A]
+```
+- Foundational property of ZIO effects
+- Can model requirements, or the absence thereof
+- Can be tested with low learning curve
+
+---
+
+### Conclusion - **Environmental Effects** - Module pattern
+
+- Low entry barrier, very mechanical
+- Macros help with boilerplate
+- Handle circular dependencies
+
+---
+
+# Thank you!
+
+### **Questions?**
+
+---
+
+---
+
+---
+
+---
+
+---
 
 ^One nice characteristic of environmental effects is that they allow:
 * Grouping environments by `with`
