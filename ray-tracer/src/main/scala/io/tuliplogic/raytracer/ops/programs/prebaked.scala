@@ -50,6 +50,20 @@ trait NoReflectionModules extends
   with WorldRefractionModule.NoRefractionModule
   with WorldReflectionModule.NoReflectionModule
 
+trait ReflectionModules extends
+  PhongReflectionModule.Live
+  with LightDiffusionModule.Live
+  with LightReflectionModule.Live
+  with WorldRefractionModule.NoRefractionModule
+  with WorldReflectionModule.NoReflectionModule
+
+trait WorldReflectionModules extends
+  PhongReflectionModule.Live
+  with LightDiffusionModule.Live
+  with LightReflectionModule.Live
+  with WorldReflectionModule.Live
+  with WorldRefractionModule.NoRefractionModule
+
 trait VerySimpleModules
   extends BasicModules
   with BlackWhiteColorModules
@@ -58,3 +72,10 @@ trait VerySimpleModulesColored
   extends BasicModules
   with NoReflectionModules
 
+trait SimpleModulesWorldReflection
+  extends BasicModules
+  with WorldReflectionModules
+
+trait SimpleModulesNoWorldReflection
+  extends BasicModules
+    with ReflectionModules

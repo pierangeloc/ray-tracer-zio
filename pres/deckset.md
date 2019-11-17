@@ -1644,9 +1644,6 @@ Group modules
 def program(viewFrom: Pt):
   ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
 
-program(Pt(2, 2, -10))
-  .provide(new BasicModules with PhongReflectionModule.BlackWhite)
-
 override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     ZIO.traverse(-18 to -6)(z => program(Pt(2, 2, z))
       .provide(
@@ -1688,16 +1685,20 @@ trait Live extends PhongReflectionModule {
   val aTModule: ATModule.Service[Any]
   val normalReflectModule: NormalReflectModule.Service[Any]
   val lightDiffusionModule: LightDiffusionModule.Service[Any]
-  val lightReflectionModule: LightReflectionModule.Service[Any]
 
 override val phongReflectionModule: Service[Any] = new Service[Any] {
-  override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {
+  override def lighting(
+    pointLight: PointLight, hitComps: HitComps, inShadow: Boolean
+  ): UIO[PhongComponents] = {
     /* ... */
     for {
       color          <- colorAtSurfacePoint
       effectiveColor <- UIO.succeed(color * pointLight.intensity)
-      ambient        <- UIO(PhongComponents.ambient(effectiveColor * hitComps.shape.material.ambient))
-      res            <- if (inShadow) UIO(PhongComponents.allBlack) else diffuseAndRefl(effectiveColor)
+      ambient        <- UIO(PhongComponents.ambient(
+        effectiveColor * hitComps.shape.material.ambient)
+      )
+      res            <- if (inShadow) UIO(PhongComponents.allBlack) 
+        else diffuse(effectiveColor)
     } yield ambient + res
   }
 ```
@@ -1723,15 +1724,18 @@ program(Pt(2, 2, -10))
 ```
 
 ---
-^ With what we developed so far (plus some tricks to handle patterns, but they don't need anything more than just affine transformation) we are able to put together a scene like this, which is not too bad.  
+^ With what we developed so far (plus some tricks such as replacing the simple color with a pattern, but they don't need anything more than just affine transformations) we are able to put together a scene like this, which is not too bad. 
+Let's add a `reflective` parameter and put it into use  
 
 ![left fit](img/three-spheres-opaque.png) 
 
 
-#### Render 3 spheres
+#### Render 3 spheres - reflect light source
 
 [.code-highlight: 1-6]
-[.code-highlight: 1-8]
+[.code-highlight: 1-6, 8-14]
+[.code-highlight: 1-6, 8-14, 15-18]
+[.code-highlight: 1-6, 8-14, 15-18, 19-25]
 ```scala
 case class Material(
   pattern: Pattern, // the color pattern
@@ -1741,9 +1745,127 @@ case class Material(
   shininess: Double, // ∈ [10, 200]
   reflective: Double, // ∈ [0, 1]
 )
+
+trait Live extends PhongReflectionModule {
+  /* other modules */
+  val lightReflectionModule: LightReflectionModule.Service[Any]
+}
+
+trait RenderingModulesV1
+  extends PhongReflectionModule.Live
+  with LightDiffusionModule.Live
+
+program(
+  from = Pt(57, 20, z),
+  to = Pt(20, 0, 20)
+).provide {
+  new BasicModules 
+  with RenderingModulesV1
+}
 ```
 
 ---
+^In our hit components we have already computed the reflected ray. All we have to do is compute how that reflected ray sees the world, find the color, multiply it by the `reflective` parameter of our material, and add it to the natural color of the object that we computed so far. The computation is delegated to the `WorldReflectionModule`
+
+![left fit](img/hit-components.png) 
+
+#### Handling reflection
+
+Pimp up the `WorldModule`
+
+[.code-highlight: 1-3]
+[.code-highlight: 1-13]
+[.code-highlight: 1-14]
+[.code-highlight: 1-19]
+```scala
+trait Live extends WorldModule {
+  /* old modules required */
+  val worldReflectionModule: WorldReflectionModule.Service[Any]
+
+  override val worldModule: Service[Any] = new Service[Any] {
+    def colorForRay(world: World, ray: Ray): ZIO[Any, RayTracerError, Color] =
+      for {
+        intersections <- /* find intersections */
+        maybeHitComps <- /* find hit components? */
+        color <- maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) {
+          hc =>
+            for {
+              color <- /* standard computation of color */  
+              reflectedColor <- worldReflectionModule.reflectedColor(world, hc) 
+            } yield color + reflectedColor + refractedColor
+        }
+      } yield color
+  }
+}
+```
+
+---
+^The WorldReflectionModule is responsible for computing the view of the world from a reflected ray perspective
+
+![left fit](img/hit-components.png) 
+
+#### Handling reflection - Live
+
+
+[.code-highlight: 1, 4-9]
+[.code-highlight: 1, 4-10]
+[.code-highlight: 1, 4-11]
+[.code-highlight: 1-16]
+```scala
+trait Live extends WorldReflectionModule {
+  val worldModule: WorldModule.Service[Any]
+
+  val worldReflectionModule = new WorldReflectionModule.Service[Any] {
+    def reflectedColor(world: World, hitComps: HitComps, remaining: Int):
+      ZIO[Any, RayTracerError, Color] =
+      if (hitComps.shape.material.reflective == 0) {
+        UIO(Color.black)
+      } else {
+        val reflRay = Ray(hitComps.overPoint, hitComps.rayReflectV)
+        worldModule.colorForRay(world, reflRay, remaining).map(c =>
+          c * hitComps.shape.material.reflective
+        )
+      }
+  }
+}
+```
+
+- Circular dependency! :muscle: :muscle:
+
+---
+^Calculating reflection can be pretty expensive, as it's like having a much higher number of observers for which we have to calculate all the rays. It can also introduce explosive behavior, like when you look at 2 mirrors face 2 face and you see the infinite, so we introduce also a mechanism to limit the recursion depth, but I don't talk about it here.
+But considering it's expensive, it can be handy to provide an implementation of the reflectin module that does nothing and returns black. This can be useful if I want to first check how an image looks like approx and then later compute it in all its beauty
+
+#### Handling reflection - Noop module
+```scala
+trait NoReflectionModule extends WorldReflectionModule {
+  val worldReflectionModule = new WorldReflectionModule.Service[Any] {
+    def reflectedColor(
+      world: World, 
+      hitComps: HitComps, 
+      remaining: Int
+    ): ZIO[Any, RayTracerError, Color] = UIO.succeed(Color.black)
+  }
+}
+```
+
+--- 
+
+#### Handling reflection - Noop module
+
+```scala
+program(
+  from = Pt(57, 20, z),
+  to = Pt(20, 0, 20)
+).provide {
+  new BasicModules 
+  with PhongReflectionModule.Live
+  with 
+}
+```
+
+---
+
 
 ^One nice characteristic of environmental effects is that they allow:
 * Grouping environments by `with`

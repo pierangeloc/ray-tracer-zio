@@ -27,7 +27,8 @@ object WorldReflectionModule {
     val worldModule: WorldModule.Service[Any]
 
     val worldReflectionModule = new WorldReflectionModule.Service[Any] {
-      def reflectedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[Any, RayTracerError, Color] =
+      def reflectedColor(world: World, hitComps: HitComps, remaining: Int):
+        ZIO[Any, RayTracerError, Color] =
         if (hitComps.shape.material.reflective == 0) {
           UIO(Color.black)
         } else {
