@@ -42,9 +42,9 @@ object SimpleWorld extends App{
           override def path: Path = Paths.get(s"$canvasFile-$z.ppm")
         }
       }
-    ).foldM(err =>
-      console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1),
-      _ => UIO.succeed(0)
-    )
+    ).timed.foldM(err =>
+    console.putStrLn(s"Execution failed with: $err").as(1),
+    { case (duration, _) => console.putStrLn(s"rendering took ${duration.toMillis} ms") *> UIO.succeed(0) }
+  )
 
 }

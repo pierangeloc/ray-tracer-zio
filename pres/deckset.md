@@ -18,14 +18,14 @@ theme: Fira, 3
 ---
 # Agenda
 
-1. Functional Effects
+1. ZIO - 101
 1. Environmental effects
-1x. Module pattern (we can skip it and make it in the next point)
-1. Build Ray tracer components
+1. Build foundations
+1. Build Ray Tracer components
 1. Test Ray tracer components
 1. Wiring things together
-1. Make it work :nut_and_bolt:
-1. Make it fast :rocket:
+1. Improving rendering
+1. Show pattern at work
 
 ---
 # Functional Effects
@@ -546,33 +546,11 @@ Chaining errors and capabilities
 Full inference of Environment and errors
  -->
 ---
-![left fit](img/rt-world-light-eye.png) 
-
 # Ray tracing
 ^The problem we want to solve is rendering a scene by simulating how the light works when coming from a light source, or from an environment, and hits some objects in an environemnt (world)
 and finally hits the sensors in a camera, or the photosensitive cells in our retina
 
-[.list: alignment(left)]
-- Spheres (world), light source, eye
-
----
-![left fit](img/rt-incident-rays.png) 
-
-[.build-lists: false]
-
-# Ray tracing
-[.list: alignment(left)]
-
-- Spheres (world), light source, eye
-- Incident rays    
-
----
-
-^ but.. how do we build an image, ultimately?
-
-![left fit](img/rt-reflected-rays.png) 
-
-[.build-lists: false]
+![left fit](img/raytracing-description-1.png) 
 
 # Ray tracing
 [.list: alignment(left)]
@@ -584,7 +562,7 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 ---
 ^To build an image we need a canvas, a rectangular surface divided in pixels where the rays coming from the world will hit and produce the color they carry in the ray
 
-![left fit](img/rt-reflected-rays-screen.png) 
+![left fit](img/raytracing-description-2.png) 
 
 [.build-lists: false]
 
@@ -594,56 +572,46 @@ and finally hits the sensors in a camera, or the photosensitive cells in our ret
 - Spheres (world), light source, eye
 - Incident rays    
 - Reflected rays
-- Canvas
-
----
-
-![left fit](img/rt-reflected-rays-screen-red-pixel.png) 
-
-[.build-lists: false]
-
-# Ray tracing
-[.list: alignment(left)]
-
-- Spheres (world), light source, eye
-- Incident rays    
-- Reflected rays
-- Canvas
-
----
-
-![left fit](img/rt-reflected-rays-screen-red-green-pixel.png) 
-
-[.build-lists: false]
-
-# Ray tracing
-[.list: alignment(left)]
-
-- Spheres (world), light source, eye
-- Incident rays    
-- Reflected rays
-- Canvas
-
----
-
-![left fit](img/rt-reflected-rays-screen-red-green-pixel-and-discarded.png) 
-
-[.build-lists: false]
-
-# Ray tracing
-[.list: alignment(left)]
-
-- Spheres (world), light source, eye
-- Incident rays    
-- Reflected rays
-- Canvas
 - Discarded rays
+- Canvas
+
+---
+
+![left fit](img/raytracing-description-3.png) 
+
+[.build-lists: false]
+
+# Ray tracing
+[.list: alignment(left)]
+
+- Spheres (world), light source, eye
+- Incident rays    
+- Reflected rays
+- Discarded rays
+- Canvas
+- Colored pixels
+
+---
+
+![left fit](img/raytracing-description-4.png) 
+
+[.build-lists: false]
+
+# Ray tracing
+[.list: alignment(left)]
+
+- Spheres (world), light source, eye
+- Incident rays    
+- Reflected rays
+- Discarded rays
+- Canvas
+- Colored pixels
 
 ---
 ^At this point we have 2 options, one is computing all the rays for all the objects, and then consider only those that hit the canvas
 Another option is work on the reverse problem, i.e. have rays going out of the canvas, hitting the objects in the world and determine how they behave considering all the agents
 
-![left fit](img/rt-reflected-rays-screen-red-green-pixel-and-discarded.png) 
+![left fit](img/raytracing-description-4.png) 
 
 # Ray tracing
 
@@ -932,7 +900,7 @@ $$
 // Defined somewhere else
 object MatrixModule {
   trait Service[R] {
-     def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
+    def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
     def mul(m1: M, m2: M): ZIO[R, AlgebraicError, M]
   }
 }
