@@ -19,7 +19,6 @@ theme: Fira, 3
 # Agenda
 
 1. ZIO - 101
-1. Environmental effects
 1. Build foundations
 1. Build Ray Tracer components
 1. Test Ray tracer components
@@ -27,526 +26,217 @@ theme: Fira, 3
 1. Improving rendering
 1. Show pattern at work
 
----
-# Functional Effects
-
-<br>
-
-
-<!--
-# Functional Effects
-
-^ Let's talk about functional effects. As functional programmers we appreciate the benefits of programming only with functions and immutable values 
-
-FP: Programming with values and functions
 
 ---
-[.autoscale: false]
-# Functional Effects
-^ for example let's consider a Matrix (value) and a function for adding 2 matrices. This function is defined for every possible pair of matrices, this means the function `add` is a TOTAL function
+# ZIO - 101
 
-FP: Programming with values and functions
-
-
-[.code-highlight: 1-4]
-[.code-highlight: 1-6]
-[.code-highlight: 1-9]
-
-```scala
-case class Matrix(
-  x11: Double, x12: Double, 
-  x21: Double, x22: Double
-)
-
-def add(m1: Matrix, m2: Matrix): Matrix = ???
-
-add(Matrix(1, 2, 3, 4), Matrix(5, 6, 7, 8)) 
-// Matrix(6, 8, 10, 12)
-```
-
----
-[.autoscale: false]
-
-# Functional Effects
-^ Now let's consider another function, that given a matrix, inverts it
-
-FP: Programming with values and functions
+^Let's write a simple program, and show how we can compose small programs into bigger programs. Notice that we are not building programs as "running things", we are building programs as data structures, and what I have after I have built these programs are just data structures, it's like having built a tree. The next step is to interpret the data structure, and that's the place where all impure stuff happens, where the console gets actually printed  
+#### Program as values
 
 [.code-highlight: 1]
+[.code-highlight: 1-2]
+[.code-highlight: 1-4]
 [.code-highlight: 1-5]
 [.code-highlight: 1-7]
-
+[.code-highlight: 1-8]
+[.code-highlight: 1-10]
 ```scala
-def invert(m: Matrix): Matrix = ???
-val m = Matrix( 
-    1, 2, 
-    1, 2
-)
+val salutation = console.putStr("Zdravo, ")
+val city = console.putStrLn("Ljubljana!!!")
 
-invert(m) // Exception!
+val prg = salutation *> city
+salutation.flatMap(_ => city)
+
+// nothing happens!
+new DefaultRuntime.unsafeRun(prg)
+
+//>  Zdravo, Ljubljana!!!
 ```
 
 ---
-[.autoscale: false]
+# ZIO - 101
 
-# Functional Effects
-^ `invert` is clearly not a total function
-
-`invert` is not a total function
+^If we look at our simple program, we see that the type has 3 parameters, the environment, the error channel and the output channel
+ZIO is a functional effect library. This means that it's a library that builds data structures that then are, eventually interpreted. The advantage of this approach is that it allows us to keep reasoning in terms of values rather than statements, preserving the capability to reason around our logic, and the foundational property of FP, referential transparency.
+ZIO is parameterized in 3 types, the environment, the error channel and the output channel. As a mental model, think of it as a ... which can be further simplified as ... One important thing is that it is contravariant in the environment, and covariant on the E,A 
 
 [.code-highlight: 1]
-[.code-highlight: 1-6]
+[.code-highlight: 2-4]
+[.code-highlight: 2-8] 
+[.code-highlight: 2-12] 
 ```scala
-def invert(m: Matrix): Option[Matrix] = ???
-invert(
-  Matrix(
-    1, 2,
-    1, 2)
-  ) // None
+val prg = salutation *> city
+val prg: ZIO[Console, Nothing, Unit] = salutation *> city
+
+ZIO[-R, +E, +A]
+
+       ⬇
+
+R => IO[Either[E, A]]
+
+       ⬇
+
+R => Either[E, A]
 ```
 
 ---
--->
+# ZIO - 101
 
----
+^What does it mean when we see ZIO[Console, Nothing, Unit]?
 
-^ What is a functional effect? It is a data structure, plus some operations, to deal with a concern.
-E.g. if our concern is to express the presence or absence of a value, a functional effect we are using daily is `Option[A]`
-If our concern is expressing the success (producing a value of type A) vs a failure (producing an error of type E) of an operation we can use `Either[E,A]` 
-
-# Functional Effects
-
-Given a concern, build _**an immutable data structure**_ that provides a set of operations to deal with that concern[^1]
-
-[.code-highlight: none]
-[.code-highlight: 1]
-[.code-highlight: 1-2]
 ```scala
-Option[A] 
-Either[E, A]  
+val prg: ZIO[Console, Nothing, Unit] = salutation *> city
 ```
 
-[^1]:  Semiquoting John De Goes (https://youtu.be/POUEz8XHMhE)
+- Needs a `Console` to run
+- Doesn't produce any error
+- Produce `()` as output
 
 ---
+# ZIO - 101
 
-# Functional Effects
-^ What do we do with these data structures? We can combine them (map, flatmap, zip), but ultimately we want to produce some workable value for our business case. Usually we us pattern matching, but we'd better get used to `fold`.
-The interpretation phase takes these data structures, and extract the information and makes it usable
+^Our program, on its own, could not be run. We just managed to run it because the `DefaultRuntime` is able to handle the Console.
+* Actually the minimal runtime available is an environment that provides nothing
+ But the process to run an environmental effect is to satisfy all its requirements, and then execute it. 
+* Let's satisfy the requirement through `provide`
+* now we eliminated the requirement, and this is witnessed in the type
+* now I can run this "autonomous" effect in a runtime that provides nothing
+* if I try to run an effect with unsatisfied requirement in an runtime that provides less than required I get an error
 
-Interpretation: Produce some outcome from the processing of these data structures
-
-[.code-highlight: none]
-[.code-highlight: 1]
-[.code-highlight: 1-2]
-[.code-highlight: 1-4]
-[.code-highlight: 1-5]
+[.code-highlight: 1] 
+[.code-highlight: 1-2] 
+[.code-highlight: 1-5] 
+[.code-highlight: 1-4, 6] 
+[.code-highlight: 1-4, 6-8] 
+[.code-highlight: 1-4, 6, 7, 10-12]
 ```scala
-val oa: Option[A]    
-val res: B = oa.fold[B](ifEmpty)(a => ifNonEmpty) 
+val prg: ZIO[Console, Nothing, Unit] = salutation *> city
+val miniRT = new Runtime[Any]{}
 
-val ea: Either[E, A] 
-val res: B = ea.fold[B](e => ifError)(a => ifSuccess)
+// Provide console
+val provided = prg.provide(Console.Live)
+val provided: ZIO[Any, Nothing, Unit] = prg.provide(Console.Live)
+
+miniRT.unsafeRun(provided)
+
+miniRT.unsafeRun(prg)
+// [error]  found   : zio.ZIO[zio.console.Console,Nothing,Unit]
+// [error]  required: zio.ZIO[Any,?,?]
 ```
 
 ---
+^A pattern that is ubiquitously in ZIO is the module pattern. We use modules to model capabilities. All capabilities in ZIO are modelled as modules
+* Let's define a module that allows us to handle metrics counter incrementations.
+* Module
+* Service
+* Accessor
+Notice that we just defined an interface, or if you want an algebra
+# ZIO - 101
+### A Metrics module (or Algebra)
 
-![left fit](img/bread.jpg) 
-
-# Functional Effects
-^ Let's talk about one of my favourite hobbies. Baking bread. How do I express the act of baking, in an imperative way? 
-I just give a list of instructions and they get immediately executed
-How do we deal with this in a functional way? We separate the description from the execution
-
-#### Imperative baking
-
-[.code-highlight: none]
-[.code-highlight: 1]
-[.code-highlight: 1-2]
-[.code-highlight: 1-3]
-[.code-highlight: 1-5]
-
+[.code-highlight: 1-4] 
+[.code-highlight: 1-9] 
+[.code-highlight: 1-16] 
 ```scala
-def bakeBread(): Unit = {
-  knead()
-  raise()
-  cook()
+// the module
+trait Metrics {
+  val metrics: Metrics.Service[Any]
+}
+object Metrics {
+  // the service
+  trait Service[R] {
+    def inc(label: String): ZIO[R, Nothing, Unit]
+  }
+
+  // the accessor
+  object > extends Service[Metrics] {
+    override def inc(label: String): ZIO[Metrics, Nothing, Unit] =
+      ZIO.accessM(_.metrics.inc(label))
+  }
 }
 ```
----
-
-# Functional Effects
-^ How do we deal with this in a functional way? We separate the description from the execution, having a data type that _describes_ what we want to do
-Then we provide this data type with (pretty standard) mechanism to chain/transform the computation, classical `map`/`flatMap`
-
-<!-- ![original](img/bread.jpg)  -->
-
-#### Functional baking
-
-[.code-highlight: none]
-[.code-highlight: 1]
-[.code-highlight: 1-2]
-[.code-highlight: 1-3]
-[.code-highlight: 1-9]
-```scala
-val knead: IO[Dough]
-val raise(dough: Dough): IO[Dough]
-val cook(dough: Dough): IO[Bread]
-
-val bakeBread: IO[Bread] = for {
-  d1 <- knead
-  d2 <- raise(d1)
-  b  <- cook(d2)
-} yield b
-```
 
 ---
+^Now we can write a program that uses our metrics module, and let's use it in conjunction with the console module
+* SUPERB Type inference. Compiler is able to tell me that I need both these modules, I don't need to provide these capabilities beforehand like in TF
+* Let's provide a live implementation that is backed by prometheus
+* We can run it
 
-# Functional Effects
-^ ...and finally we get our bread by interpreting the data structure we just built.
-It _traverses_ the data structure, or our recipe, and executes the instructions written on those data structures
+# ZIO - 101
+### A Metrics module - Running
 
-<!-- ![left fit](img/bread.jpg)  -->
-
-#### Functional baking
-
-[.code-highlight: 1-2]
-[.code-highlight: 1-5]
+[.code-highlight: 1-7] 
+[.code-highlight: 1-14] 
+[.code-highlight: 1-18] 
 ```scala
-  def main() {
-    val bakeBread: IO[Bread] = ???
+val prg2: ZIO[Metrics with Console, Nothing, Unit] = 
+for {
+  _ <- console.putStrLn("Hello")
+  _ <- Metrics.>.inc("salutation")
+  _ <- console.putStrLn("BeeScala")
+  _ <- Metrics.>.inc("subject")
+} yield ()
 
-    val bread: Bread = unsafeRun(bakeBread)   
+trait Prometheus extends Metrics {
+  val metrics = new Metrics.Service[Any] {
+    def inc(label: String): ZIO[Any, Nothing, Unit] = 
+      ZIO.effectTotal(counter.labels(label).inc(1))
   }
+}
 
-
-
-
-
-
-
-⠀
+miniRT.unsafeRun(
+  prg2.provide(new Prometheus with Console.Live)
+)
 ```
 
 ---
-# Functional Effects
-^ But how do I get by bread? I need to interpret the data structure
+^How do I unit test though my program? I want to ensure that the counter gets called exactly once for "salutation" and once for "subject"
+* The program remains the same value (data structure) we defined in first place 
+* We define an implementation of the **SERVICE** backed by a data structure to handle state mutations
+* We build an environment where the `Metrics` service is backed by this ref, and we provide it to our program, therefore we closed the requirements
+* we get the  
 
-[.list: alignment(left)]
-<!-- ![left fit](img/bread.jpg)  -->
+# ZIO - 101
+### A Metrics module - testing
 
-#### Functional baking
-
+[.code-highlight: none] 
+[.code-highlight: 1] 
+[.code-highlight: 1-7] 
+[.code-highlight: 1-13] 
+[.code-highlight: 1-14] 
+[.code-highlight: 1-16] 
+[.code-highlight: 1-18] 
 ```scala
-  def main() {
-    val bakeBread: IO[Bread] = ???
+val prg2: ZIO[Metrics with Console, Nothing, Unit] = /* ... */
 
-    val bread: Bread = unsafeRun(bakeBread)   
-  }
+case class TestMetrics(incCalls: Ref[List[String]]) 
+  extends Metrics.Service[Any] {
+  def inc(label: String): ZIO[Any, Nothing, Unit] =
+    incCalls.update(xs => xs :+ label).unit
+}
+
+val test =  for {
+  ref <- Ref.make(List[String]())
+  _   <- prg2.provide(new Console.Live with Metrics {
+           val metrics = TestMetrics(ref)
+         })
+  calls <- ref.get
+  _     <- UIO.effectTotal(assert(calls == List("salutation", "subject")))
+} yield ()
+
+emptyRuntime.unsafeRun(test)
 ```
 
-1. Build an immutable data structure
-1. Combine small data structures to more complex ones
-1. Interpret the final data structure
-
-<!-- 1. Enjoy your bread -->
-
-<!-- ---
-[.build-lists: false]
-
-# Functional Effects
-^ There are 2 concerns we didn't cover yet in this exercise. What if we put too much water in our dough? Can we recover from it? Should we retry somehow?
-
-<!-- ![left fit](img/bread.jpg)  -->
-
-<!-- ---
-
-#### Functional baking
-[.list: alignment(left)]
-
-Errors -->
-
----
-[.build-lists: false]
-
-# Functional Effects
-^ There are 2 concerns we didn't cover yet in this exercise. What if we cook too much our bread? What if our oven stops working halfway through? Well these are 2 different kinds of errors, one is what we call a failure (oven stops working), while the other one is what we call an error and we want to act upon (see talk from Francois Armand @ ScalaIO)
-
-<!-- ![left fit](img/bread.jpg)  -->
-
-#### Functional baking
-[.list: alignment(left)]
-
-Errors
-
-[.code-highlight: none]
-[.code-highlight: 1]
-[.code-highlight: 1-4]
-[.code-highlight: 1-7]
-[.code-highlight: 1-10]
-
-```scala
-  sealed trait BakingError     extends Exception
-
-  case object WrongIngredients extends BakingError
-  case object Overcooking      extends BakingError
-
-  val knead: IO[WrongIngredients, Dough] 
-  val cook(dough: Dough): IO[Overcooking, Bread]
-  
-  val bake: IO[BakingError, Bread] =
-    knead.flatMap(cook)  
-```
-
----
-
-<!-- [.build-lists: false]
-
-# Functional Effects
-^ There are 2 concerns we didn't cover yet in this exercise. What if we cook too much our bread? What if our oven stops working halfway through? Well these are 2 different kinds of errors, one is what we call a failure (oven stops working), while the other one is what we call an error and we want to act upon (see talk from Francois Armand @ ScalaIO)
-
-#### Functional baking
-[.list: alignment(left)]
-
-1. Errors
-
-```scala
-  sealed trait BakingError     extends Exception
-
-  case object WrongIngredients extends BakingError
-  case object Overcooking      extends BakingError
-
-  val knead: IO[WrongIngredients, Dough] 
-  val cook(dough: Dough): IO[Overcooking, Bread]
-```
-
----
-[.build-lists: false]
-
-# Functional Effects
-^ There are 2 concerns we didn't cover yet in this exercise. What if we cook too much our bread? What if our oven stops working halfway through? Well these are 2 different kinds of errors, one is what we call a failure (oven stops working), while the other one is what we call an error and we want to act upon (see talk from Francois Armand @ ScalaIO)
-
-
-#### Functional baking
-[.list: alignment(left)]
-
-Unaddressed concerns:
-
-1. Errors
-
-```scala
-  sealed trait BakingError     extends Exception
-
-  case object WrongIngredients extends BakingError
-  case object Overcooking      extends BakingError
-  
-  val knead: IO[WrongIngredients, Dough] 
-  val cook(dough: Dough): IO[Overcooking, Bread]
-  
-  val bake: IO[BakingError, Bread] =
-    knead.flatMap(cook)  
-```
-
---- -->
-
-[.build-lists: false]
-
-# Functional Effects
-^ The second concern we need to deal with is the one of capabilities. What do I need in order to be able to knead my bread? What do I need to be able to cook it?
-* ZIO[R, E, A] is an immutable data structure that expresses the concern of running a computation that might produce a value A, or fail with an error E, and requires a set of capabilities `R` in order to run
-* So I define the methods in terms of the capabilities and then I chain them through the monadic operators. Notice that the contravariance in `R` is all the compiler need to do the `with` between environments
-
-<!-- ![left fit](img/bread.jpg)  -->
-
-#### Functional baking
-[.list: alignment(left)]
-
-Capabilities
-
-[.code-highlight: none]
-[.code-highlight: 1]
-[.code-highlight: 1-5]
-[.code-highlight: 1-7, 9-13]
-[.code-highlight: 1-13]
-```scala
-  ZIO[-R, +E, +A] // R => IO[E, A]
-
-  val knead:               ZIO[MixerEnv, WrongIngredients, Dough] = ???
-  def raise(dough: Dough): ZIO[WarmRoomEnv, Nothing, Dough] = ???
-  def cook(dough: Dough):  ZIO[OvenEnv, Overcooking, Bread] = ???
-
-  val bread
-    : ZIO[OvenEnv with WarmRoomEnv with MixerEnv, BakingError, Bread]
-  = for {
-    dough <- knead
-    risen <- raise(dough)
-    ready <- cook(risen)
-  } yield ready
-```
-
----
-<!-- [.build-lists: false] -->
-
-# Functional Effects
-^ZIO effects must be interpreted, before that point they are just simple data structures. Default runtime environemnt can cope with effects that require standard JVM capabilities (console, random, system, clock and blocking), but if we have an effect that has richer requirements we must satisfy those requirements before running it.
-So we provide our bread baking instructions with all the requirements they have, and finally we are able to interpret our data structure and get our bread.
-The problem with this is that it's not immediate (not to me at least) how to make non-trivial applications, in a layered way, with dependencies of layer upon layer, or even with circular dependencies?
-
-#### Provide and run
-
-[.code-highlight: none]
-[.code-highlight: 1]
-[.code-highlight: 1-3]
-[.code-highlight: 1-5]
-```scala
-  val bread: ZIO[OvenEnv with WarmRoomEnv with MixerEnv, BakingError, Bread] = ???
-
-  val r: ZIO[Any, BakingError, Bread] = bread.provide(new OvenEnv with WarmRoomEnv with MixerEnv)
-  
-  val result:Bread = runtime.unsafeRun(bread)
-```
-
-- Nice, but how do we deal with non-trivial applications?
-
-- TODO: basic intro just to ZIO, R, E, A, access, accessM, provide, unsafeRun. Just use console and clock.
-
-<!-- ---
-[.build-lists: false]
-
-# Environmental effects
-^ What are environmental effects? They are functional effects (= immutable data structures) that model, at once, the requirement of an environment, the possibility to fail or succeed, and the possiblity to perform IO
-This simple data type allows us to express different things: 
-1. The introduction of an environment requirement. I can access the mixing machine together with the oven through that R
-
-
-### `ZIO[-R, +E, +A]`
-
-[.code-highlight: none]
-[.code-highlight: 1-5]
-[.code-highlight: 1-10]
-```scala
-  object ZIO {
-    //environment introduction
-    def access[R, E, A](f: R => A): ZIO[R, Nothing, A]
-    def accessM[R, E, A](f: R => ZIO[R, E, A]): ZIO[R, E, A]
-  }
-```
-
----
-
-# Environmental effects
-^ What are environmental effects? They are functional effects (= immutable data structures) that model, at once, the requirement of an environment, the possibility to fail or succeed, and the possiblity to perform IO
-This simple data type allows us to express different things: 
-1. The introduction of an environment requirement. I can access the environemnt that provides me with the mixing capabilities
-
-
-### `ZIO[-R, +E, +A]`
-
-Environment introduction 
-
-[.code-highlight: 1-5]
-[.code-highlight: 1-9]
-[.code-highlight: 1-13]
-[.code-highlight: 1-18]
-```scala
-  object ZIO {
-    def access[R, E, A](f: R => A): ZIO[R, Nothing, A]
-    def accessM[R, E, A](f: R => ZIO[R, E, A]): ZIO[R, E, A]
-  }
-
-  trait MixingMachine {
-    def knead: ZIO[Any, WrongIngredients, Dough] //IO[WrongIngredients, Dough]
-  }
-
-  trait MixerEnv {
-    val mixingMachine: MixingMachine
-  }
-
-  val knead: ZIO[MixerEnv, WrongIngredients, Dough] =
-    ZIO.accessM { mixerEnv =>
-      mixerEnv.mixingMachine.knead
-    }
-```
-
----
-
-# Environmental effects
-^ And then, later (typically close to the main program, or in testing) I can provide the environment that my functional effect needs, eliminating the requirement of that environment 
-
-### `ZIO[-R, +E, +A]`
-
-Environment elimination
-
-[.code-highlight: none]
-[.code-highlight: 1-4]
-[.code-highlight: 1-9]
-```scala
-  trait ZIO[-R, +E, +A] {
-    // environment  elimination
-    def provide(r: R): ZIO[Any, E, A]
-  }
-
-  val knead: ZIO[MixerEnv, WrongIngredients, Dough]
-  
-  val autonomousEffect = knead.provide(new MixerEnv{})
-  val dough: Dough = runtime.unsafeRun(autonomousEffect)
-```
-
----
-
-# Environmental effects
-^ How do we mix these capabilities and error together? The simplest thing we can do is just flatmap these structures 
-
-![left fit](img/bread.jpg) 
-
-#### Functional baking
-
-Chaining errors and capabilities
-
-```scala
-  val knead:               ZIO[MixerEnv, WrongIngredients, Dough]
-  val raise(dough: Dough): ZIO[WarmRoomEnv, Nothing, Dough]
-  val cook(dough: Dough):  ZIO[OvenEnv, Overcooking, Bread]
-
-  val bakeBread = for {
-    d1 <- knead
-    d2 <- raise(d1)
-    b  <- cook(d2)
-  } yield b 
-```
-
----
-
-# Environmental effects
-^ Not only ths works, but the compiler infers errors and environment for us
-We can see that the act of chaining these operations makes the required capabilities mix into an intersection type between
-the capabilities (`type BakingEnv = MixerEnv with WarmRoomEnv with OvenEnv`), and it tries to unify the errors, looking for the nearest common supertype of errors, in our case `BakingError`
-
-
-![left fit](img/bread.jpg) 
-
-#### Functional baking
-
-Chaining errors and capabilities
-
-```scala
-  val knead:               ZIO[MixerEnv, WrongIngredients, Dough]
-  val raise(dough: Dough): ZIO[WarmRoomEnv, Nothing, Dough]
-  val cook(dough: Dough):  ZIO[OvenEnv, Overcooking, Bread]
-
-  type BakingEnv = MixerEnv with WarmRoomEnv with OvenEnv
-  
-  val bakeBread: ZIO[BakingEnv, BakingError, Bread] = for {
-    d1 <- knead
-    d2 <- raise(d1)
-    b  <- cook(d2)
-  } yield b 
-```
-
-Full inference of Environment and errors
- -->
 ---
 # Ray tracing
+#### Why?
+
+![inline fill](img/the-death-of-final-tagless.jpg) ![inline 50%](img/ray-tracer-challenge-cover.jpg) 
+
+[Presentation](https://www.slideshare.net/jdegoes/the-death-of-final-tagless)
+[Book](https://pragprog.com/book/jbtracer/the-ray-tracer-challenge)
+
+---
 ^The problem we want to solve is rendering a scene by simulating how the light works when coming from a light source, or from an environment, and hits some objects in an environemnt (world)
 and finally hits the sensors in a camera, or the photosensitive cells in our retina
 
