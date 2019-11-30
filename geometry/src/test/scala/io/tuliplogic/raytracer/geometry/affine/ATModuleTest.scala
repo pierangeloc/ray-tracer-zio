@@ -45,7 +45,7 @@ object allSuites {
       ).orDie
 
   val ptVec = factory.createColVector(Vector(1d, 2d, 3d, 1d))
-  val translatedPtVec: IO[AlgebraicError, factory.Col] = factory.createColVector(Vector(4, 6, 8, 1)).mapError(_.asInstanceOf[AlgebraicError])
+  val translatedPtVec: IO[AlgebraicError, factory.Col] = factory.createColVector(Vector(4, 6, 8, 1))
 
   val s1 = suite("AT relies on matrix operations"){
 

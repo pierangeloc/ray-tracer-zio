@@ -10,10 +10,8 @@ import zio.stream.Sink
 
 object RaytracingProgram {
 
-  def drawOnCanvasWithCamera(world: World, camera: Camera, canvas: Canvas): ZIO[RasteringModule, RayTracerError, Unit] = for {
-    coloredPointsStream <- RasteringModule.>.raster(world, camera)
-    _ <- coloredPointsStream.mapM(cp => canvas.update(cp)).run(Sink.drain)
-  } yield ()
+  def drawOnCanvasWithCamera(world: World, camera: Camera, canvas: Canvas): ZIO[RasteringModule, RayTracerError, Unit] =
+    RasteringModule.>.raster(world, camera).mapM(cp => canvas.update(cp)).run(Sink.drain)
 
   def drawOnCanvas(world: World, viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int):
     ZIO[RasteringModule with ATModule, RayTracerError, Canvas] = for {

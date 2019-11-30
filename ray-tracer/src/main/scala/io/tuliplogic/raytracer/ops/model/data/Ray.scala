@@ -72,7 +72,7 @@ object RayModule {
         */
       override def intersect(ray: Ray, o: Shape): ZIO[Any, Nothing, List[Intersection]] =
         for {
-          inverseTf <- aTModule.invert(o.transformation).orDie
+          inverseTf <- aTModule.invert(o.transformation)
           tfRay <- transform(inverseTf, ray)
           intersections <- canonicalIntersect(tfRay, o)
         } yield intersections
@@ -85,7 +85,7 @@ object RayModule {
         (for {
           tfPt <- aTModule.applyTf(at, ray.origin)
             tfVec <- aTModule.applyTf(at, ray.direction)
-        } yield Ray(tfPt, tfVec)).orDie
+        } yield Ray(tfPt, tfVec))
     }
   }
 

@@ -27,7 +27,6 @@ object Chapter7World extends App {
       }
       .foldM(err => console.putStrLn(s"Execution failed with: $err").as(1), _ => UIO.succeed(0))
 
-  //TODO: make a DSL to build a world, this is too painful
 
   val world = for {
     defaultMat   <- Material.default

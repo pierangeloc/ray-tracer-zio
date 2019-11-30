@@ -30,13 +30,11 @@ object Chapter11World extends App {
       }
       .foldM(err => console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1), _ => UIO.succeed(0))
 
-  //TODO: make a DSL to build a world, this is too painful
-
   val world: ZIO[ATModule, AlgebraicError, World] = for {
     mat      <- Material.default
     idTf     <- ATModule.>.id
     scale4Tf <- ATModule.>.scale(4, 4, 4)
-    planeMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(0.9, 0.9, 0.9), Color(0.3, 0.3, 0.3), scale4Tf), specular = 0, reflective = 0.1))
+    planeMat <- UIO(mat.copy(pattern = Pattern.Checker(Color(230/256.0, 29/256.0, 31/256.0), Color(0.9, 0.9, 0.9), scale4Tf), specular = 0, reflective = 0.1))
     floorS   <- Plane.canonical.map(_.copy(material = planeMat)) //grey, matte
 
     leftWallTf2 <- ATModule.>.rotateX(math.Pi / 2)

@@ -29,7 +29,6 @@ object Chapter11WorldRefraction extends App {
       }
       .foldM(err => console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1), _ => UIO.succeed(0))
 
-  //TODO: make a DSL to build a world, this is too painful
 
   val world = for {
     mat      <- Material.default

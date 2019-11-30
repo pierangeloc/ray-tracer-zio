@@ -10,7 +10,7 @@ import io.tuliplogic.raytracer.ops.model.data.{Color, Intersection, Material, Pa
 import io.tuliplogic.raytracer.ops.model.modules.{LightDiffusionModule, LightReflectionModule, NormalReflectModule, PhongReflectionModule, WorldHitCompsModule, WorldModule, WorldReflectionModule, WorldRefractionModule, WorldTopologyModule}
 import org.scalatest.WordSpec
 import org.scalatest.Matchers._
-import zio.{DefaultRuntime, IO, UIO}
+import zio.{DefaultRuntime, IO, Ref, UIO}
 //TODO: put all the tests for hitComps in worldhitcompstest
 class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
   import WorldTest._
@@ -112,8 +112,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w     <- defaultWorld
+          remaining <- Ref.make(5)
           ray   <- UIO(Ray(Pt(0, 0, -5), Vec(0, 1, 0)))
-          color <- WorldModule.>.colorForRay(w, ray)
+          color <- WorldModule.>.colorForRay(w, ray, remaining)
           _     <- IO { color shouldEqual Color.black }
         } yield color)
           .provide(env)
@@ -124,8 +125,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w     <- defaultWorld
+          remaining <- Ref.make(5)
           ray   <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
-          color <- WorldModule.>.colorForRay(w, ray)
+          color <- WorldModule.>.colorForRay(w, ray, remaining)
           _     <- IO { color should ===(Color(0.38066, 0.47583, 0.2855)) }
         } yield color)
           .provide(env)
@@ -136,8 +138,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w     <- defaultWorld
+          remaining <- Ref.make(5)
           ray   <- UIO(Ray(Pt(0, 0, 0.75), Vec(0, 0, -1)))
-          color <- WorldModule.>.colorForRay(w, ray)
+          color <- WorldModule.>.colorForRay(w, ray, remaining)
           _     <- IO { color should ===(Color.white) }
         } yield color)
           .provide(env)
@@ -148,8 +151,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w     <- defaultWorld
+          remaining <- Ref.make(5)
           ray   <- UIO(Ray(Pt(0, 0, 0.75), Vec(0, 0, -1)))
-          color <- WorldModule.>.colorForRay(w, ray)
+          color <- WorldModule.>.colorForRay(w, ray, remaining)
           _     <- IO { color should ===(Color(0.1, 0.1, 0.1)) }
         } yield color)
           .provide(env)
@@ -160,11 +164,12 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w         <- defaultWorld4_1
+          remaining <- Ref.make(5)
           ray       <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
           plane     <- UIO(w.objects(2)) //TODO make a method to access objects by index in a World
           hit       <- UIO(Intersection(math.sqrt(2), plane))
           hitComps  <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
-          fullColor <- WorldModule.>.colorForRay(w, ray)
+          fullColor <- WorldModule.>.colorForRay(w, ray, remaining)
           _ <- IO {
             fullColor should ===(Color(0.87677, 0.92436, 0.82918))
           }
@@ -177,8 +182,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w         <- defaultWorld5
+          remaining <- Ref.make(5)
           ray       <- UIO(Ray(Pt.origin, Vec(0, 1, 0)))
-          fullColor <- WorldModule.>.colorForRay(w, ray)
+          fullColor <- WorldModule.>.colorForRay(w, ray, remaining)
           _ <- IO {
             fullColor should not equal Color.black
           }
@@ -191,8 +197,9 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w              <- defaultWorldWithRefractingPlane
+          remaining      <- Ref.make(5)
           ray            <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
-          fullColor      <- WorldModule.>.colorForRay(w, ray, 10)
+          fullColor      <- WorldModule.>.colorForRay(w, ray, remaining)
           _ <- IO {
             fullColor shouldEqual Color(0.93642, 0.68642, 0.68642)
           }
@@ -249,7 +256,8 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w     <- defaultWorld3
-          color <- WorldModule.>.colorForRay(w, Ray(Pt(0, 0, 5), Vec(0, 0, 1)))
+          remaining <- Ref.make(5)
+          color <- WorldModule.>.colorForRay(w, Ray(Pt(0, 0, 5), Vec(0, 0, 1)), remaining)
           _     <- IO { color should ===(Color(0.1, 0.1, 0.1)) }
         } yield
           ()).provide(env)
@@ -262,11 +270,12 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w              <- defaultWorld4
+          remaining <- Ref.make(5)
           ray            <- UIO(Ray(Pt(0, 0, 0), Vec(0, 0, 1)))
           s              <- UIO(w.objects(1))
           hit            <- UIO(Intersection(1, s))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
-          reflectedColor <- WorldReflectionModule.>.reflectedColor(w, hitComps)
+          reflectedColor <- WorldReflectionModule.>.reflectedColor(w, hitComps, remaining)
           _ <- IO {
             reflectedColor shouldEqual Color.black
           }
@@ -279,11 +288,12 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w              <- defaultWorld4_1
+          remaining <- Ref.make(5)
           ray            <- UIO(Ray(Pt(0, 0, -3), Vec(0, -math.sqrt(2) / 2, math.sqrt(2) / 2)))
           plane          <- UIO(w.objects(2)) //TODO make a method to access objects by index in a World
           hit            <- UIO(Intersection(math.sqrt(2), plane))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, hit, List(hit))
-          reflectedColor <- WorldReflectionModule.>.reflectedColor(w, hitComps)
+          reflectedColor <- WorldReflectionModule.>.reflectedColor(w, hitComps, remaining)
           _ <- IO {
             reflectedColor should ===(Color(0.19032, 0.2379, 0.14274)) //it shoudl return these according to the book. they are actually proportional by 2.891
           }
@@ -298,11 +308,12 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w              <- defaultWorld
+          remaining      <- Ref.make(5)
           ray            <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           s              <- UIO(w.objects(0))
           intersections  <- UIO(List(Intersection(4, s), Intersection(6, s)))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections.head, intersections)
-          refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps)
+          refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps, remaining)
           _ <- IO {
             refractedColor shouldEqual Color.black
           }
@@ -317,9 +328,11 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
           w              <- externalCanonicalTransparentInternalHalfOpaque
           ray            <- UIO(Ray(Pt(0, 0, -5), Vec(0, 0, 1)))
           s              <- UIO(w.objects(0))
+          remaining      <- Ref.make(10)
+
           intersections  <- UIO(List(Intersection(4, s), Intersection(6, s)))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections.head, intersections)
-          refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps, 0)
+          refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps, remaining)
           _ <- IO {
             refractedColor shouldEqual Color.black
             }
@@ -332,11 +345,12 @@ class WorldTest extends WordSpec with DefaultRuntime with OpsTestUtils {
       unsafeRun {
         (for {
           w              <- externalCanonicalTransparentInternalHalfOpaque
+          remaining      <- Ref.make(5)
           ray            <- UIO(Ray(Pt(0, 0, math.sqrt(2) / 2), Vec(0, 1, 0)))
           s              <- UIO(w.objects(0))
           intersections  <- UIO(List(Intersection(- math.sqrt(2) / 2, s), Intersection(math.sqrt(2) / 2, s)))
           hitComps       <- WorldHitCompsModule.>.hitComps(ray, intersections(1), intersections)
-          refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps)
+          refractedColor <- WorldRefractionModule.>.refractedColor(w, hitComps, remaining)
           _ <- IO {
             refractedColor shouldEqual Color.black
           }
@@ -445,10 +459,10 @@ object WorldTest {
     for {
       pl   <- UIO(PointLight(Pt(-10, 10, -10), Color.white))
       idTf <- ATModule.>.id
-      mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.1, 0.7, 0.2, 200, 0, 1, 1.5))
+      mat1 <- UIO(Material(Pattern.Uniform(Color(0.8, 1.0, 0.6), idTf), 0.0, 0.7, 0.2, 200, 0, 1, 1.5))
       tf1  <- ATModule.>.id
       s1   <- Sphere.withTransformAndMaterial(tf1, mat1)
-      mat2 <- Material.default
+      mat2 <- Material.default.map(_.copy(ambient = 0.0))
       tf2  <- ATModule.>.scale(0.5, 0.5, 0.5)
       s2   <- Sphere.withTransformAndMaterial(tf2, mat2)
       w    <- UIO(World(pl, List(s1, s2)))

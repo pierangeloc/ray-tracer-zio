@@ -9,7 +9,7 @@ import zio.test.Assertion._
 import zio.test._
 import zio.test.mock.Expectation
 import zio.test.mock.Expectation._
-import zio.{UIO, ZIO}
+import zio.{Ref, UIO, ZIO}
 
 object RasteringModuleSpec extends DefaultRunnableSpec(
   suite("ChunkRasteringModule") {
@@ -17,7 +17,7 @@ object RasteringModuleSpec extends DefaultRunnableSpec(
       val camera = Camera.makeUnsafe(Pt.origin, Pt(0, 0, -1), Vec.uy, math.Pi / 3, 2, 2)
       val world = World(PointLight(Pt(5, 5, 5), Color.white), List())
       val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
-        RasteringModule.>.raster(world, camera).flatMap(_.runCollect)
+        RasteringModule.>.raster(world, camera).runCollect
 
       for {
         (worldModuleExp, cameraModuleExp) <- RasteringModuleMocks.mockExpectations(world, camera)
@@ -51,11 +51,12 @@ object RasteringModuleMocks {
       (CameraModule.rayForPixel(equalTo((camera, 1, 0))) returns value(r3)) *>
       (CameraModule.rayForPixel(equalTo((camera, 1, 1))) returns value(r4))
     }
+    ref5 <- Ref.make(5)
     worldModuleExp <- UIO {
-      (WorldModule.colorForRay(equalTo((world, r1, 5))) returns value(Color.red)) *>
-      (WorldModule.colorForRay(equalTo((world, r2, 5))) returns value(Color.green)) *>
-      (WorldModule.colorForRay(equalTo((world, r3, 5))) returns value(Color.blue)) *>
-      (WorldModule.colorForRay(equalTo((world, r4, 5))) returns value(Color.white))
+      (WorldModule.colorForRay(equalTo((world, r1, ref5))) returns value(Color.red)) *>
+      (WorldModule.colorForRay(equalTo((world, r2, ref5))) returns value(Color.green)) *>
+      (WorldModule.colorForRay(equalTo((world, r3, ref5))) returns value(Color.blue)) *>
+      (WorldModule.colorForRay(equalTo((world, r4, ref5))) returns value(Color.white))
     }
   } yield (worldModuleExp, cameraModuleExp)
 }
