@@ -67,26 +67,29 @@ object MatrixModule {
       def add(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
         elementWiseOp(m1, m2)(_ + _)
 
-      def mul(m1: M, m2: M): ZIO[Any, AlgebraicError, M] =
+      def mul(m1: M, m2: M): ZIO[Any, AlgebraicError, M] = {
+        import breeze.linalg._
         for {
           m1_m   <- m1.m
           m1_n   <- m1.n
           m2_m   <- m2.m
           m2_n   <- m2.n
           _      <- if (!(m1_n == m2_m)) IO.fail(MatrixDimError(s"can't multiply a matrix $m1_m x $m1_n and a matrix $m2_m x $m2_n)")) else IO.unit
-          m1Rows <- m1.rows
+          m1Cols <- m1.cols
           m2Cols <- m2.cols
-          tmp = for {
-            m1Row <- m1Rows
-            m2Col <- m2Cols
-          } yield vectorizable.scalarProduct(m1Row, m2Col)
-          resultRows = vectorizable.groupChunk(tmp)(m2_n)
+          m1Elems: Array[Double] = m1Cols.flatten.toArray
+          m2Elems: Array[Double] = m2Cols.flatten.toArray
+          m1B = DenseMatrix.create(m1_m, m1_n, m1Elems)
+          m2B = DenseMatrix.create(m2_m, m2_n, m2Elems)
+          mul <- ZIO.effectTotal(m1B * m2B)
+
           res <- factory.fromRows(
             m1_m,
             m2_n,
-            resultRows
+            vectorizable.fromArray(mul.data.grouped(m1_m).toArray.transpose.map(vectorizable.fromArray))
           )
         } yield res
+      }
 
       def invert(m: M): ZIO[Any, AlgebraicError, M] = {
         //cheating here, I don't want to bother coming up with a correct implementation of this, it might take considerable time

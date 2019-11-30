@@ -12,12 +12,12 @@ import zio.clock.Clock
 import zio.duration.Duration
 import zio.internal.{Executor, NamedThreadFactory, PlatformLive}
 import zio.stream._
-import zio.{App, DefaultRuntime, IO, Schedule, UIO, ZEnvDefinition, ZIO, ZSchedule, blocking, clock, console}
+import zio.{App, DefaultRuntime, IO, Schedule, ZIO,  clock, console}
 
 object StreamApp extends App {
 
   Executors.newFixedThreadPool(32)
-  override val Platform = PlatformLive.Default.withExecutor(Executor.fromThreadPoolExecutor(_ => 2048) {
+  override val platform = PlatformLive.Default.withExecutor(Executor.fromThreadPoolExecutor(_ => 2048) {
     val threadPool = new ThreadPoolExecutor(
       32,
       32,
@@ -45,10 +45,10 @@ object StreamApp extends App {
       _     <- str
       end   <- clock.nanoTime
       _     <- console.putStr(s"it took ${(end - start) / 1000000d} millis")
-    } yield ()).foldM(err => console.putStrLn(s"Execution failed").as(1), _ => UIO.succeed(0))
+    } yield ()).as(0)
 
   val str = Stream.fromIterable(0 to (640 * 480))//.mapM(processing(10))
-    .chunkN(20000)
+    .chunkN(20000).chunks
     .mapMPar(15)(chunk => chunk.mapM(processing(10)))
       .run(Sink.drain)
 
@@ -71,15 +71,6 @@ object SingleCoreApp extends scala.App {
   }
 
   scala.Stream.from(0, 6400 * 480).map(processing(10)).toList
-
-}
-
-object TestClock {
-  import scala.concurrent.duration._
-  case class SimpleEvent(at: Instant)
-  ZStream.repeatEffect(
-    clock.currentDateTime.map(at => SimpleEvent(at.toInstant))
-  ).schedule(ZSchedule.spaced(zio.duration.Duration.fromScala(10.seconds)))
 
 }
 

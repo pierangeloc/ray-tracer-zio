@@ -11,7 +11,7 @@ import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import zio.{App, UIO, ZEnv, ZIO, console}
 
 object Chapter10World2 extends App {
-  val canvasFile    = "ppm/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".ppm"
+  val canvasFile    = "ppm/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".png"
   val lightPosition = Pt(10, 10, 2)
   val cameraFrom    = Pt(12, 4, 0)
   val cameraTo      = Pt(0, 4, 16)
@@ -23,7 +23,7 @@ object Chapter10World2 extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasSerializer.PPMCanvasSerializer with ATModule.Live
+        new CanvasSerializer.PNGCanvasSerializer with ATModule.Live
         with FullModules {
           override def path: Path = Paths.get(canvasFile)
         }
@@ -31,8 +31,6 @@ object Chapter10World2 extends App {
       .foldM(err =>
         console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1),
         {case (duration, _) => console.putStrLn(s"it took ${duration.toMillis}") *> UIO.succeed(0)})
-
-  //TODO: make a DSL to build a world, this is too painful
 
   val world: ZIO[ATModule, AlgebraicError, World] = for {
     mat      <- Material.default

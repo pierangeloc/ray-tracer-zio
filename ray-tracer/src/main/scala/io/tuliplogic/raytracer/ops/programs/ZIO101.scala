@@ -25,8 +25,8 @@ object ZIO101 extends SApp {
 
   val provided: ZIO[Any, Nothing, Unit] = prg.provide(Console.Live)
   val emptyRuntime = new Runtime[Any] {
-    override val Environment: Any = ()
-    override val Platform: Platform = PlatformLive.Default
+    override val environment: Any = ()
+    override val platform: Platform = PlatformLive.Default
   }
   emptyRuntime.unsafeRun(provided)
 //  emptyRuntime.unsafeRun(prg)

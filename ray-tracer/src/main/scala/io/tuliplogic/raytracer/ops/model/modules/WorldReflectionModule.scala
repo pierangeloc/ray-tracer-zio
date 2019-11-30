@@ -3,7 +3,7 @@ package io.tuliplogic.raytracer.ops.model.modules
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.ops.model.data.{Color, Ray, World}
 import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.HitComps
-import zio.{UIO, ZIO}
+import zio.{Ref, RefM, UIO, ZIO}
 
 /**
   * Determines how the world gets reflected
@@ -15,11 +15,10 @@ trait WorldReflectionModule {
 object WorldReflectionModule {
   trait Service[R] {
 
-    //TODO: see how to manage the `remaining` with Ref
     /**
       * Determines the color due to the reflection of the world on the hit point
       */
-    def reflectedColor(world: World, hitComps: HitComps, remaining: Int = 10): ZIO[R, RayTracerError, Color]
+    def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[R, RayTracerError, Color]
 
   }
 
@@ -27,7 +26,7 @@ object WorldReflectionModule {
     val worldModule: WorldModule.Service[Any]
 
     val worldReflectionModule = new WorldReflectionModule.Service[Any] {
-      def reflectedColor(world: World, hitComps: HitComps, remaining: Int):
+      def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]):
         ZIO[Any, RayTracerError, Color] =
         if (hitComps.shape.material.reflective == 0) {
           UIO(Color.black)
@@ -42,12 +41,12 @@ object WorldReflectionModule {
 
   trait NoReflectionModule extends WorldReflectionModule {
     val worldReflectionModule = new WorldReflectionModule.Service[Any] {
-      def reflectedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[Any, RayTracerError, Color] = UIO.succeed(Color.black)
+      def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[Any, RayTracerError, Color] = UIO.succeed(Color.black)
     }
   }
 
   object > extends WorldReflectionModule.Service[WorldReflectionModule] {
-    override def reflectedColor(world: World, hitComps: HitComps, remaining: Int): ZIO[WorldReflectionModule, RayTracerError, Color] =
+    override def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[WorldReflectionModule, RayTracerError, Color] =
       ZIO.accessM(_.worldReflectionModule.reflectedColor(world, hitComps, remaining))
   }
 }

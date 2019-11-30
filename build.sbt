@@ -145,6 +145,9 @@ lazy val `ray-tracer` = project
       cats,
       catsEffect,
       log4CatsSlf4j,
+      scrimageCore,
+      scrimageFilters,
+      scrimageIOX,
       scalaTest % "test"
     )
   )

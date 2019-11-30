@@ -3,15 +3,16 @@ import sbt._
 object Dependencies {
   val http4sVersion = "0.21.0-M4"
 
-  val zioVersion       = "1.0.0-RC16"
-  val zioCatsVersion   = "2.0.0.0-RC7"
-  val zioNioVersion    = "0.3.0"
-  val zioMacrosVersion = "0.5.0"
+  val zioVersion       = "1.0.0-RC17"
+  val zioCatsVersion   = "2.0.0.0-RC8"
+  val zioNioVersion    = "0.4.0"
+  val zioMacrosVersion = "0.6.0"
 
   val fs2Version        = "2.0.0"
   val catsVersion       = "2.0.0"
   val catsEffectVersion = "2.0.0"
   val circeVersion      = "0.12.1"
+  val scrimageVersion   = "2.1.8"
 
   lazy val scalaTest  = "org.scalatest"  %% "scalatest"  % "3.0.5"
   lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
@@ -54,6 +55,11 @@ object Dependencies {
   lazy val scalafx = "org.scalafx" %% "scalafx" % "8.0.144-R12"
 
   lazy val scalaTags = "com.lihaoyi" %% "scalatags" % "0.6.8"
+
+  // scrimage
+  lazy val scrimageCore    = "com.sksamuel.scrimage" %% "scrimage-core" % scrimageVersion
+  lazy val scrimageIOX     = "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion
+  lazy val scrimageFilters = "com.sksamuel.scrimage" %% "scrimage-filters" % scrimageVersion
 
   lazy val zioTest         = "dev.zio" %% "zio-test"        % zioVersion
   lazy val zioTestSbt      = "dev.zio" %% "zio-test-sbt"    % zioVersion
