@@ -1,16 +1,14 @@
 package io.tuliplogic.raytracer.http.model
 
-import io.tuliplogic.raytracer.commons.errors.{BusinessError, RayTracerError}
+import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
 import io.tuliplogic.raytracer.commons.errors.IOError.HttpError
 import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.http.model.Shape.{Plane, Sphere}
 import io.tuliplogic.raytracer.ops.model.data
-import io.tuliplogic.raytracer.ops.model.data.Scene.PointLight
-import io.tuliplogic.raytracer.ops.model.data.{Color, Scene, World}
+import io.tuliplogic.raytracer.ops.model.data.{Color, World}
 import zio.{UIO, ZIO}
-import zio.macros.annotation.{accessible, mockable}
 
 trait Http2WorldModule {
   val http2WorldModule: Http2WorldModule.Service[Any]
@@ -89,23 +87,25 @@ object Http2WorldModule {
     val aTModule: ATModule.Service[Any]
 
     val http2WorldModule: Service[Any] = new Service[Any]{
-      override def httpScene2World(httpScene: Scene): ZIO[Any, HttpError, SceneBundle] = (for {
-        worldShapes <- ZIO.traverse(httpScene.shapes)(httpShape2Shape).mapError(e => HttpError(e.getMessage))
-        pointLightColor <- Color.fromHex(httpScene.pointLight.color).mapError(e => HttpError(e.getMessage))
-        pointLight  <- UIO(data.Scene.PointLight(
-          Pt(httpScene.pointLight.ptX, httpScene.pointLight.ptY, httpScene.pointLight.ptZ), pointLightColor))
+      override def httpScene2World(httpScene: Scene): ZIO[Any, HttpError, SceneBundle] = (
+        for {
+          worldShapes <- ZIO.traverse(httpScene.shapes)(httpShape2Shape).mapError(e => HttpError(e.getMessage))
+          pointLightColor <- Color.fromHex(httpScene.pointLight.color).mapError(e => HttpError(e.getMessage))
+          pointLight  <- UIO(data.Scene.PointLight(
+            Pt(httpScene.pointLight.ptX, httpScene.pointLight.ptY, httpScene.pointLight.ptZ), pointLightColor))
 
-      } yield SceneBundle(
-        World(pointLight, worldShapes),
-        viewFrom(httpScene.camera),
-        viewTo(httpScene.camera),
-        upVec(httpScene.camera),
-        math.Pi / 3,
-        httpScene.camera.hRes,
-        httpScene.camera.vRes
-      ) ).provide(new ATModule {
-        override val aTModule: ATModule.Service[Any] = self.aTModule
-      })
+        } yield SceneBundle(
+            World(pointLight, worldShapes),
+            viewFrom(httpScene.camera),
+            viewTo(httpScene.camera),
+            upVec(httpScene.camera),
+            math.Pi / 3,
+            httpScene.camera.hRes,
+            httpScene.camera.vRes
+          )
+      ).provide(new ATModule {
+          override val aTModule: ATModule.Service[Any] = self.aTModule
+        })
 
 
     }

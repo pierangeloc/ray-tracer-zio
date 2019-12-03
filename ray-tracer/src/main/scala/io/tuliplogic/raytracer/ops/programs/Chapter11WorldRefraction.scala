@@ -6,12 +6,15 @@ import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, PointLight, Shape, Sphere}
 import io.tuliplogic.raytracer.ops.model.data.{Color, Material, Pattern, World}
+import io.tuliplogic.raytracer.ops.programs.Chapter10World2Birdseye.canvasFile
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import zio.{App, UIO, ZEnv, ZIO, console}
 
 
 object Chapter11WorldRefraction extends App {
   val canvasFile    = "ppm/chapter-11-refractive-spheres" + System.currentTimeMillis + ".ppm"
+  val path: Path = Paths.get(canvasFile)
+
   val lightPosition = Pt(5, 5, 2)
   val cameraFrom    = Pt(0, 10, 0)
   val cameraTo      = Pt.origin
@@ -23,9 +26,7 @@ object Chapter11WorldRefraction extends App {
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     program
       .provide {
-        new CanvasSerializer.PPMCanvasSerializer with FullModules {
-          override def path: Path = Paths.get(canvasFile)
-        }
+        new CanvasSerializer.PPMCanvasSerializer with FullModules
       }
       .foldM(err => console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1), _ => UIO.succeed(0))
 
@@ -55,7 +56,7 @@ object Chapter11WorldRefraction extends App {
   val program = for {
     w      <- world
       canvas <- RaytracingProgram.drawOnCanvas(w, cameraFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
-      _      <- CanvasSerializer.>.serialize(canvas, 255)
+      _      <- CanvasSerializer.>.serializeToFile(canvas, 255, path)
   } yield ()
 
 }
