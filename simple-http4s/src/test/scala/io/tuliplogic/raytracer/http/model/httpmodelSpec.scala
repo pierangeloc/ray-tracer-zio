@@ -9,7 +9,7 @@ import io.tuliplogic.raytracer.http.model.Shape.Sphere
 
 object httpmodelSpec extends DefaultRunnableSpec(
   suite("parse correctly body") {
-    testM("scene with no shapes") {
+    test("scene with 2 spheres is decodable") {
       val mat1 = Material(
         Pattern.Striped("ff0000", "00ff00", 5),
         None,
@@ -30,7 +30,9 @@ object httpmodelSpec extends DefaultRunnableSpec(
       )
       val scene = Scene(List(s1, s2), PointLight(10, 10, 10, "ff0000"), camera)
       println(scene.asJson.spaces2)
-      ZIO.unit.as(assert(true, equalTo(true)))
+      import io.circe.parser._
+
+      assert(parse(scene.asJson.spaces2).flatMap(_.as[Scene]), equalTo(Right(scene)))
     }
   }
 )

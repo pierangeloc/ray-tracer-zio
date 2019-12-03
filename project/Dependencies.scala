@@ -39,6 +39,7 @@ object Dependencies {
   lazy val circeCore     = "io.circe" %% s"circe-core"           % circeVersion
   lazy val circeGeneric  = "io.circe" %% s"circe-generic"        % circeVersion
   lazy val circeGenericX = "io.circe" %% s"circe-generic-extras" % circeVersion
+  lazy val circeParser   = "io.circe" %% "circe-parser"          % circeVersion
 
   // type-level restrictions
   lazy val breeze       = "org.scalanlp" %% "breeze"         % "0.13.2"
