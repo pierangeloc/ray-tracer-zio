@@ -6,9 +6,13 @@ import io.tuliplogic.raytracer.ops.model.modules.RasteringModule
 import io.tuliplogic.raytracer.ops.programs.RaytracingProgram
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import zio.ZIO
+import zio.console.Console
 
 object DrawingProgram {
-  def draw(sceneBundle: SceneBundle): ZIO[CanvasSerializer with RasteringModule with ATModule, Nothing, (String, Array[Byte])] = for {
+  type DrawEnv = CanvasSerializer with RasteringModule with ATModule
+
+  def draw(sceneBundle: SceneBundle): ZIO[CanvasSerializer with RasteringModule with ATModule with Console, Nothing, (String, Array[Byte])] = for {
+    _      <- zio.console.putStrLn("Created scene bundle, now drawing the world...")
     canvas <- RaytracingProgram.drawOnCanvas(
       sceneBundle.world,
       sceneBundle.viewFrom,
@@ -17,6 +21,7 @@ object DrawingProgram {
       sceneBundle.visualAngleRad,
       sceneBundle.hRes, sceneBundle.vRes
       ).orDie
+    _      <- zio.console.putStrLn("World is drawn, baking png...")
     bs <- CanvasSerializer.>.serializeAsByteStream(canvas, 255).runCollect
   } yield ("image/png", bs.toArray)
 }

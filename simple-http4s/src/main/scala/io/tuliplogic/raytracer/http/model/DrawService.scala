@@ -13,8 +13,9 @@ import io.circe._
 import io.circe.generic.auto._
 import org.http4s._
 import org.http4s.circe._
+import zio.console.Console
 
-class HttpService[R <: CanvasSerializer with RasteringModule with ATModule] {
+class DrawService[R <: DrawingProgram.DrawEnv with Console] {
   type F[A] = RIO[R, A]
   private val http4sDsl = new Http4sDsl[F] {}
   import http4sDsl._
@@ -27,13 +28,13 @@ class HttpService[R <: CanvasSerializer with RasteringModule with ATModule] {
   val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
     case req @ POST -> Root / "draw" =>
       req.decode[Scene] { scene =>
-        val t: ZIO[CanvasSerializer with RasteringModule with ATModule, IOError.HttpError, (String, Array[Byte])] = for {
+        val t: ZIO[CanvasSerializer with RasteringModule with ATModule with Console, IOError.HttpError, (String, Array[Byte])] = for {
           bundle  <- Http2World.httpScene2World(scene)
           res     <- DrawingProgram.draw(bundle)
         } yield res
 
         t.foldM(
-          _ => InternalServerError("something went wrong..."),
+          e => zio.console.putStrLn(s"error ${e.getStackTrace.mkString("\n")}" + e) *> InternalServerError(s"something went wrong..., ${e.getStackTrace.mkString("\n")}"),
           {case (ct, bs) => Ok(bs, `Content-Type`(MediaType.unsafeParse(ct)))}
         )
       }

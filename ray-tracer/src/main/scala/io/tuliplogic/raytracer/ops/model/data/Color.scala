@@ -23,9 +23,9 @@ object Color {
   def fromHex(s: String): IO[GenericError, Color] = s.toList match {
     case List(r1, r2, g1, g2, b1, b2) =>
       IO.effect(Color(
-        Integer.parseInt(r1.toString + r2) / 256.0,
-        Integer.parseInt(g1.toString + g2) / 256.0,
-        Integer.parseInt(b1.toString + b2) / 256.0
+        Integer.parseInt(r1.toString + r2, 16) / 256.0,
+        Integer.parseInt(g1.toString + g2, 16) / 256.0,
+        Integer.parseInt(b1.toString + b2, 16) / 256.0
       )).mapError(_ => GenericError(s"could not parse hex RGB $s"))
 
     case _ => IO.fail(GenericError(s"could not parse hex RGB $s"))

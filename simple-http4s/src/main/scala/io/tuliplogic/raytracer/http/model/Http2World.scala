@@ -7,7 +7,8 @@ import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.http.model.Shape.{Plane, Sphere}
 import io.tuliplogic.raytracer.ops.model.data
-import io.tuliplogic.raytracer.ops.model.data.{Color, World}
+import io.tuliplogic.raytracer.ops.model.data.{Color, Scene, World}
+import zio.console.Console
 import zio.{UIO, ZIO}
 
 object Http2World {
@@ -50,10 +51,12 @@ object Http2World {
       } yield data.Pattern.Uniform(col, tf)
   }
 
-  private def material(mat: Material): ZIO[ATModule, GenericError, data.Material] = mat match {
-    case Material(p, ambient, diffuse, specular, shininess, reflective, transparency, refractionIndex) =>
+  private def material(mat: Material): ZIO[ATModule with Console, GenericError, data.Material] = mat match {
+    case m @ Material(p, ambient, diffuse, specular, shininess, reflective, transparency, refractionIndex) =>
       for {
+        _ <- zio.console.putStrLn(s"Creating material from $m")
         p <- pattern(p)
+        _ <- zio.console.putStrLn(s"Created pattern $p for material")
       } yield
         data.Material(
           p,
@@ -67,9 +70,10 @@ object Http2World {
         )
   }
 
-  private def httpShape2Shape(s: Shape): ZIO[ATModule, RayTracerError, data.Scene.Shape] = s match {
-    case Plane(m, rotateX, rotateY, rotateZ, translateX, translateY, translateZ) =>
+  private def httpShape2Shape(s: Shape): ZIO[ATModule with Console, RayTracerError with Product with Serializable, data.Scene.Shape] = s match {
+    case p @ Plane(m, rotateX, rotateY, rotateZ, translateX, translateY, translateZ) =>
       for {
+        _   <- zio.console.putStrLn(s"creating plane from $p")
         mat <- material(m)
         plane <- data.Scene.Plane.make(
           rotateX.getOrElse(0),
@@ -79,8 +83,9 @@ object Http2World {
           mat)
       } yield plane
 
-    case Sphere(m, centerX, centerY, centerZ, radius) =>
+    case sph @ Sphere(m, centerX, centerY, centerZ, radius) =>
       for {
+        _   <- zio.console.putStrLn(s"creating sphere from $sph")
         mat <- material(m)
         s <- data.Scene.Sphere.make(
           Pt(centerX, centerY, centerZ),
@@ -90,7 +95,7 @@ object Http2World {
       } yield s
   }
 
-  def httpScene2World(httpScene: Scene): ZIO[ATModule, HttpError, SceneBundle] = (
+  def httpScene2World(httpScene: Scene): ZIO[ATModule with Console, HttpError, SceneBundle] = (
     for {
       worldShapes     <- ZIO.traverse(httpScene.shapes)(httpShape2Shape).mapError(e => HttpError(e.getMessage))
       pointLightColor <- Color.fromHex(httpScene.pointLight.color).mapError(e => HttpError(e.getMessage))

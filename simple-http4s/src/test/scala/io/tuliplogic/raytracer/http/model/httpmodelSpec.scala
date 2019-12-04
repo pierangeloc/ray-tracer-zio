@@ -1,6 +1,5 @@
 package io.tuliplogic.raytracer.http.model
 
-import zio.ZIO
 import zio.test._
 import zio.test.Assertion._
 import io.circe.generic.auto._
