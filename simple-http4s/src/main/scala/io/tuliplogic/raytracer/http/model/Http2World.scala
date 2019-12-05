@@ -37,18 +37,24 @@ object Http2World {
         tf   <- ATModule.>.scale(stripSize, 1, 1)
       } yield data.Pattern.Striped(col1, col2, tf)
 
-    case Pattern.Checker(c1, c2, size: Double) =>
+    case Pattern.Checker(c1, c2, size) =>
       for {
         col1 <- Color.fromHex(c1)
         col2 <- Color.fromHex(c2)
         tf   <- ATModule.>.scale(size, size, size)
       } yield data.Pattern.Checker(col1, col2, tf)
 
-    case Pattern.Uniform(c: String) =>
+    case Pattern.Uniform(c) =>
       for {
         col <- Color.fromHex(c)
         tf  <- ATModule.>.id
       } yield data.Pattern.Uniform(col, tf)
+
+    case Pattern.GradientX(c1, c2) => for {
+      col1 <- Color.fromHex(c1)
+      col2 <- Color.fromHex(c2)
+      tf  <- ATModule.>.id
+    } yield data.Pattern.GradientX(col1, col2, tf)
   }
 
   private def material(mat: Material): ZIO[ATModule with Console, GenericError, data.Material] = mat match {

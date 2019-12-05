@@ -16,6 +16,7 @@ object Pattern {
   case class Striped(c1: String, c2: String, stripSize: Double) extends Pattern
   case class Uniform(c: String) extends Pattern
   case class Checker(c1: String, c2: String, size: Double) extends Pattern
+  case class GradientX(c1: String, c2: String) extends Pattern
 }
 
 sealed trait Shape

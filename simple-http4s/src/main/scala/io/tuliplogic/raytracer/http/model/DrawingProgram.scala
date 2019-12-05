@@ -22,6 +22,8 @@ object DrawingProgram {
       sceneBundle.hRes, sceneBundle.vRes
       ).orDie
     _      <- zio.console.putStrLn("World is drawn, baking png...")
-    bs <- CanvasSerializer.>.serializeAsByteStream(canvas, 255).runCollect
+    bs     <- CanvasSerializer.>.serializeAsByteStream(canvas, 255).runCollect
+    _      <- zio.console.putStrLn(s"Png is baked, long ${bs.size} bytes")
+
   } yield ("image/png", bs.toArray)
 }
