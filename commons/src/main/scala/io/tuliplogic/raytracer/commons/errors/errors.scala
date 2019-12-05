@@ -38,4 +38,5 @@ sealed trait IOError extends RayTracerError
 object IOError {
   case class CanvasRenderingError(override val getMessage: String, override val getCause: Throwable) extends IOError
   case class HttpError(override val getMessage: String) extends IOError
+  case class DrawingRepoError(override val getMessage: String) extends IOError
 }
