@@ -4,9 +4,6 @@ import org.http4s.{HttpRoutes, MediaType}
 import org.http4s.dsl.Http4sDsl
 import zio._
 import io.tuliplogic.raytracer.commons.errors.IOError
-import io.tuliplogic.raytracer.geometry.affine.ATModule
-import io.tuliplogic.raytracer.ops.model.modules.RasteringModule
-import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
 import org.http4s.headers.`Content-Type`
 import zio.interop.catz._
 import io.circe._
@@ -25,13 +22,12 @@ class DrawService[R <: DrawingProgram.DrawEnv with DrawingRepository with Random
   private val http4sDsl = new Http4sDsl[F] {}
   import http4sDsl._
 
-  implicit def circeJsonDecoder[A](implicit decoder: Decoder[A]):
-  EntityDecoder[F, A] = jsonOf[F, A]
-  implicit def circeJsonEncoder[A](implicit decoder: Encoder[A]):
-  EntityEncoder[F, A] = jsonEncoderOf[F, A]
-
   val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
     case req @ POST -> Root / "draw" =>
+      implicit def circeJsonDecoder[A](implicit decoder: Decoder[A]):
+      EntityDecoder[F, A] = jsonOf[F, A]
+      implicit def circeJsonEncoder[A](implicit decoder: Encoder[A]):
+      EntityEncoder[F, A] = jsonEncoderOf[F, A]
       req.decode[Scene] { scene =>
         val t: ZIO[DrawingProgram.DrawEnv with Console with Random with Clock with DrawingRepository, IOError.HttpError, DrawingId] = for {
           bundle    <- Http2World.httpScene2World(scene)
@@ -53,12 +49,18 @@ class DrawService[R <: DrawingProgram.DrawEnv with DrawingRepository with Random
         )
       }
 
-    case req @ GET -> Root / "draw" / LongVar(id) =>
+    case GET -> Root / "draw" / LongVar(id) =>
       for {
         drawingState <- DrawingRepository.>.find(DrawingId(id))
         response     <- drawingState match {
-          case e @ Error(_) => Ok(e)
-          case s @ Started(_) => Ok(s)
+          case e @ Error(_) =>
+            implicit def circeJsonEncoder[A](implicit decoder: Encoder[A]):
+            EntityEncoder[F, A] = jsonEncoderOf[F, A]
+            Ok(e)
+          case s @ Started(_) =>
+            implicit def circeJsonEncoder[A](implicit decoder: Encoder[A]):
+            EntityEncoder[F, A] = jsonEncoderOf[F, A]
+            Ok(s)
           case Done(contentType, bytes, millisRequired) =>
             Ok(bytes, `Content-Type`(MediaType.unsafeParse(contentType)), Header("X-millis-required", millisRequired.toString))
         }

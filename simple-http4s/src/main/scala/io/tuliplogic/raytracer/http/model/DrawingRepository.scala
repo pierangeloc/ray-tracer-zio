@@ -4,7 +4,6 @@ import io.tuliplogic.raytracer.commons.errors.IOError.DrawingRepoError
 import zio.macros.annotation.accessible
 import zio.{Ref, ZIO}
 import DrawingRepoModel._
-import zio.clock.Clock
 
 @accessible(">")
 trait DrawingRepository {
