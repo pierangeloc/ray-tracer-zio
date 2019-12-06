@@ -7,12 +7,11 @@ import io.tuliplogic.raytracer.commons.errors.IOError
 import io.tuliplogic.raytracer.ops.model.data.{Canvas, Color}
 import zio.nio.channels.AsynchronousFileChannel
 import zio.stream._
-import zio.{Chunk, UIO, ZIO, stream}
+import zio.{Chunk, UIO, ZIO}
 import mouse.all._
 import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
-import zio.macros.annotation.accessible
 
 import scala.math.min
 
@@ -107,9 +106,6 @@ object CanvasSerializer {
             serializeAsByteStream(canvas, maxColor).run(channelSink(channel)).unit
               .mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
         }
-
-
-
 
       def channelSink(channel: AsynchronousFileChannel): Sink[Exception, Nothing, Chunk[Byte], Int] =
         Sink.foldLeftM(0) { (pos: Int, chunk: Chunk[Byte]) =>
