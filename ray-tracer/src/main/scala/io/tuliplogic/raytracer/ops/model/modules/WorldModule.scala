@@ -3,6 +3,7 @@ package io.tuliplogic.raytracer.ops.model.modules
 import cats.implicits._
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.ops.model.data.{Color, Ray, World}
+import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.HitComps
 import zio.interop.catz._
 import zio.macros.annotation.mockable
 import zio.{IO, Ref, UIO, ZIO}
@@ -30,6 +31,24 @@ object WorldModule {
     val worldRefractionModule: WorldRefractionModule.Service[Any]
 
     override val worldModule: Service[Any] = new Service[Any] {
+
+      def schlick(hitComps: HitComps) = {
+        val cos = if (hitComps.n1 <= hitComps.n2)
+          hitComps.eyeV dot hitComps.normalV
+          else {
+            val c = hitComps.eyeV dot hitComps.normalV
+            val n = hitComps.n1 / hitComps.n2
+            val sin2t = n * n / (1 - c * c)
+            if (sin2t > 1)
+              1
+            else {
+              math.sqrt(1 - sin2t)
+            }
+          }
+        val r0: Double = (hitComps.n1 - hitComps.n2) / (hitComps.n1 * hitComps.n2) * (hitComps.n1 - hitComps.n2) / (hitComps.n1 * hitComps.n2)
+        r0 + (1 - r0) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos)
+      }
+
       def colorForRay(world: World, ray: Ray, remaining: Ref[Int]): ZIO[Any, RayTracerError, Color] =
         for {
           intersections <- worldTopologyModule.intersections(world, ray)
@@ -47,7 +66,12 @@ object WorldModule {
                   }// if (r > 0)  else UIO(Color.black)
                 refractedColor <- worldRefractionModule.refractedColor(world, hc, remaining)
 //                _ <- UIO(println(s"color: $color, reflectedC: $reflectedColor, refractedC: $refractedColor"))
-              } yield color + reflectedColor + refractedColor
+              } yield {
+                if (hc.shape.material.reflective > 0 && hc.shape.material.transparency > 0) {
+                  val reflectance = schlick(hc)
+                  color + reflectedColor * reflectance + refractedColor * (1 - reflectance)
+                } else color + reflectedColor + refractedColor
+              }
           }
         } yield color
     }
