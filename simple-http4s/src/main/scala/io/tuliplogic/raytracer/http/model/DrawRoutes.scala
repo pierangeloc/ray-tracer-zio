@@ -17,7 +17,7 @@ import zio.clock.Clock
 import zio.console.Console
 import zio.random.Random
 
-class DrawService[R <: DrawingProgram.DrawEnv with DrawingRepository with Random with Console with Clock] {
+class DrawRoutes[R <: DrawingProgram.DrawEnv with DrawingRepository with Random with Console with Clock] {
   type F[A] = RIO[R, A]
   private val http4sDsl = new Http4sDsl[F] {}
   import http4sDsl._
@@ -48,6 +48,10 @@ class DrawService[R <: DrawingProgram.DrawEnv with DrawingRepository with Random
           drawingId => Ok(drawingId)
         )
       }
+
+    case GET -> Root / "draw" =>
+      implicit def circeJsonEncoder[A](implicit decoder: Encoder[A]): EntityEncoder[F, A] = jsonEncoderOf[F, A]
+      DrawingRepository.>.getAllIds.flatMap(Ok(_))
 
     case GET -> Root / "draw" / LongVar(id) =>
       for {
