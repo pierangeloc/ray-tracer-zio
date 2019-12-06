@@ -1,14 +1,12 @@
 package io.tuliplogic.raytracer.http.model
 
-import io.tuliplogic.raytracer.http.model.DrawingProgram.DrawEnv
 import io.tuliplogic.raytracer.http.model.DrawingRepoModel.{DrawingId, DrawingState}
 import io.tuliplogic.raytracer.ops.programs.FullModules
 import io.tuliplogic.raytracer.ops.rendering.CanvasSerializer
-import io.tuliplogic.repository.UserRepository
 import zio.clock.Clock
 import zio.console._
 import zio.random.Random
-import zio.{App, RIO, Ref, UIO, ZEnv, ZIO}
+import zio.{App, Ref, ZEnv, ZIO}
 
 /**
   *
@@ -16,8 +14,6 @@ import zio.{App, RIO, Ref, UIO, ZEnv, ZIO}
   * Created with ♥ in Amsterdam
   */
 object Main extends App {
-  type AppEnvironment = Clock with UserRepository
-  type AppTask[A]     = RIO[AppEnvironment, A]
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
     (for {
