@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  val http4sVersion = "0.21.0-M4"
+  val http4sVersion = "0.21.0-M6"
 
   val zioVersion       = "1.0.0-RC17"
   val zioCatsVersion   = "2.0.0.0-RC8"
@@ -39,6 +39,7 @@ object Dependencies {
   lazy val circeCore     = "io.circe" %% s"circe-core"           % circeVersion
   lazy val circeGeneric  = "io.circe" %% s"circe-generic"        % circeVersion
   lazy val circeGenericX = "io.circe" %% s"circe-generic-extras" % circeVersion
+  lazy val circeParser   = "io.circe" %% "circe-parser"          % circeVersion
 
   // type-level restrictions
   lazy val breeze       = "org.scalanlp" %% "breeze"         % "0.13.2"

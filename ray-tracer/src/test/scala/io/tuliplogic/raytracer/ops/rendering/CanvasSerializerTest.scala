@@ -12,11 +12,12 @@ import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.console.Console
 import zio.stream.{Sink, ZStream}
-import zio.{DefaultRuntime, IO, ZIO}
+import zio.{DefaultRuntime, IO}
 
 class CanvasSerializerTest extends WordSpec with DefaultRuntime {
 
   val canvasFile = "ppm/canvas.ppm"
+  val path: Path = Paths.get(canvasFile)
   val w          = 5
   val h          = 4
 
@@ -24,21 +25,17 @@ class CanvasSerializerTest extends WordSpec with DefaultRuntime {
 
   "canvas renderer" should {
     "write canvas as PPM file" in {
-      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live with Clock.Live with Console.Live {
-        override def path: Path = Paths.get(canvasFile)
-      }
+      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live with Clock.Live with Console.Live
       unsafeRun {
         for {
           newCanvas <- Canvas.create(w, h)
-          _         <- cr.canvasSerializer.serialize(newCanvas, 256)
+          _         <- cr.canvasSerializer.serializeToFile(newCanvas, 256, path)
         } yield ()
       }
     }
 
     "show that a point can rotate in the plane" in {
-      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live with Clock.Live with Console.Live {
-        override def path: Path = Paths.get(canvasFile)
-      }
+      val cr = new CanvasSerializer.PPMCanvasSerializer with Blocking.Live with Clock.Live with Console.Live
 
       def updateCanvasFromXY(c: Canvas, p: Pt): IO[AlgebraicError, Unit] =
         c.update(p.x.toInt, p.y.toInt, Color(255, 255, 255))
@@ -64,7 +61,7 @@ class CanvasSerializerTest extends WordSpec with DefaultRuntime {
               }
             }
             .run(Sink.collectAll[Unit])
-          _ <- cr.canvasSerializer.serialize(c, 256)
+          _ <- cr.canvasSerializer.serializeToFile(c, 256, path)
         } yield ()).provide(env)
       }
     }

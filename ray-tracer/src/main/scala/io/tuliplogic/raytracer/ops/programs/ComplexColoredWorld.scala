@@ -47,18 +47,16 @@ object ComplexColoredWorld extends App{
     light      <- UIO(pointLight)
   } yield World(light, List[Shape](s1, s2, s3, f))
 
-  def program(viewFrom: Pt): ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] = for {
+  def program(viewFrom: Pt, path: Path): ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] = for {
     w      <- world
     canvas <- RaytracingProgram.drawOnCanvas(w, viewFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
-    _      <- CanvasSerializer.>.serialize(canvas, 255)
+    _      <- CanvasSerializer.>.serializeToFile(canvas, 255, path)
   } yield ()
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
-    ZIO.traverse(-35 to -35)(z => program(Pt(57, 20, z))
+    ZIO.traverse(-35 to -35)(z => program(Pt(57, 20, z), Paths.get(s"$canvasFile-$z.ppm"))
       .provide {
-        new CanvasSerializer.PPMCanvasSerializer with FullModules {
-          override def path: Path = Paths.get(s"$canvasFile-$z.ppm")
-        }
+        new CanvasSerializer.PPMCanvasSerializer with FullModules
       }
     ).timed.foldM(err =>
       console.putStrLn(s"Execution failed with: $err").as(1),

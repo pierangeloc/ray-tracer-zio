@@ -93,11 +93,15 @@ lazy val `simple-http4s` = project
         http4sDsl,
         http4sCirce,
         circeCore,
+        circeParser,
         circeGeneric,
         circeGenericX,
         log4CatsSlf4j
       )
   )
+  .dependsOn(commons)
+  .dependsOn(`ray-tracer`)
+
 
 lazy val geometry = project
   .in(file("geometry"))

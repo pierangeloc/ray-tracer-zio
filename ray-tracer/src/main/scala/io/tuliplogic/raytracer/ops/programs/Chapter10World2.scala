@@ -12,6 +12,7 @@ import zio.{App, UIO, ZEnv, ZIO, console}
 
 object Chapter10World2 extends App {
   val canvasFile    = "ppm/chapter-10-two-spheres-shadow-" + System.currentTimeMillis + ".png"
+  val path: Path = Paths.get(canvasFile)
   val lightPosition = Pt(10, 10, 2)
   val cameraFrom    = Pt(12, 4, 0)
   val cameraTo      = Pt(0, 4, 16)
@@ -24,9 +25,7 @@ object Chapter10World2 extends App {
     program
       .provide {
         new CanvasSerializer.PNGCanvasSerializer with ATModule.Live
-        with FullModules {
-          override def path: Path = Paths.get(canvasFile)
-        }
+        with FullModules
       }.timed
       .foldM(err =>
         console.putStrLn(s"Execution failed with: ${err.getStackTraceString}").as(1),
@@ -74,7 +73,7 @@ object Chapter10World2 extends App {
   val program = for {
     w      <- world
       canvas <- RaytracingProgram.drawOnCanvas(w, cameraFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
-      _      <- CanvasSerializer.>.serialize(canvas, 255)
+      _      <- CanvasSerializer.>.serializeToFile(canvas, 255, path)
   } yield ()
 
 }

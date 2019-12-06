@@ -19,6 +19,7 @@ object SimpleColoredWorld extends App{
   val vRes = 480
   val canvasFile    = "ppm/simple-colored-world-" + System.currentTimeMillis
 
+
   val world = for {
     defaultMat <- Material.default
     idTf       <- ATModule.>.id
@@ -27,22 +28,19 @@ object SimpleColoredWorld extends App{
     light      <- UIO(PointLight(Pt(0, 0, -15), Color.white))
   } yield World(light, List[Shape](s1, s2))
 
-  def program(viewFrom: Pt): ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] = for {
+  def program(viewFrom: Pt, path: Path): ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] = for {
     w      <- world
     canvas <- RaytracingProgram.drawOnCanvas(w, viewFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
-    _      <- CanvasSerializer.>.serialize(canvas, 255)
+    _      <- CanvasSerializer.>.serializeToFile(canvas, 255, path)
   } yield ()
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
-    ZIO.traverse(-18 to -6)(z => program(Pt(2, 2, z))
-      .provide {
-        new CanvasSerializer.PPMCanvasSerializer with VerySimpleModulesColored {
-          override def path: Path = Paths.get(s"$canvasFile-$z.ppm")
-        }
-      }
-    ).foldM(err =>
+    ZIO.traverse(-18 to -6)(z => program(Pt(2, 2, z), Paths.get(s"$canvasFile-$z.ppm")))
+      .foldM(err =>
       console.putStrLn(s"Execution failed with: $err").as(1),
       _ => UIO.succeed(0)
-    )
+    ).provide {
+      new CanvasSerializer.PPMCanvasSerializer with VerySimpleModulesColored
+    }
 
 }

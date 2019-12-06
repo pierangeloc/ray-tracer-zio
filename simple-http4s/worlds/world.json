@@ -1,0 +1,72 @@
+{
+  "shapes" : [
+    {
+      "Sphere" : {
+        "material" : {
+          "pattern" : {
+            "Striped" : {
+              "c1" : "ff0000",
+              "c2" : "00ff00",
+              "stripSize" : 5.0
+            }
+          },
+          "ambient" : null,
+          "diffuse" : null,
+          "specular" : null,
+          "shininess" : null,
+          "reflective" : null,
+          "transparency" : null,
+          "refractionIndex" : null
+        },
+        "centerX" : 5.0,
+        "centerY" : 5.0,
+        "centerZ" : 5.0,
+        "radius" : 5.0
+      }
+    },
+    {
+      "Sphere" : {
+        "material" : {
+          "pattern" : {
+            "Checker" : {
+              "c1" : "ff0000",
+              "c2" : "00ff00",
+              "size" : 5.0
+            }
+          },
+          "ambient" : null,
+          "diffuse" : null,
+          "specular" : null,
+          "shininess" : null,
+          "reflective" : null,
+          "transparency" : null,
+          "refractionIndex" : null
+        },
+        "centerX" : 5.0,
+        "centerY" : 5.0,
+        "centerZ" : 5.0,
+        "radius" : 5.0
+      }
+    }
+  ],
+  "pointLight" : {
+    "ptX" : 10.0,
+    "ptY" : 10.0,
+    "ptZ" : 10.0,
+    "color" : "ff0000"
+  },
+  "camera" : {
+    "fromX" : 7.0,
+    "fromY" : 7.0,
+    "fromZ" : 7.0,
+    "toX" : 0.0,
+    "toY" : 0.0,
+    "toZ" : 0.0,
+    "upX" : 0.0,
+    "upY" : 0.0,
+    "upZ" : 1.0,
+    "hRes" : 640,
+    "vRes" : 480
+  }
+}
+
