@@ -32,7 +32,7 @@ object WorldModule {
 
     override val worldModule: Service[Any] = new Service[Any] {
 
-      def schlick(hitComps: HitComps) = {
+      def schlick(hitComps: HitComps): Double = {
         val cos = if (hitComps.n1 <= hitComps.n2)
           hitComps.eyeV dot hitComps.normalV
           else {
@@ -45,7 +45,7 @@ object WorldModule {
               math.sqrt(1 - sin2t)
             }
           }
-        val r0: Double = (hitComps.n1 - hitComps.n2) / (hitComps.n1 * hitComps.n2) * (hitComps.n1 - hitComps.n2) / (hitComps.n1 * hitComps.n2)
+        val r0: Double = (hitComps.n1 - hitComps.n2) / (hitComps.n1 + hitComps.n2) * (hitComps.n1 - hitComps.n2) / (hitComps.n1 + hitComps.n2)
         r0 + (1 - r0) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos)
       }
 

@@ -20,7 +20,7 @@ trait RasteringModule {
 
 object RasteringModule {
 
-  val defaultRemaining = 7
+  val defaultRemaining = 15
   trait Service[R] {
     def raster(world: World, camera: Camera): ZStream[R, RayTracerError, ColoredPixel]
 //    ZIO[R, Nothing, ZStream[R, RayTracerError, ColoredPixel]]
