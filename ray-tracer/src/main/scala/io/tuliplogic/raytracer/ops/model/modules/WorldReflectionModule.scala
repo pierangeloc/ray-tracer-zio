@@ -19,7 +19,6 @@ object WorldReflectionModule {
       * Determines the color due to the reflection of the world on the hit point
       */
     def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[R, RayTracerError, Color]
-
   }
 
   trait Live extends WorldReflectionModule {
@@ -30,12 +29,15 @@ object WorldReflectionModule {
         ZIO[Any, RayTracerError, Color] =
         if (hitComps.shape.material.reflective == 0) {
           UIO(Color.black)
-        } else {
-          val reflRay = Ray(hitComps.overPoint, hitComps.rayReflectV)
-          worldModule.colorForRay(world, reflRay, remaining).map(c =>
-            c * hitComps.shape.material.reflective
-          )
-        }
+        } else for {
+          rem <- remaining.get
+          res <- if (rem < 0) UIO.succeed(Color.black) else {
+            val reflRay = Ray(hitComps.overPoint, hitComps.rayReflectV)
+            worldModule.colorForRay(world, reflRay, remaining).map(c =>
+              c * hitComps.shape.material.reflective
+            )
+          }
+        } yield res
     }
   }
 

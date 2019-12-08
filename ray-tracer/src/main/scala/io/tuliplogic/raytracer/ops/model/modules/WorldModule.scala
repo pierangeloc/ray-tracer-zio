@@ -53,25 +53,25 @@ object WorldModule {
         for {
           intersections <- worldTopologyModule.intersections(world, ray)
           maybeHitComps <- intersections.find(_.t > 0).traverse(worldHitCompsModule.hitComps(ray, _, intersections))
-          color <- maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) {
-            hc =>
-              for {
-                shadowed <- worldTopologyModule.isShadowed(world, hc.overPoint)
-                color    <- phongReflectionModule.lighting(world.pointLight, hc, shadowed).map(_.toColor)
-                //invoke this only if remaining > 0. Also, reflected color and color can be computed in parallel
-                r        <- remaining.update(_ - 1)
-                reflectedColor <- if (r <= 0) UIO(Color.black)
-                  else {
-                    worldReflectionModule.reflectedColor(world, hc, remaining)
-                  }// if (r > 0)  else UIO(Color.black)
-                refractedColor <- worldRefractionModule.refractedColor(world, hc, remaining)
-//                _ <- UIO(println(s"color: $color, reflectedC: $reflectedColor, refractedC: $refractedColor"))
-              } yield {
-                if (hc.shape.material.reflective > 0 && hc.shape.material.transparency > 0) {
-                  val reflectance = schlick(hc)
-                  color + reflectedColor * reflectance + refractedColor * (1 - reflectance)
-                } else color + reflectedColor + refractedColor
-              }
+          rem           <- remaining.update(_ - 1)
+          color <- if (rem <= 0) UIO.succeed(Color.black)
+            else maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) {
+              hc =>
+                for {
+                  shadowed <- worldTopologyModule.isShadowed(world, hc.overPoint)
+                    ((c, reflectedColor), refractedColor)    <-
+                      (phongReflectionModule.lighting(world.pointLight, hc, shadowed).map(_.toColor) zipPar
+                        worldReflectionModule.reflectedColor(world, hc, remaining)) zipPar
+                        worldRefractionModule.refractedColor(world, hc, remaining)
+                } yield {
+                  if (hc.shape.material.reflective > 0 && hc.shape.material.transparency > 0) {
+                    val reflectance = schlick(hc)
+                    c + reflectedColor * reflectance + refractedColor * (1 - reflectance)
+
+                  } else {
+                    c + reflectedColor + refractedColor
+                  }
+                }
           }
         } yield color
     }

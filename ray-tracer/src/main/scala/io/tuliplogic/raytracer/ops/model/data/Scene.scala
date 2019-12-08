@@ -52,7 +52,7 @@ object Scene {
 
   case class Plane(transformation: AT, material: Material) extends Shape
   object Plane {
-    val horizEpsilon: Double = 1e-4
+    val horizEpsilon: Double = 1e-6
 
     def withTransformAndMaterial(tf: AT, material: Material): UIO[Plane] =
       UIO(Plane(tf, material))

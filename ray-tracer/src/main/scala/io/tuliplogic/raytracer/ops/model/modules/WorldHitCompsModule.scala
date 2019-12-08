@@ -68,9 +68,10 @@ object WorldHitCompsModule {
           pt <- UIO(ray.positionAt(hit.t))
           normalV <- normalReflectModule.normal(pt, hit.sceneObject)
           eyeV <- UIO(-ray.direction)
-          reflectV <- normalReflectModule.reflect(ray.direction, normalV)
+          realNormal <- UIO(if ((eyeV dot normalV) > 0) normalV else -normalV)
+          reflectV <- normalReflectModule.reflect(ray.direction, realNormal)
           (n1, n2) <- n1n2
-        } yield HitComps(hit.sceneObject, pt, normalV, eyeV, reflectV, n1, n2)
+        } yield HitComps(hit.sceneObject, pt, realNormal, eyeV, reflectV, n1, n2)
       }
     }
   }

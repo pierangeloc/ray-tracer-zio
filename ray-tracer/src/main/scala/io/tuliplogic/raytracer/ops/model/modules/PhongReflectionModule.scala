@@ -22,9 +22,8 @@ object PhongReflectionModule {
     * @param rayReflectV the reflection vector of the RAY
     */
   case class HitComps(shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec, n1: Double = 1, n2: Double = 1) {
-    def inside: Boolean = (normalV dot eyeV) < 0 //the eye is inside the sphere if the normal vector (pointing always outside) dot eyeV < 0
-    def overPoint: Pt   = hitPt + normalV.*(HitComps.epsilon * (if(inside) -1 else 1))
-    def underPoint: Pt  = hitPt + normalV.*(-HitComps.epsilon * (if(inside) -1 else 1))
+    def overPoint: Pt   = hitPt + normalV.*(HitComps.epsilon * 1 )//(if(inside) -1 else 1))
+    def underPoint: Pt  = hitPt + normalV.*(-HitComps.epsilon * 1 )//(if(inside) -1 else 1))
   }
 
   object HitComps {
