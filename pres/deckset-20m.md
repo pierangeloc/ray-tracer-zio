@@ -52,14 +52,13 @@ London - 12 Dec 2019
 
 [.text: alignment(left)]
 ### This talk
-- **Will cover**
+- **Is about**
  - ZIO environment
- - Layered computations
  - Testing
  - How ray tracing works
  
-- **Will not cover**
-- Errors, Concurrency, fibers, cancellation, runtime
+- **Is not about**
+ - Errors, Concurrency, fibers, cancellation, runtime
 
 ---
 ^The agenda for the talk:
@@ -80,28 +79,21 @@ London - 12 Dec 2019
 ---
 # ZIO - 101
 
-^ZIO belongs together with other projects, to the set of Functional Effects libraries. This means that computations are just values instead of statements, that can be manipulated and combined, and then interpreted separetely
-Let's write a simple program, and show how we can compose small programs into bigger programs. Notice that we are not building programs as "running things", we are building programs as data structures, and what I have after I have built these programs are just data structures, it's like having built a tree. The next step is to interpret the data structure, and that's the place where all impure stuff happens, where the console gets actually printed  
-#### Program as values
 
-[.code-highlight: 1]
-[.code-highlight: 1-2]
 [.code-highlight: 1-4]
-[.code-highlight: 1-5]
-[.code-highlight: 1-7]
-[.code-highlight: 1-8]
+[.code-highlight: 1-6]
 [.code-highlight: 1-10]
 ```scala
-val salutation = console.putStr("Zdravo, ")
-val city = console.putStrLn("Ljubljana!!!")
+import zio.console
 
-val prg = salutation *> city
-salutation.flatMap(_ => city)
+val hello =
+  console.putStrLn("Hello Functional Scala!!!") 
 
-// nothing happens!
-runtime.unsafeRun(prg)
+val runtime: Runtime[ZEnv] = new DefaultRuntime {}
 
-//>  Zdravo, Ljubljana!!!
+runtime.unsafeRun(hello)
+
+// > Hello Functional Scala!!! 
 ```
 
 ---
@@ -110,13 +102,13 @@ runtime.unsafeRun(prg)
 ^If we look at our simple program, we see that the type has 3 parameters, the environment, the error channel and the output channel
 ZIO is parameterized in 3 types, the environment, the error channel and the output channel. As a mental model, think of it as a ... which can be further simplified as ... One important thing is that it is contravariant in the environment, and covariant on the E,A 
 
-[.code-highlight: 1]
-[.code-highlight: 2-4]
-[.code-highlight: 2-8] 
-[.code-highlight: 2-12] 
+[.code-highlight: 1-2]
+[.code-highlight: 1-4]
+[.code-highlight: 1-8] 
+[.code-highlight: 1-12] 
 ```scala
-val prg = salutation *> city
-val prg: ZIO[Console, Nothing, Unit] = salutation *> city
+val hello: ZIO[Console, Nothing, Unit] =
+  console.putStrLn("Hello Functional Scala!!!") 
 
 ZIO[-R, +E, +A]
 
@@ -128,6 +120,7 @@ R => IO[Either[E, A]]
 
 R => Either[E, A]
 ```
+<!--
 
 ---
 # ZIO - 101
@@ -135,12 +128,14 @@ R => Either[E, A]
 ^What does it mean when we see ZIO[Console, Nothing, Unit]?
 
 ```scala
-val prg: ZIO[Console, Nothing, Unit] = salutation *> city
+val hello: ZIO[Console, Nothing, Unit] =
+  console.putStrLn("Hello Functional Scala!!!") 
 ```
 
 - Needs a `Console` to run
 - Doesn't produce any error
 - Produce `()` as output
+
 
 ---
 # ZIO - 101
@@ -152,27 +147,47 @@ val prg: ZIO[Console, Nothing, Unit] = salutation *> city
 * now I can run this "autonomous" effect in a runtime that provides nothing
 * if I try to run an effect with unsatisfied requirement in an runtime that provides less than required I get an error
 
-[.code-highlight: 1] 
 [.code-highlight: 1-2] 
 [.code-highlight: 1-5] 
-[.code-highlight: 1-4, 6] 
+[.code-highlight: 1-2, 6-7] 
 [.code-highlight: 1-4, 6-8] 
 [.code-highlight: 1-4, 6-9] 
 [.code-highlight: 1-4, 6, 7, 10-13]
 ```scala
-val prg: ZIO[Console, Nothing, Unit] = salutation *> city
-val miniRT = new Runtime[Any]{}
+val hello: ZIO[Console, Nothing, Unit] =
+  console.putStrLn("Hello Functional Scala!!!") 
 
-// Provide console
-val provided = prg.provide(Console.Live)
-val provided: ZIO[Any, Nothing, Unit] = prg.provide(Console.Live)
+val runtime: Runtime[ZEnv] = 
+  new DefaultRuntime{}
+val runtime: Runtime[Console with Clock with ...] = 
+  new DefaultRuntime{}
 
-miniRT.unsafeRun(provided)
-//>  Zdravo, Ljubljana!!!
+defaultRuntme.unsafeRun(hello)
+```
+-->
 
-miniRT.unsafeRun(prg)
-// [error]  found   : zio.ZIO[zio.console.Console,Nothing,Unit]
-// [error]  required: zio.ZIO[Any,?,?]
+---
+# ZIO - 101
+### A tale of types
+
+[.code-highlight: none] 
+[.code-highlight: 1] 
+[.code-highlight: 1-3] 
+[.code-highlight: 1-5] 
+[.code-highlight: 1-7] 
+[.code-highlight: 1-11] 
+```scala
+val two: ZIO[Any, Nothing, Int] = ???
+
+val parsedEmail: ZIO[Any, String, Email] = ???
+
+val kubeDeploy: ZIO[Kube, String, Unit] = ???
+
+val logAndDeploy: ZIO[Kube with Log, String, Unit] = ???
+
+type IO[+E, +A]   = ZIO[Any, E, A]
+
+type UIO[+A]      = ZIO[Any, Nothing, A]
 ```
 
 ---
@@ -182,7 +197,7 @@ miniRT.unsafeRun(prg)
 
 [.code-highlight: 1] 
 [.code-highlight: 1-4] 
-[.code-highlight: 1-6] 
+[.code-highlight: 1-7] 
 [.code-highlight: 1-8] 
 ```scala
 // INTRODUCE AN ENVIRONMENT
@@ -191,25 +206,9 @@ ZIO.access(f: R => A): ZIO[R, Nothing, A]
 ZIO.accessM(f: R => ZIO[R, E, A]): ZIO[R, E, A]
 
 // ELIMINATE AN ENVIRONMENT
-val prg: ZIO[Console, Nothing, Unit]
-prg.provide(Console.Live): ZIO[Any, Nothing, Unit]
+val kubeDeploy: ZIO[Kube, Nothing, Unit]
+prg.provide(Kube.Live): ZIO[Any, Nothing, Unit]
 ```
----
-^ A couple of useful corner cases that allow us to exploit expressivenesss through types.
-`IO[E,A]` is an effect that doesn't need anything but can fail or succeed
-`UIO[A]` is an effect that doesn't need anything to run, and cannot fail (at least from the possible errors we want to cover)
-In the latest ZIO RC there are even constraints that prevent to try to provide something to an effect that doesn't need anything, or trying to recover from errors on an effect that cannot fail
-
-# ZIO - 101
-### Types at work
-
-```scala
-type IO[+E, +A]   = ZIO[Any, E, A]
-
-type UIO[+A]      = ZIO[Any, Nothing, A]
-```
-
-
 ---
 ^The R part in ZIO makes it very convenient to use the module pattern. We use modules to model capabilities. All capabilities in ZIO are modelled as modules
 * All we need is to adhere to a simple naming convention
@@ -220,7 +219,7 @@ type UIO[+A]      = ZIO[Any, Nothing, A]
 Notice that we just defined an interface, or if you want an algebra
 # ZIO-101: Module Pattern
 
-### Example: A Metrics module (or Algebra)
+### Module recipe
 
 [.code-highlight: 1-4] 
 [.code-highlight: 1-9] 
@@ -228,7 +227,7 @@ Notice that we just defined an interface, or if you want an algebra
 ```scala
 // the module
 trait Metrics {
-  val metrics: Metrics.Service[Any]
+  val metrics: Metrics.Service[Any] // named as the module
 }
 object Metrics {
   // the service
@@ -251,22 +250,20 @@ object Metrics {
 * We can run it
 
 # ZIO-101: Module Pattern
-### A Metrics module - Running
+### `Metrics` and `Log` modules
 
-[.code-highlight: 1, 3-8] 
 [.code-highlight: 1-8] 
 [.code-highlight: 1-15] 
-[.code-highlight: 1-15, 18] 
+[.code-highlight: 1-15] 
 [.code-highlight: 1-19] 
 ```scala
-val prg2: 
-ZIO[Metrics with Log, Nothing, Unit] = 
-for {
-  _ <- Log.>.info("Hello")
-  _ <- Metrics.>.inc("salutation")
-  _ <- Log.>.info("BeeScala")
-  _ <- Metrics.>.inc("subject")
-} yield ()
+val prg2: ZIO[Metrics with Log, Nothing, Unit] = 
+  for {
+    _ <- Log.>.info("Hello")
+    _ <- Metrics.>.inc("salutation")
+    _ <- Log.>.info("BeeScala")
+    _ <- Metrics.>.inc("subject")
+  } yield ()
 
 trait Prometheus extends Metrics {
   val metrics = new Metrics.Service[Any] {
@@ -275,8 +272,8 @@ trait Prometheus extends Metrics {
   }
 }
 
-miniRT.unsafeRun(
-  prg2.provide(new Prometheus with Log.Live)
+runtime.unsafeRun(
+  prg2.provide(new Metrics.Prometheus with Log.Live)
 )
 ```
 
@@ -288,7 +285,7 @@ miniRT.unsafeRun(
 * we run the test program, if this doesn't throw the test is green
 
 # ZIO-101: Module Pattern
-### A Metrics module - testing
+### Testing
 
 [.code-highlight: none] 
 [.code-highlight: 1] 
@@ -315,7 +312,7 @@ val test =  for {
   _     <- UIO.effectTotal(assert(calls == List("salutation", "subject")))
 } yield ()
 
-miniRt.unsafeRun(test)
+runtime.unsafeRun(test)
 ```
 
 ---
@@ -407,7 +404,7 @@ Options:
 1. Compute all the rays (and discard most of them)
 1. Compute only the rays outgoing from the camera through the canvas, and determine how they behave on the surfaces
 
----
+<!--
 ^Let's start building our model. A ray is an infinite line with a starting point. So let's start with the components we need to represent it, i.e. points and vectors
 
 ![left fit](img/rt-ray-def-tex.png) 
@@ -487,6 +484,7 @@ testM("vectors and points form an affine space") (
   }
 )
 ```
+-->
 
 ---
 ^once we define points and vectors, the definition of a ray is immediate:
@@ -514,7 +512,7 @@ case class Ray(origin: Pt, direction: Vec) {
 * Define an object extending the Service, parameterized on the module itself. 
 * The accessor creation is pretty repetitive and mechanical, so an annotation can do the boring stuff for us (the same way simulacrum does for typeclasses)
 
-### Transformations 
+### Transformations Module
 
 [.code-highlight: 1]
 [.code-highlight: 1, 7-14]
@@ -548,7 +546,7 @@ object ATModule {
 ```
 
 ---
-### Transformations
+### Transformations Module
 
 [.code-highlight: 1-26]
 ```scala
@@ -584,7 +582,7 @@ object ATModule {
 
 ---
 ^ This accessor object allows us to summon our module wherever necessary
-### Transformations
+### Transformations Module
 
 [.code-highlight: 1-26]
 ```scala
@@ -607,7 +605,7 @@ object ATModule {
 
 ---
 ^ This accessor object allows us to summon our module wherever necessary, and build something like this, where I'm summoning capabilities from different modules, not only, but the compiler is able to infer and mix these capabilities for us
-### Transformations
+### Transformations Module
 
 [.code-highlight: 1-26]
 ```scala
@@ -621,7 +619,7 @@ val rotatedPt =
 ---
 
 ^ Show type inference
-### Transformations
+### Transformations Module
 
 [.code-highlight: 1-26]
 ```scala
@@ -636,13 +634,13 @@ val rotatedPt: ZIO[ATModule with Log, ATError, Pt] =
 ---
 
 ^ Now we want to provide an implementation of this module. With an easy convention to translate vectors and points into 4-tuples, all we need is matrix multiplication  
-### Transformations - Live
+### Transformations Module - Live
 
 ```scala
 val rotated: ZIO[ATModule, ATError, Vec] = 
   for {
-    rotateX <- ATModule.>.rotateZ(math.Pi/2)
-    res     <- ATModule.>.applyTf(rotateX, Vec(x, y, z))
+    rotateX <- ATModule.>.rotateX(math.Pi/2)
+    res     <- ATModule.>.applyTf(rotateX, Pt(1, 1, 1))
   } yield res
 ```
 
@@ -667,10 +665,11 @@ z \\
 \end{pmatrix}
 $$
 
+<!--
 ---
 
 ^ Given that we defined somewhere else another module to handle matrices
-### Transformations - Live
+### Transformations Module - Live
 
 [.code-highlight: 1-6]
 [.code-highlight: 1-18]
@@ -698,7 +697,7 @@ trait Live extends ATModule {
 ---
 
 ^ Now that we have a live implementation of our AT, let's see if we can run our rotation (forgetting about the Log module for a moment)
-### Transformations - running
+### Transformations Module - running
 
 [.code-highlight: 1]
 [.code-highlight: 1-2]
@@ -714,7 +713,7 @@ val program = rotatedPt.provide(new ATModule.Live{})
 ---
 
 ^ If I provide the ATModule with the missing dependency, i.e. an implementation of the MatrixModule
-### Transformations - running
+### Transformations Module - running
 
 [.code-highlight: 1]
 [.code-highlight: 1-5]
@@ -728,6 +727,9 @@ val program = rotatedPt.provide(
 runtime.unsafeRun(program)
 // Runs!
 ```
+
+-->
+
 ---
 ^So now we have a tool that allows us to perform the std transformations on our points and vectors, so we are ready to build a camera
 
@@ -753,12 +755,13 @@ runtime.unsafeRun(program)
 ### Camera - canonical
 
 [.code-highlight: 1-4, 6]
+[.code-highlight: 1-6]
 ```scala
 case class Camera (
   hRes: Int,
   vRes: Int,
   fieldOfViewRad: Double,
-  tf: AT
+  tf: AT // world transformation
 )
 ```
 
@@ -775,14 +778,6 @@ case class Camera (
 [.code-highlight: 1-20]
 ```scala
 object Camera {
-
-  def worldTransformation(from: Pt, to: Pt, up: Vec):
-    ZIO[ATModule, Nothing, AT] = for {
-    orientationAT <- // some prepration ...
-    translateTf   <- ATModule.>.translate(-from.x, -from.y, -from.z)
-    composed      <- ATModule.>.compose(translateTf,  orientationAT)
-  } yield composed
-
   def make(
     viewFrom: Pt, 
     viewTo: Pt, 
@@ -916,7 +911,7 @@ object WorldModule {
 ^And with these 2 modules we can provide a live implementation of the rastering logic. We declare dependencies on the *services* of our modules, and then we access them in the implmentation
 
 ### World Rendering - Top Down
-#### Rastering - **Live**
+#### Rastering **Live** - Module Dependency
 
 [.code-highlight: 1-3]
 [.code-highlight: 1-6, 11-14]
@@ -946,17 +941,13 @@ trait LiveRasteringModule extends RasteringModule {
 
 [.build-lists: false]
 
-### Test **LiveRasteringModule**
-1 - Define the method under test
+### Test **LiveRasteringModule** (in short)
 
-```scala
-val world = /* prepare a world */
-val camera = /* prepare a camera */
+1. Mock the services `RasteringModule.Live` depends on
+1. Use `zio-test` mocking capabilities
+1. Assert your mocks are called as expected
 
-val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
-  RasteringModule.>.raster(world, camera)
-    .flatMap(_.runCollect)
-```
+<!--
 
 ---
 ^The second step is make our dependencies mockable, just annotate them
@@ -1034,6 +1025,8 @@ assert(res, equalTo(List(
 )
 ```
 
+-->
+
 ---
 ^Here's how the whole test looks like. Why do we build managed? Managed has an acquire/release process, in the acquire we load the mocks, in the release we verify them, and we fail if this verification is unsatisfied.
 
@@ -1042,11 +1035,6 @@ assert(res, equalTo(List(
 ```scala
 suite("LiveRasteringModule") {
   testM("raster should rely on cameraModule and world module") {
-    val camera = Camera.makeUnsafe(Pt.origin, Pt(0, 0, -1), Vec.uy, math.Pi / 3, 2, 2)
-    val world = World(PointLight(Pt(5, 5, 5), Color.white), List())
-    val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
-      RasteringModule.>.raster(world, camera).flatMap(_.runCollect)
-
     for {
       (worldModuleExp, cameraModuleExp) <- RasteringModuleMocks.mockExpectations(world, camera)
       res <- appUnderTest.provideManaged(
@@ -1308,7 +1296,7 @@ Group modules in **trait**
 [.code-highlight: 2-12]
 [.code-highlight: 1-12]
 ```scala
-trait BasicModules extends 
+type BasicModules = 
   NormalReflectModule.Live
   with RayModule.Live
   with ATModule.Live
@@ -1386,6 +1374,7 @@ def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
 
 ![left fit](img/modules-4.png) 
 ### Live **PhongReflectionModule**
+#### With **LightDiffusion** 
 
 ```scala
 trait Live extends PhongReflectionModule {
@@ -1400,6 +1389,8 @@ trait Live extends PhongReflectionModule {
 ![left fit](img/phong-animated.gif) 
 
 ### Live **PhongReflectionModule**
+#### With **LightDiffusion** 
+
 
 [.code-highlight: 1-1]
 [.code-highlight: 1-2]
@@ -1439,6 +1430,8 @@ case class Material(
 
 ![left fit](img/modules-5.png) 
 ### Live **PhongReflectionModule**
+#### With **LightDiffusion** and **LightReflection** 
+
 
 ```scala
 trait Live extends PhongReflectionModule {
@@ -1448,27 +1441,12 @@ trait Live extends PhongReflectionModule {
   val lightReflectionModule: LightReflectionModule.Service[Any]
 }
 ```
----
-
-![left fit](img/modules-5.png) 
-### Live **PhongReflectionModule**
-
-```scala
-trait Live extends PhongReflectionModule {
-  val aTModule: ATModule.Service[Any]
-  val normalReflectModule: NormalReflectModule.Service[Any]
-  val lightDiffusionModule: LightDiffusionModule.Service[Any]
-  val lightReflectionModule: LightReflectionModule.Service[Any]
-}
-```
-
 ---
 ^ Let's add some realism by handling how the light is reflected on the surface towards the camera, so we have a light reflection module
 
 ![left fit](img/three-spheres-opaque.png) 
 
-
-#### Render 3 spheres - reflect light source
+### Spheres reflect **light source**
 
 [.code-highlight: 1-6]
 [.code-highlight: 1-6, 8-14]
@@ -1521,9 +1499,9 @@ trait Live extends WorldModule {
 ![left fit](img/hit-components.png) 
 
 ### **Reflective** surfaces
+#### Use **WorldReflection**
 
-
-[.code-highlight: 1-3]
+[.code-highlight: 1-4]
 [.code-highlight: 1-13]
 [.code-highlight: 1-14]
 [.code-highlight: 1-19]
@@ -1553,12 +1531,11 @@ trait Live extends WorldModule {
 
 ![left fit](img/hit-components.png) 
 
-#### Handling reflection - Live
-
+### Implement **WorldReflection** Live
 
 [.code-highlight: 1, 4-9]
 [.code-highlight: 1, 4-10]
-[.code-highlight: 1, 4-11]
+[.code-highlight: 1-2, 4-11]
 [.code-highlight: 1-16]
 ```scala
 trait Live extends WorldReflectionModule {
@@ -1587,7 +1564,8 @@ trait Live extends WorldReflectionModule {
 ^Calculating reflection can be pretty expensive, as it's like having a much higher number of observers for which we have to calculate all the rays. It can also introduce explosive behavior, like when you look at 2 mirrors face 2 face and you see the infinite, so we introduce also a mechanism to limit the recursion depth, but I don't talk about it here.
 But considering it's expensive, it can be handy to provide an implementation of the reflectin module that does nothing and returns black. This can be useful if I want to first check how an image looks like approx and then later compute it in all its beauty
 
-#### Handling reflection - Noop module
+### Implement **WorldReflection** Dummy
+
 ```scala
 trait NoReflectionModule extends WorldReflectionModule {
   val worldReflectionModule = new WorldReflectionModule.Service[Any] {
@@ -1602,7 +1580,7 @@ trait NoReflectionModule extends WorldReflectionModule {
 
 --- 
 
-#### Handling reflection - Noop module
+### Shiny spheres **NoReflection**
 
 ![left fit](img/reflective-spheres-with-non-reflective-environment.png) 
 
@@ -1623,7 +1601,7 @@ program(
 
 --- 
 
-#### Handling reflection - Live module
+### Shiny spheres **LiveReflection**
 
 ![left fit](img/reflective-spheres-with-reflective-environment.pbm) 
 
@@ -1642,6 +1620,7 @@ program(
 }
 ```
 
+<!--
 ---
 
 ### Alternative approach
@@ -1658,6 +1637,8 @@ val partial = program
 partial.provide(new WorldReflectionModule.Live)
 ```
 
+-->
+
 ---
 [.text: alignment(left)]
 ### Conclusion - **Environmental Effects**
@@ -1671,7 +1652,7 @@ Build purely functional, testable, modular applications
 - Do not require HKT, typeclasses, etc
 - Do not abuse typeclasses
 - Can group capabilities
-- Can provide capabilities one at a time
+- Can provide capabilities one at a time  - `provideSome` 
 - Are not dependent on implicits (survive refactoring)
 
 ---
@@ -1687,13 +1668,11 @@ Build purely functional, testable, modular applications
 
 ---
 
-# Thank you! [^1]
+# Thank you!
 
 ## **Questions?**
 
 
 ![inline 10%](img/Twitter_Logo_WhiteOnBlue.png) @pierangelocecc
 
-![inline 40%](img/GitHub-Mark-Light-120px-plus.png) https://github.com/pierangeloc
-
-[^1]: [Ray Tracing with ZIO](https://github.com/pierangeloc/ray-tracer-zio)
+![inline 40%](img/GitHub-Mark-Light-120px-plus.png) https://github.com/pierangeloc/ray-tracer-zio

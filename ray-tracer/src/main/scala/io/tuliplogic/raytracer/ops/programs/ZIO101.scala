@@ -19,7 +19,7 @@ object ZIO101 extends SApp {
   val prg: ZIO[Console, Nothing, Unit] = salutation *> city
   salutation.flatMap(_ => city)
 //  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, Int] = ???
-  val defaultRuntme = new DefaultRuntime{}
+  val defaultRuntme: Runtime[ZEnv] = new DefaultRuntime{}
   defaultRuntme.unsafeRun(prg)
 
 
