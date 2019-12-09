@@ -67,7 +67,7 @@ object WorldHitCompsModule {
         for {
           pt <- UIO(ray.positionAt(hit.t))
           normalV <- normalReflectModule.normal(pt, hit.sceneObject)
-          eyeV <- UIO(-ray.direction)
+          eyeV <- ray.direction.normalized.map(- _).orDie
           realNormal <- UIO(if ((eyeV dot normalV) > 0) normalV else -normalV)
           reflectV <- normalReflectModule.reflect(ray.direction, realNormal)
           (n1, n2) <- n1n2

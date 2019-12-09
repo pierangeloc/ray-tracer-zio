@@ -1,0 +1,88 @@
+{
+  "shapes" : [
+    {
+      "Plane" : {
+        "material" : {
+          "pattern" : {
+            "Checker" : {
+              "c1" : "cccccc",
+              "c2" : "333333",
+              "size" : 1.0
+            }
+          },
+          "ambient" : 0.1,
+          "diffuse" : 0.9,
+          "specular" : 0.9,
+          "shininess" : 200,
+          "reflective" : 1,
+          "transparency" : 1,
+          "refractionIndex" : 1
+        },
+        "translateY": -10.1
+      }
+    },
+    {
+      "Sphere" : {
+        "material" : {
+          "pattern" : {
+            "Uniform" : {
+              "c" : "ffffff"
+            }
+          },
+          "ambient" : 0.1,
+          "diffuse" : 0.1,
+          "specular" : 0.9,
+          "shininess" : 300,
+          "reflective" : 1,
+          "transparency" : 1,
+          "refractionIndex" : 1.52
+        },
+        "centerX" : 0.0,
+        "centerY" : 0.0,
+        "centerZ" : 0.0,
+        "radius" : 1.0
+      }
+    },
+    {
+      "Sphere" : {
+        "material" : {
+          "pattern" : {
+            "Uniform" : {
+              "c" : "00ff00"
+            }
+          },
+          "ambient" : 0.1,
+          "diffuse" : 0.1,
+          "specular" : 0.9,
+          "shininess" : 300,
+          "reflective" : 0,
+          "transparency" : 1,
+          "refractionIndex" : 1.0
+        },
+        "centerX" : 0.0,
+        "centerY" : 0.0,
+        "centerZ" : 0.0,
+        "radius" : 0.5
+      }
+    }
+  ],
+  "pointLight" : {
+    "ptX" : 20.0,
+    "ptY" : 10.0,
+    "ptZ" : 0.0,
+    "color" : "ffffff"
+  },
+  "camera" : {
+    "fromX" : 0.0,
+    "fromY" : 2.5,
+    "fromZ" : 0.0,
+    "toX" : 0.0,
+    "toY" : 0.0,
+    "toZ" : 0.0,
+    "upX" : 1.0,
+    "upY" : 0.0,
+    "upZ" : 0.0,
+    "hRes" : 160,
+    "vRes" : 120
+  }
+}
