@@ -31,9 +31,9 @@ object WorldReflectionModule {
           UIO(Color.black)
         } else for {
           rem <- remaining.get
-          res <- if (rem < 0) UIO.succeed(Color.black) else {
+          res <- if (rem <= 0) UIO.succeed(Color.black) else {
             val reflRay = Ray(hitComps.overPoint, hitComps.rayReflectV)
-            worldModule.colorForRay(world, reflRay, remaining).map(c =>
+            remaining.update(_ - 1) *> worldModule.colorForRay(world, reflRay, remaining).map(c =>
               c * hitComps.shape.material.reflective
             )
           }

@@ -32,30 +32,13 @@ object WorldModule {
 
     override val worldModule: Service[Any] = new Service[Any] {
 
-      def schlick(hitComps: HitComps): Double = {
-        val cos = if (hitComps.n1 <= hitComps.n2)
-          hitComps.eyeV dot hitComps.normalV
-          else {
-            val c = hitComps.eyeV dot hitComps.normalV
-            val n = hitComps.n1 / hitComps.n2
-            val sin2t = n * n / (1 - c * c)
-            if (sin2t > 1)
-              1
-            else {
-              math.sqrt(1 - sin2t)
-            }
-          }
-        val r0: Double = (hitComps.n1 - hitComps.n2) / (hitComps.n1 + hitComps.n2) * (hitComps.n1 - hitComps.n2) / (hitComps.n1 + hitComps.n2)
-        r0 + (1 - r0) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos)
-      }
+
 
       def colorForRay(world: World, ray: Ray, remaining: Ref[Int]): ZIO[Any, RayTracerError, Color] =
         for {
           intersections <- worldTopologyModule.intersections(world, ray)
           maybeHitComps <- intersections.find(_.t > 0).traverse(worldHitCompsModule.hitComps(ray, _, intersections))
-          rem           <- remaining.update(_ - 1)
-          color <- if (rem <= 0) UIO.succeed(Color.black)
-            else maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) {
+          color <- maybeHitComps.fold[IO[RayTracerError, Color]](UIO(Color.black)) {
               hc =>
                 for {
                   shadowed <- worldTopologyModule.isShadowed(world, hc.overPoint)
@@ -65,7 +48,7 @@ object WorldModule {
                         worldRefractionModule.refractedColor(world, hc, remaining)
                 } yield {
                   if (hc.shape.material.reflective > 0 && hc.shape.material.transparency > 0) {
-                    val reflectance = schlick(hc)
+                    val reflectance = hc.reflectance
                     c + reflectedColor * reflectance + refractedColor * (1 - reflectance)
 
                   } else {

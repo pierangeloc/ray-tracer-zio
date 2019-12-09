@@ -72,13 +72,10 @@ London - 12 Dec 2019
 # Agenda
 
 1. ZIO-101: the bare minimum
-1. Build foundations
 1. Build Ray Tracer components
 1. Test Ray tracer components
 1. Wiring things together
 1. Improving rendering
-1. Show pattern at work
-
 
 ---
 # ZIO - 101

@@ -4,7 +4,7 @@ import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.ops.model.data
 import io.tuliplogic.raytracer.ops.model.data.{Camera, Color, ColoredPixel, Pixel, World}
 import zio.stream.{ZStream, ZStreamChunk}
-import zio.{Chunk, Ref, UIO, ZIO}
+import zio.{Chunk, Ref, ZIO}
 
 
 //TODO: PERFORMANCE IMPROVEMENTS:
@@ -20,7 +20,7 @@ trait RasteringModule {
 
 object RasteringModule {
 
-  val defaultRemaining = 15
+  val defaultRemaining = 12
   trait Service[R] {
     def raster(world: World, camera: Camera): ZStream[R, RayTracerError, ColoredPixel]
   }
@@ -47,8 +47,8 @@ object RasteringModule {
             case (px, py) =>
               for {
                 remaining <- Ref.make(defaultRemaining)
-                ray   <- cameraModule.rayForPixel(camera, px, py)
-                color <- worldModule.colorForRay(world, ray, remaining)
+                ray       <- cameraModule.rayForPixel(camera, px, py)
+                color     <- worldModule.colorForRay(world, ray, remaining)
               } yield data.ColoredPixel(Pixel(px, py), color)
           }
         }.flatMap(ZStream.fromChunk)
@@ -71,8 +71,8 @@ object RasteringModule {
           case (px, py) =>
             for {
               remaining <- Ref.make(defaultRemaining)
-              ray   <- cameraModule.rayForPixel(camera, px, py)
-              color <- worldModule.colorForRay(world, ray, remaining)
+              ray       <- cameraModule.rayForPixel(camera, px, py)
+              color     <- worldModule.colorForRay(world, ray, remaining)
             } yield data.ColoredPixel(Pixel(px, py), color)
         }
       }

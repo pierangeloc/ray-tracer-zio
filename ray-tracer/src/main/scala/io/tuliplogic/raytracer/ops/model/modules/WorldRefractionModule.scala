@@ -23,23 +23,21 @@ object WorldRefractionModule {
 
         if (hitComps.shape.material.transparency == 0)
           UIO.succeed(Color.black) // opaque surfaces don't refract
-        else {
-          val nRatio = hitComps.n1 / hitComps.n2
-          val cosTheta_i = (hitComps.eyeV dot hitComps.normalV)
-          val sin2Theta_t = nRatio * nRatio * (1 - cosTheta_i * cosTheta_i)
-          if (sin2Theta_t > 1) UIO.succeed(Color.black) // total internal reflection reached
-          else for {
-            r   <- remaining.get
-              res <- if (r <= 0) UIO(Color.black) else {
-                val cosTheta_t: Double = math.sqrt(1 - sin2Theta_t)
-                val direction: Vec = (hitComps.normalV * (nRatio * cosTheta_i - cosTheta_t)) - (hitComps.eyeV * nRatio)
-                val refractedRay = Ray(hitComps.underPoint, direction)
-                //              println(s"refracted ray: $refractedRay for hp: ${hitComps.hitPt}, eyeV: ${hitComps.eyeV},  normal: ${hitComps.normalV}}")
-                worldModule.colorForRay(world, refractedRay, remaining).map(_ * hitComps.shape.material.transparency)
-              }
-            //          _ <- UIO(println(s"refracted color for r: $res"))
-          } yield res
-        }
+        else for {
+          r   <- remaining.get
+          res <- if (r <= 0) UIO(Color.black) else {
+             val nRatio = hitComps.n1 / hitComps.n2
+             val cosTheta_i = (hitComps.eyeV dot hitComps.normalV)
+             val sin2Theta_t = nRatio * nRatio * (1 - cosTheta_i * cosTheta_i)
+             if (sin2Theta_t > 1) UIO.succeed(Color.black) // total internal reflection reached
+             val cosTheta_t: Double = math.sqrt(1 - sin2Theta_t)
+             val direction: Vec = (hitComps.normalV * (nRatio * cosTheta_i - cosTheta_t)) - (hitComps.eyeV * nRatio)
+             val refractedRay = Ray(hitComps.underPoint, direction)
+             //              println(s"refracted ray: $refractedRay for hp: ${hitComps.hitPt}, eyeV: ${hitComps.eyeV},  normal: ${hitComps.normalV}}")
+             remaining.update(_ - 1) *> worldModule.colorForRay(world, refractedRay, remaining).map(_ * hitComps.shape.material.transparency)
+          }
+          //          _ <- UIO(println(s"refracted color for r: $res"))
+        } yield res
       }
     }
   }

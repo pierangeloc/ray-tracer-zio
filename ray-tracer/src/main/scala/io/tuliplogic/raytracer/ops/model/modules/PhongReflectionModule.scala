@@ -22,8 +22,24 @@ object PhongReflectionModule {
     * @param rayReflectV the reflection vector of the RAY
     */
   case class HitComps(shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec, n1: Double = 1, n2: Double = 1) {
-    def overPoint: Pt   = hitPt + normalV.*(HitComps.epsilon * 1 )//(if(inside) -1 else 1))
-    def underPoint: Pt  = hitPt + normalV.*(-HitComps.epsilon * 1 )//(if(inside) -1 else 1))
+    def overPoint: Pt   = hitPt + normalV.*(HitComps.epsilon)//(if(inside) -1 else 1))
+    def underPoint: Pt  = hitPt + normalV.*(-HitComps.epsilon)//(if(inside) -1 else 1))
+    def reflectance: Double = {
+      val cos = if (n1 <= n2)
+        eyeV dot normalV
+      else {
+        val c = eyeV dot normalV
+        val n = n1 / n2
+        val sin2t = n * n / (1 - c * c)
+        if (sin2t > 1)
+          1
+        else {
+          math.sqrt(1 - sin2t)
+        }
+      }
+      val r0: Double = (n1 - n2) / (n1 + n2) * (n1 - n2) / (n1 + n2)
+      r0 + (1 - r0) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos)
+    }
   }
 
   object HitComps {
