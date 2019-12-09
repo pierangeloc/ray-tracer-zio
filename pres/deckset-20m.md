@@ -4,6 +4,17 @@ build-lists: true
 list: alignment(left)
 theme: Fira, 3
 
+^Plan for the talk: 
+1. ZIO[R, E, A] lends to the module pattern
+2. recipe for the module, show metrics example
+3. Ray tracing problem
+4. module for Transformations, relying on Matrix module (just signatures)
+5. Module for camera, show rastering and testing
+6. Show modules adding progressively
+7. Show plugging in/out
+8. Show http4s?
+
+
 # Environmental effects
 
 
