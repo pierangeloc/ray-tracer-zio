@@ -94,7 +94,7 @@
         "material" : {
           "pattern" : {
             "Uniform" : {
-              "c" : "ffffff"
+              "c" : "0000ff"
             }
           },
           "ambient" : 0.1,
@@ -113,9 +113,9 @@
     }
   ],
   "pointLight" : {
-    "ptX" : 20.0,
-    "ptY" : 10.0,
-    "ptZ" : -15.0,
+    "ptX" : 30.0,
+    "ptY" : 40.0,
+    "ptZ" : -20.0,
     "color" : "ffffff"
   },
   "camera" : {

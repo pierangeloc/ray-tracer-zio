@@ -1531,7 +1531,7 @@ But considering it's expensive, it can be handy to provide an implementation of 
 ### Implement **WorldReflection** Dummy
 
 ```scala
-trait NoReflectionModule extends WorldReflectionModule {
+trait NoReflection extends WorldReflectionModule {
   val worldReflectionModule = new WorldReflectionModule.Service[Any] {
     def reflectedColor(
       world: World, 
@@ -1544,13 +1544,14 @@ trait NoReflectionModule extends WorldReflectionModule {
 
 --- 
 
-### Shiny spheres **NoReflection**
+### Spheres **NoReflection**
 
-![left fit](img/reflective-spheres-with-non-reflective-environment.png) 
+![left fit](img/refractive-without-refraction-without-reflection-blue.png) 
 
 [.build-lists: false]
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
+- Blue: reflective = 0.9, transparency: 1
 
 ```scala
 program(
@@ -1559,19 +1560,20 @@ program(
 ).provide {
   new BasicModules 
   with PhongReflectionModule.Live
-  with WorldReflectionModule.NoReflectionModule
+  with WorldReflectionModule.NoReflection
 }
 ```
 
 --- 
 
-### Shiny spheres **LiveReflection**
+### Spheres **LiveReflection**
 
-![left fit](img/reflective-spheres-with-reflective-environment.pbm) 
+![left fit](img/refractive-without-refraction-blue.png) 
 
 [.build-lists: false]
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
+- Blue: reflective = 0.9, transparency: 1
 
 ```scala
 program(
@@ -1581,6 +1583,52 @@ program(
   new BasicModules 
   with PhongReflectionModule.Live
   with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+}
+```
+
+--- 
+
+### Spheres **LiveReflection**, **NoRefraction**
+
+![left fit](img/refractive-without-refraction-blue.png) 
+
+[.build-lists: false]
+- Red: reflective = 0.9
+- Green/white: reflective = 0.6
+- Blue: reflective = 0.9, transparency: 1
+
+```scala
+program(
+  from = Pt(57, 20, z),
+  to = Pt(20, 0, 20)
+).provide {
+  new BasicModules 
+  with PhongReflectionModule.Live
+  with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+  with WorldRefractionModule.NoRefraction⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+}
+```
+
+--- 
+
+### Spheres **LiveReflection**, **LiveRefraction**
+
+![left fit](img/refractive-with-refraction-blue.png) 
+
+[.build-lists: false]
+- Red: reflective = 0.9
+- Green/white: reflective = 0.6
+- Blue: reflective = 0.9, transparency: 1
+
+```scala
+program(
+  from = Pt(57, 20, z),
+  to = Pt(20, 0, 20)
+).provide {
+  new BasicModules 
+  with PhongReflectionModule.Live
+  with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+  with WorldRefractionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 }
 ```
 
