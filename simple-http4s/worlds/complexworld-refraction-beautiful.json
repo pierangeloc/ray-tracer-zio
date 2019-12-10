@@ -1,0 +1,134 @@
+{
+  "shapes" : [
+    {
+      "Plane" : {
+        "material" : {
+          "pattern" : {
+            "Checker" : {
+              "c1" : "e5e5e5",
+              "c2" : "7f7f7f",
+              "size" : 4.0
+            }
+          },
+          "ambient" : 0.1,
+          "diffuse" : 0.9,
+          "specular" : 0.0,
+          "shininess" : 200,
+          "reflective" : 0,
+          "transparency" : 0,
+          "refractionIndex" : 1
+        }
+      }
+    },
+    {
+      "Sphere" : {
+        "material" : {
+          "pattern" : {
+            "GradientX" : {
+              "c1" : "f07931",
+              "c2" : "91b357"
+            }
+          },
+          "ambient" : 0.1,
+          "diffuse" : 0.9,
+          "specular" : 0.9,
+          "shininess" : 200,
+          "reflective" : 0,
+          "transparency" : 0,
+          "refractionIndex" : 1
+        },
+        "centerX" : 40.0,
+        "centerY" : 10.0,
+        "centerZ" : 20.0,
+        "radius" : 10.0
+      }
+    },
+    {
+      "Sphere" : {
+        "material" : {
+          "pattern" : {
+            "Striped" : {
+              "c1" : "ffffff",
+              "c2" : "00ff00",
+              "stripSize" : 0.2
+            }
+          },
+          "ambient" : 0.1,
+          "diffuse" : 0.7,
+          "specular" : 0.3,
+          "shininess" : 200,
+          "reflective" : 0.5,
+          "transparency" : 0,
+          "refractionIndex" : 1
+        },
+        "centerX" : 20.0,
+        "centerY" : 10.0,
+        "centerZ" : 15.0,
+        "radius" : 10.0
+      }
+    },
+    {
+      "Sphere" : {
+        "material" : {
+          "pattern" : {
+            "Uniform" : {
+              "c" : "ff0000"
+            }
+          },
+          "ambient" : 0.1,
+          "diffuse" : 0.7,
+          "specular" : 0.3,
+          "shininess" : 200,
+          "reflective" : 0.9,
+          "transparency" : 0,
+          "refractionIndex" : 1
+        },
+        "centerX" : -5.0,
+        "centerY" : 8.0,
+        "centerZ" : 10.0,
+        "radius" : 8.0
+      }
+    },
+    {
+      "Sphere" : {
+        "material" : {
+          "pattern" : {
+            "Uniform" : {
+              "c" : "ffffff"
+            }
+          },
+          "ambient" : 0.1,
+          "diffuse" : 0.7,
+          "specular" : 0.3,
+          "shininess" : 200,
+          "reflective" : 0.9,
+          "transparency" : 1,
+          "refractionIndex" : 1.52
+        },
+        "centerX" : 40.0,
+        "centerY" : 9.0,
+        "centerZ" : -13.0,
+        "radius" : 5.0
+      }
+    }
+  ],
+  "pointLight" : {
+    "ptX" : 20.0,
+    "ptY" : 10.0,
+    "ptZ" : -15.0,
+    "color" : "ffffff"
+  },
+  "camera" : {
+    "fromX" : 57.0,
+    "fromY" : 20.0,
+    "fromZ" : -35.0,
+    "toX" : 20.0,
+    "toY" : 0.0,
+    "toZ" : 20.0,
+    "upX" : 0.0,
+    "upY" : 1.0,
+    "upZ" : 0.0,
+    "hRes" : 1024,
+    "vRes" : 768
+  }
+}

@@ -28,6 +28,8 @@ London - 12 Dec 2019
 
 ![right fit](img/refractive-spheres.png) 
 
+<!--
+
 ---
 ^A couple of words about myself
 
@@ -60,6 +62,8 @@ London - 12 Dec 2019
  
 - **Is not about**
  - Errors, Concurrency, fibers, cancellation, runtime
+ 
+-->
 
 ---
 ^The agenda for the talk:
@@ -76,6 +80,8 @@ London - 12 Dec 2019
 1. Test Ray tracer components
 1. Wiring things together
 1. Improving rendering
+
+<!--
 
 ---
 # ZIO - 101
@@ -96,6 +102,8 @@ runtime.unsafeRun(hello)
 
 // > Hello Functional Scala!!! 
 ```
+
+-->
 
 ---
 # ZIO - 101
@@ -174,7 +182,6 @@ defaultRuntme.unsafeRun(hello)
 [.code-highlight: none] 
 [.code-highlight: 1] 
 [.code-highlight: 1-2] 
-[.code-highlight: 1-3] 
 [.code-highlight: 1-5] 
 [.code-highlight: 1-7] 
 [.code-highlight: 1-11] 
@@ -253,7 +260,6 @@ object Metrics {
 
 [.code-highlight: 1-8] 
 [.code-highlight: 1-15] 
-[.code-highlight: 1-15] 
 [.code-highlight: 1-19] 
 ```scala
 val prg2: ZIO[Metrics with Log, Nothing, Unit] = 
@@ -282,6 +288,21 @@ runtime.unsafeRun(
 * We define an implementation of the **SERVICE** backed by a data structure to handle state mutations
 * We build an environment where the `Metrics` service is backed by this ref, and we provide it to our program, closing the requirements
 * we run the test program, if this doesn't throw the test is green
+
+# ZIO-101: Module Pattern
+### Testing
+
+```scala
+val prg2: ZIO[Metrics with Log, Nothing, Unit] = 
+  for {
+    _ <- Log.>.info("Hello")
+    _ <- Metrics.>.inc("salutation")
+    _ <- Log.>.info("London")
+    _ <- Metrics.>.inc("subject")
+  } yield ()
+```
+
+---
 
 # ZIO-101: Module Pattern
 ### Testing
@@ -315,6 +336,7 @@ runtime.unsafeRun(test)
 ```
 
 ---
+
 # Ray tracing
 #### Why?
 
@@ -933,7 +955,7 @@ trait LiveRasteringModule extends RasteringModule {
 
 ### Test **LiveRasteringModule** (in short)
 
-1. Mock the services `RasteringModule.Live` depends on
+1. Mock the services `LiveRasteringModule` depends on
 1. Use `zio-test` mocking capabilities
 1. Assert your mocks are called as expected
 
@@ -1177,7 +1199,7 @@ trait Live extends WorldModule {
 ### Live **WorldModule**
 #### **PhongReflectionModule**
 
-[.code-highlight: 1-3, 8-10]
+[.code-highlight: 1-5, 8-12]
 [.code-highlight: 1-17]
 ```scala
 case class PhongComponents(
@@ -1204,15 +1226,13 @@ trait BlackWhite extends PhongReflectionModule {
 ### Display the first canvas / 1
 
 ```scala
-def drawOnCanvasWithCamera(world: World, camera: Camera, canvas: Canvas):
-  ZIO[RasteringModule, RayTracerError, Unit] = 
+def drawOnCanvasWithCamera(world: World, camera: Camera, canvas: Canvas) = 
   for {
     coloredPointsStream <- RasteringModule.>.raster(world, camera)
     _                   <- coloredPointsStream.mapM(cp => canvas.update(cp)).run(Sink.drain)
   } yield ()
 
-def program(viewFrom: Pt):
-  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] =
+def program(viewFrom: Pt) =
   for {
     camera <- cameraFor(viewFrom: Pt)
     w      <- world
@@ -1300,34 +1320,8 @@ type BasicModules =
 ```
 
 ---
-^This is the same set of dependencies expressed in TF
-### Display the first canvas - /5
-
-How to group typeclasses?
-
-```scala
-program[F[_]
-  : NormalReflectModule
-  : RayModule
-  : ATModule
-  : MatrixModule
-  : WorldModule
-  : WorldTopologyModule
-  : WorldHitCompsModule
-  : CameraModule
-  : RasteringModule
-  : Blocking
-]
-```
-
-```scala
-program[F[_]: BasicModules] //not so easy
-```
-
-
----
 ^Given that definition, we can just provide our program with the missing module, which is the phong reflection module, and we are done
-### Display the first canvas - /6
+### Display the first canvas - /5
 
 Group modules
 
@@ -1341,7 +1335,7 @@ program(Pt(2, 2, -10))
 
 ---
 ^This is the whole program that produces these images that I then put together in a gif
-### Display the first canvas - /7
+### Display the first canvas - /6
 ![left fit](img/simple-world-shadows-anim.gif) 
 
 Group modules
@@ -1438,35 +1432,15 @@ trait Live extends PhongReflectionModule {
 
 ### Spheres reflect **light source**
 
-[.code-highlight: 1-6]
-[.code-highlight: 1-6, 8-14]
-[.code-highlight: 1-6, 8-14, 15-18]
-[.code-highlight: 1-6, 8-14, 15-18, 19-25]
 ```scala
-case class Material(
-  pattern: Pattern, // the color pattern
-  ambient: Double,  // ∈ [0, 1] 
-  diffuse: Double,  // ∈ [0, 1]
-  specular: Double, // ∈ [0, 1]
-  shininess: Double, // ∈ [10, 200]
-  reflective: Double, // ∈ [0, 1]
-)
-
-trait Live extends PhongReflectionModule {
-  /* other modules */
-  val lightReflectionModule: LightReflectionModule.Service[Any]
-}
-
-trait RenderingModulesV1
-  extends PhongReflectionModule.Live
-  with LightReflectionModule.Live
 
 program(
   from = Pt(57, 20, z),
   to = Pt(20, 0, 20)
 ).provide {
   new BasicModules 
-  with RenderingModulesV1
+  with PhongReflectionModule.Live
+  with LightReflectionModule.Live
 }
 ```
 
@@ -1651,8 +1625,9 @@ Build purely functional, testable, modular applications
 [.text: alignment(left)]
 
 - Low entry barrier, very mechanical 🙌
-- Macros help with boilerplate :tada:
-- Handle circular dependencies :muscle: 
+- Macros help with boilerplate 🎉
+- Compiler is your friend 🤗
+- Handle circular dependencies 💪
 - Try it out! 👊
 - Join ZIO Discord channel 😊
 
