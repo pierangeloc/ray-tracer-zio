@@ -77,7 +77,7 @@ London - 12 Dec 2019
 
 1. ZIO-101: the bare minimum
 1. Build Ray Tracer components
-1. Test Ray tracer components
+1. Test Ray Tracer components
 1. Wiring things together
 1. Improving rendering
 
@@ -262,7 +262,7 @@ object Metrics {
 [.code-highlight: 1-15] 
 [.code-highlight: 1-19] 
 ```scala
-val prg2: ZIO[Metrics with Log, Nothing, Unit] = 
+val prg: ZIO[Metrics with Log, Nothing, Unit] = 
   for {
     _ <- Log.>.info("Hello")
     _ <- Metrics.>.inc("salutation")
@@ -278,7 +278,7 @@ trait Prometheus extends Metrics {
 }
 
 runtime.unsafeRun(
-  prg2.provide(new Metrics.Prometheus with Log.Live)
+  prg.provide(new Metrics.Prometheus with Log.Live)
 )
 ```
 
@@ -290,10 +290,10 @@ runtime.unsafeRun(
 * we run the test program, if this doesn't throw the test is green
 
 # ZIO-101: Module Pattern
-### Testing
+### **Testing**
 
 ```scala
-val prg2: ZIO[Metrics with Log, Nothing, Unit] = 
+val prg: ZIO[Metrics with Log, Nothing, Unit] = 
   for {
     _ <- Log.>.info("Hello")
     _ <- Metrics.>.inc("salutation")
@@ -305,7 +305,7 @@ val prg2: ZIO[Metrics with Log, Nothing, Unit] =
 ---
 
 # ZIO-101: Module Pattern
-### Testing
+### **Testing**
 
 [.code-highlight: none] 
 [.code-highlight: 1] 
@@ -315,7 +315,7 @@ val prg2: ZIO[Metrics with Log, Nothing, Unit] =
 [.code-highlight: 1-16] 
 [.code-highlight: 1-18] 
 ```scala
-val prg2: ZIO[Metrics with Log, Nothing, Unit] = /* ... */
+val prg: ZIO[Metrics with Log, Nothing, Unit] = /* ... */
 
 case class TestMetrics(incCalls: Ref[List[String]]) 
   extends Metrics.Service[Any] {
@@ -325,7 +325,7 @@ case class TestMetrics(incCalls: Ref[List[String]])
 
 val test =  for {
   ref <- Ref.make(List[String]())
-  _   <- prg2.provide(new Log.Live with Metrics {
+  _   <- prg.provide(new Log.Live with Metrics {
            val metrics = TestMetrics(ref)
          })
   calls <- ref.get
@@ -334,16 +334,6 @@ val test =  for {
 
 runtime.unsafeRun(test)
 ```
-
----
-
-# Ray tracing
-#### Why?
-
-![inline fill](img/the-death-of-final-tagless.jpg) ![inline 50%](img/ray-tracer-challenge-cover.jpg) 
-
-[Presentation](https://www.slideshare.net/jdegoes/the-death-of-final-tagless)
-[Book](https://pragprog.com/book/jbtracer/the-ray-tracer-challenge)
 
 ---
 ^In ray tracing we have 3 components: 
@@ -956,7 +946,7 @@ trait LiveRasteringModule extends RasteringModule {
 ### Test **LiveRasteringModule** (in short)
 
 1. Mock the services `LiveRasteringModule` depends on
-1. Use `zio-test` mocking capabilities
+1. Use `zio-test` mocking features
 1. Assert your mocks are called as expected
 
 <!--
@@ -1039,6 +1029,7 @@ assert(res, equalTo(List(
 
 -->
 
+<!--
 ---
 ^Here's how the whole test looks like. Why do we build managed? Managed has an acquire/release process, in the acquire we load the mocks, in the release we verify them, and we fail if this verification is unsatisfied.
 
@@ -1064,6 +1055,7 @@ suite("LiveRasteringModule") {
   }
 }
 ```
+-->
 
 ---
 ^So the takeaway of this is...
@@ -1255,7 +1247,7 @@ def program(viewFrom: Pt):
 
 program(Pt(2, 2, -10))
   .provide(
-    new CanvasSerializer.PPMCanvasSerializer 
+    new CanvasSerializer.PNGCanvasSerializer 
     with RasteringModule.ChunkRasteringModule 
     with ATModule.Live
   )
@@ -1281,7 +1273,7 @@ def program(viewFrom: Pt):
 
 program(Pt(2, 2, -10))
   .provide(
-    new CanvasSerializer.PPMCanvasSerializer 
+    new CanvasSerializer.PNGCanvasSerializer 
     with RasteringModule.ChunkRasteringModule 
     with ATModule.Live 
     with CameraModule.Live 
@@ -1571,6 +1563,8 @@ program(
 ![left fit](img/refractive-without-refraction-blue.png) 
 
 [.build-lists: false]
+[.autoscale: false]
+
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
 - Blue: reflective = 0.9, transparency: 1
@@ -1593,6 +1587,8 @@ program(
 ![left fit](img/refractive-without-refraction-blue.png) 
 
 [.build-lists: false]
+[.autoscale: false]
+
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
 - Blue: reflective = 0.9, transparency: 1
@@ -1616,6 +1612,8 @@ program(
 ![left fit](img/refractive-with-refraction-blue.png) 
 
 [.build-lists: false]
+[.autoscale: false]
+
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
 - Blue: reflective = 0.9, transparency: 1
@@ -1682,9 +1680,6 @@ Build purely functional, testable, modular applications
 ---
 
 # Thank you!
-
-## **Questions?**
-
 
 ![inline 10%](img/Twitter_Logo_WhiteOnBlue.png) @pierangelocecc
 

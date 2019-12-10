@@ -94,7 +94,7 @@
         "material" : {
           "pattern" : {
             "Uniform" : {
-              "c" : "0000ff"
+              "c" : "ffffff"
             }
           },
           "ambient" : 0.1,

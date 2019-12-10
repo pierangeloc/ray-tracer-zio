@@ -34,8 +34,8 @@ trait FullRenderingModules
   extends PhongReflectionModule.Live
   with LightDiffusionModule.Live
   with LightReflectionModule.Live
-  with WorldReflectionModule.Live
-  with WorldRefractionModule.Live
+  with WorldReflectionModule.NoReflectionModule
+  with WorldRefractionModule.NoRefractionModule
 
 
 trait BlackWhiteColorModules extends
