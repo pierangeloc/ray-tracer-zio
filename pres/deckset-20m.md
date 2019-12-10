@@ -26,11 +26,12 @@ London - 12 Dec 2019
 <br/>
 <br/>
 
-![right fit](img/title.png) 
+![right fit](img/refractive-spheres.png) 
 
 ---
 ^A couple of words about myself
-#### About me
+
+# 👋
 
 ### Pierangelo Cecchetto
 
@@ -172,22 +173,20 @@ defaultRuntme.unsafeRun(hello)
 
 [.code-highlight: none] 
 [.code-highlight: 1] 
+[.code-highlight: 1-2] 
 [.code-highlight: 1-3] 
 [.code-highlight: 1-5] 
 [.code-highlight: 1-7] 
 [.code-highlight: 1-11] 
 ```scala
 val two: ZIO[Any, Nothing, Int] = ???
+val two: UIO[Int] = ???
 
 val parsedEmail: ZIO[Any, String, Email] = ???
 
 val kubeDeploy: ZIO[Kube, String, Unit] = ???
 
 val logAndDeploy: ZIO[Kube with Log, String, Unit] = ???
-
-type IO[+E, +A]   = ZIO[Any, E, A]
-
-type UIO[+A]      = ZIO[Any, Nothing, A]
 ```
 
 ---
@@ -261,7 +260,7 @@ val prg2: ZIO[Metrics with Log, Nothing, Unit] =
   for {
     _ <- Log.>.info("Hello")
     _ <- Metrics.>.inc("salutation")
-    _ <- Log.>.info("BeeScala")
+    _ <- Log.>.info("London")
     _ <- Metrics.>.inc("subject")
   } yield ()
 
@@ -859,15 +858,6 @@ object RasteringModule {
   trait Service[R] {
     def raster(world: World, camera: Camera): 
       ZStream[R, RayTracerError, ColoredPixel]
-  }
-
-  trait AllWhiteTestRasteringModule extends RasteringModule {
-    val rasteringModule: Service[Any] = new Service[Any] {
-      def raster(world: World, camera: Camera): ZStream[Any, RayTracerError, ColoredPixel] =
-        for {
-          x <- ZStream.fromIterable(0 until camera.hRes)
-          y <- ZStream.fromIterable(0 until camera.vRes)
-        } yield ColoredPixel(Pixel(x, y), Color.white))
   }
 ```
 
