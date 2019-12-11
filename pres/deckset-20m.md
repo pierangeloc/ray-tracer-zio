@@ -75,7 +75,6 @@ London - 12 Dec 2019
 * Make pictures nicer
 # Agenda
 
-1. ZIO-101: the bare minimum
 1. Build Ray Tracer components
 1. Test Ray Tracer components
 1. Wiring things together
@@ -103,7 +102,6 @@ runtime.unsafeRun(hello)
 // > Hello Functional Scala!!! 
 ```
 
--->
 
 ---
 # ZIO - 101
@@ -173,7 +171,6 @@ val runtime: Runtime[Console with Clock with ...] =
 
 defaultRuntme.unsafeRun(hello)
 ```
--->
 
 ---
 # ZIO - 101
@@ -333,6 +330,23 @@ val test =  for {
 } yield ()
 
 runtime.unsafeRun(test)
+```
+
+-->
+
+---
+# ZIO-101
+
+```scala
+ZIO[-R, +E, +A]
+
+       ⬇
+
+R => IO[Either[E, A]]
+
+       ⬇
+
+R => Either[E, A]
 ```
 
 ---
@@ -938,7 +952,8 @@ trait LiveRasteringModule extends RasteringModule {
 }
 ```
 
----
+<!--
+
 ^To unit test this we should mock the dependencies. ZIO-TEST provides a very convenient way to do the `Ref` trick we've seen before to an arbitrary complex scale, and it all boils down to 4 steps
 
 [.build-lists: false]
@@ -949,7 +964,21 @@ trait LiveRasteringModule extends RasteringModule {
 1. Use `zio-test` mocking features
 1. Assert your mocks are called as expected
 
-<!--
+-->
+
+---
+
+### Test **LiveRasteringModule**
+1 - Define the method under test
+
+```scala
+val world = /* prepare a world */
+val camera = /* prepare a camera */
+
+val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
+  RasteringModule.>.raster(world, camera)
+    .flatMap(_.runCollect)
+```
 
 ---
 ^The second step is make our dependencies mockable, just annotate them
@@ -1027,9 +1056,6 @@ assert(res, equalTo(List(
 )
 ```
 
--->
-
-<!--
 ---
 ^Here's how the whole test looks like. Why do we build managed? Managed has an acquire/release process, in the acquire we load the mocks, in the release we verify them, and we fail if this verification is unsatisfied.
 
@@ -1055,7 +1081,6 @@ suite("LiveRasteringModule") {
   }
 }
 ```
--->
 
 ---
 ^So the takeaway of this is...
@@ -1536,7 +1561,7 @@ trait NoReflection extends WorldReflectionModule {
 
 --- 
 
-### Spheres **NoReflection**
+### Spheres
 
 ![left fit](img/refractive-without-refraction-without-reflection-blue.png) 
 
@@ -1558,7 +1583,7 @@ program(
 
 --- 
 
-### Spheres **LiveReflection**
+### Spheres
 
 ![left fit](img/refractive-without-refraction-blue.png) 
 
@@ -1582,7 +1607,7 @@ program(
 
 --- 
 
-### Spheres **LiveReflection**, **NoRefraction**
+### Spheres
 
 ![left fit](img/refractive-without-refraction-blue.png) 
 
