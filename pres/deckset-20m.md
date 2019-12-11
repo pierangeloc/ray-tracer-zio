@@ -1566,6 +1566,7 @@ trait NoReflection extends WorldReflectionModule {
 ![left fit](img/refractive-without-refraction-without-reflection-blue.png) 
 
 [.build-lists: false]
+
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
 - Blue: reflective = 0.9, transparency: 1
@@ -1579,6 +1580,12 @@ program(
   with PhongReflectionModule.Live
   with WorldReflectionModule.NoReflection
 }
+⠀
+⠀
+⠀
+⠀
+⠀
+⠀⠀
 ```
 
 --- 
@@ -1588,7 +1595,6 @@ program(
 ![left fit](img/refractive-without-refraction-blue.png) 
 
 [.build-lists: false]
-[.autoscale: false]
 
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
@@ -1603,6 +1609,12 @@ program(
   with PhongReflectionModule.Live
   with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 }
+⠀
+⠀
+⠀
+⠀
+⠀
+⠀⠀
 ```
 
 --- 
@@ -1612,7 +1624,6 @@ program(
 ![left fit](img/refractive-without-refraction-blue.png) 
 
 [.build-lists: false]
-[.autoscale: false]
 
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
@@ -1631,13 +1642,13 @@ program(
 ```
 
 --- 
+[.autoscale: false]
 
-### Spheres **LiveReflection**, **LiveRefraction**
+### Spheres
 
 ![left fit](img/refractive-with-refraction-blue.png) 
 
 [.build-lists: false]
-[.autoscale: false]
 
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
@@ -1653,9 +1664,14 @@ program(
   with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
   with WorldRefractionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 }
+⠀
+⠀
+⠀
+⠀
 ```
 
 <!--
+
 ---
 
 ### Alternative approach
