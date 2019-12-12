@@ -63,7 +63,7 @@ London - 12 Dec 2019
 - **Is not about**
  - Errors, Concurrency, fibers, cancellation, runtime
  
--->
+
 
 ---
 ^The agenda for the talk:
@@ -79,8 +79,6 @@ London - 12 Dec 2019
 1. Test Ray Tracer components
 1. Wiring things together
 1. Improving rendering
-
-<!--
 
 ---
 # ZIO - 101
@@ -762,6 +760,8 @@ runtime.unsafeRun(program)
 
 ![inline 80%](img/rotate-animated.gif)![inline 80%](img/translate-animated.gif)![inline 80%](img/scale-animated.gif)
 
+<!--
+
 ---
 ^The first thing to consider is that everything is relative. If my standard position as observer is x=0, and I want to see how things look like from x = -3, what I can do is translate the world of +3 and keep on sitting at x = 0. We call this the canonical position
 ### Camera 
@@ -790,16 +790,16 @@ case class Camera (
 )
 ```
 
+-->
+
 ---
 
-### Camera - generic
+### Camera
 ^Following the same reasoning we did with our camera translated in x=-3, we can generalize and build a generic camera by composing 2 transformations, one coping for the rotations, and one for the translations that brought our camera there. We have just to use the inverse because we will apply them to the world
 
 ![left fit](img/rotated-camera.png) 
 
-[.code-highlight: 1]
-[.code-highlight: 1, 10-16]
-[.code-highlight: 1-16]
+[.code-highlight: 1-8]
 [.code-highlight: 1-20]
 ```scala
 object Camera {
@@ -976,8 +976,7 @@ val world = /* prepare a world */
 val camera = /* prepare a camera */
 
 val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
-  RasteringModule.>.raster(world, camera)
-    .flatMap(_.runCollect)
+  RasteringModule.>.raster(world, camera).runCollect
 ```
 
 ---
@@ -1027,8 +1026,7 @@ val colorForRayExp: Expectation[WorldModule, Nothing, Color] =
 [.code-highlight: 1-20]
 ```scala
 val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
-  RasteringModule.>.raster(world, camera)
-    .flatMap(_.runCollect)
+  RasteringModule.>.raster(world, camera).runCollect
 
 appUnderTest.provideManaged(
   worldModuleExp.managedEnv.zipWith(cameraModuleExp.managedEnv) { (wm, cm) =>
@@ -1595,7 +1593,6 @@ program(
 ![left fit](img/refractive-without-refraction-blue.png) 
 
 [.build-lists: false]
-
 - Red: reflective = 0.9
 - Green/white: reflective = 0.6
 - Blue: reflective = 0.9, transparency: 1
