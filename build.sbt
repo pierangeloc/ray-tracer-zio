@@ -61,10 +61,10 @@ lazy val tpolecatSettings = Seq(
 )
 
 lazy val commonSettings = inThisBuild(
-
   tpolecatSettings ++
     Seq(
       scalaVersion := "2.12.10",
+      resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0-M4"),
       addCompilerPlugin(("org.scalamacros" % "paradise"  % "2.1.1") cross CrossVersion.full),

@@ -3,7 +3,7 @@ import sbt._
 object Dependencies {
   val http4sVersion = "0.21.0-M6"
 
-  val zioVersion       = "1.0.0-RC17"
+  val zioVersion       = "1.0.0-RC17+273-a03ed276-SNAPSHOT"
   val zioCatsVersion   = "2.0.0.0-RC8"
   val zioNioVersion    = "0.4.0"
   val zioMacrosVersion = "0.6.0"

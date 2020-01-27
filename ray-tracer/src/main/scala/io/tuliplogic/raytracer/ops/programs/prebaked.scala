@@ -22,7 +22,7 @@ trait BasicModules
   with WorldHitCompsModule.Live
   with CameraModule.Live
   with RasteringModule.ChunkRasteringModule
-  with Blocking.Live
+  with Blocking.live
   with Clock.Live
   with Console.Live
 

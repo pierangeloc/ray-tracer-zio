@@ -4,11 +4,9 @@ import io.tuliplogic.raytracer.commons.errors.ATError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
 import io.tuliplogic.raytracer.geometry.matrix.Types.{Col, M, factory, vectorizable}
-import zio.{UIO, ZIO}
+import zio.{IO, UIO, ZIO}
 
 import scala.math.{cos, sin}
-
-//import zio.macros.access.accessible
 
 case class AT(direct: M, inverse: M) {
   def inverted: AT = AT(inverse, direct)
@@ -20,19 +18,19 @@ trait ATModule {
 
 object ATModule {
   trait Service[R] {
-    def applyTf(tf: AT, vec: Vec): ZIO[R, Nothing, Vec]
-    def applyTf(tf: AT, pt: Pt): ZIO[R, Nothing, Pt]
-    def compose(first: AT, second: AT): ZIO[R, Nothing, AT]
-    def invert(tf: AT): ZIO[R, Nothing, AT]
-    def transpose(tf: AT): ZIO[R, Nothing, AT]
+    def applyTf(tf: AT, vec: Vec): UIO[Vec]
+    def applyTf(tf: AT, pt: Pt): UIO[Pt]
+    def compose(first: AT, second: AT): UIO[AT]
+    def invert(tf: AT): UIO[AT]
+    def transpose(tf: AT): UIO[AT]
     def invertible(
       x11:Double, x12:Double, x13:Double, x14:Double,
       x21:Double, x22:Double, x23:Double, x24:Double,
       x31:Double, x32:Double, x33:Double, x34:Double,
       x41:Double, x42:Double, x43:Double, x44:Double
-    ): ZIO[R, ATError, AT]
+    ): IO[ATError, AT]
 
-    def translate(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT] =
+    def translate(x: Double, y: Double, z: Double): UIO[AT] =
       invertible(
         1d, 0d, 0d, x,
         0d, 1d, 0d, y,
@@ -40,7 +38,7 @@ object ATModule {
         0d, 0d, 0d, 1d
       ).orDie
 
-    def scale(x: Double, y: Double, z: Double): ZIO[R, Nothing, AT] =
+    def scale(x: Double, y: Double, z: Double): UIO[AT] =
       invertible(
         x, 0d, 0d, 0d,
         0d, y, 0d, 0d,
@@ -48,7 +46,7 @@ object ATModule {
         0d, 0d, 0d, 1d
       ).orDie
 
-    def rotateX(θ: Double): ZIO[R, Nothing, AT] =
+    def rotateX(θ: Double): UIO[AT] =
       invertible(
         1d, 0d, 0d, 0d,
         0d, cos(θ), -sin(θ), 0d,
@@ -56,7 +54,7 @@ object ATModule {
         0d, 0d, 0d, 1d
       ).orDie
 
-    def rotateY(θ: Double): ZIO[R, Nothing, AT] =
+    def rotateY(θ: Double): UIO[AT] =
       invertible(
         cos(θ), 0d, -sin(θ), 0d,
         0d, 1d, 0d, 0d,
@@ -64,7 +62,7 @@ object ATModule {
         0d, 0d, 0d, 1d
       ).orDie
 
-    def rotateZ(θ: Double): ZIO[R, Nothing, AT] =
+    def rotateZ(θ: Double): UIO[AT] =
       invertible(
         cos(θ), -sin(θ), 0d, 0d,
         sin(θ), cos(θ), 0d, 0d,
@@ -72,7 +70,7 @@ object ATModule {
         0d, 0d, 0d, 1d
       ).orDie
 
-    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): ZIO[R, Nothing, AT] =
+    def shear(xY: Double, xZ: Double, yX: Double, yZ: Double, zX: Double, zY: Double): UIO[AT] =
       invertible(
         1d, xY, xZ, 0d,
         yX, 1d, yZ, 0d,
