@@ -2,8 +2,9 @@ package io.tuliplogic.raytracer.ops.model.data
 
 import io.tuliplogic.raytracer.commons.errors.ATError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
-import io.tuliplogic.raytracer.geometry.matrix.MatrixModule
+import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
+import io.tuliplogic.raytracer.geometry.affine.{AT, aTModule}
+import io.tuliplogic.raytracer.geometry.matrix.matrixModule
 import zio.{DefaultRuntime, UIO, ZIO}
 
 /**
@@ -42,14 +43,14 @@ object Camera {
       upNormalized  <- up.normalized.orDie
       left          <- UIO(fwd cross upNormalized)
       trueUp        <- UIO(left cross fwd) //this makes a real reference system LTR with fwd, up, left really orthogonal with each other
-      orientationAT <- ATModule.>.invertible(
+      orientationAT <- aTModule.invertible(
         left.x,   left.y,   left.z,   0d,
         trueUp.x, trueUp.y, trueUp.z, 0d,
         -fwd.x,   -fwd.y,   -fwd.z,   0d,
         0d,       0d,       0d,       1d
       )
-      translateTf  <- ATModule.>.translate(-from.x, -from.y, -from.z)
-      composed     <- ATModule.>.compose(translateTf,  orientationAT)
+      translateTf  <- aTModule.translate(-from.x, -from.y, -from.z)
+      composed     <- aTModule.compose(translateTf,  orientationAT)
   } yield composed
 
   /**
@@ -69,7 +70,7 @@ object Camera {
   def makeUnsafe(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): Camera =
     new DefaultRuntime{}.unsafeRun(
       Camera.make(viewFrom, viewTo, upDirection, visualAngleRad, hRes, vRes)
-        .provide(new ATModule.Live with MatrixModule.BreezeLive)
+      .provideManaged((matrixModule.MatrixModule.breezeLive >>> aTModule.ATModule.live).build)
     )
 
   //this is just the `identity` transformation

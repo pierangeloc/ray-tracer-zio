@@ -82,7 +82,7 @@ object aTModule {
     }
     val live: ZLayer[MatrixModule, Nothing, ATModule] = ZLayer.fromEnvironment { matrixModule =>
 
-      Has(new ATModule.Service {
+      Has(new Service {
         import vectorizable.comp
 
         private def transform(tf: AT, v: Col): ZIO[Any, ATError, Col] =
