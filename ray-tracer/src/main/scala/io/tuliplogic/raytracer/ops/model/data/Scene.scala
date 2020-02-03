@@ -25,27 +25,27 @@ object Scene {
     def withTransformAndMaterial(tf: AT, material: Material): UIO[Sphere] = UIO(tf).zipWith(UIO(material))(Sphere(_, _))
     val canonical: URIO[ATModule, Sphere] =
       for {
-        tf  <- aTModule.>.id
+        tf  <- aTModule.id
         mat <- Material.default
         res <- withTransformAndMaterial(tf, mat)
       } yield res
 
     val unitGlass: URIO[ATModule, Sphere] =
       for {
-        tf     <- aTModule.>.id
+        tf     <- aTModule.id
         defMat <- Material.default
         mat    <- UIO(defMat.copy(transparency = 1.0, refractionIndex = 1.5))
         res    <- withTransformAndMaterial(tf, mat)
       } yield res
 
     def make(center: Pt, radius: Double, mat: Material): ZIO[ATModule, ATError, Sphere] = for {
-      scale     <- aTModule.>.scale(radius, radius, radius)
-      translate <- aTModule.>.translate(center.x, center.y, center.z)
-      composed  <- aTModule.>.compose(scale, translate)
+      scale     <- aTModule.scale(radius, radius, radius)
+      translate <- aTModule.translate(center.x, center.y, center.z)
+      composed  <- aTModule.compose(scale, translate)
     } yield Sphere(composed, mat)
 
     def makeUniform(center: Pt, radius: Double, c: Color): ZIO[ATModule, ATError, Sphere] = for {
-      idTf       <- aTModule.>.id
+      idTf       <- aTModule.id
       defaultMat <- Material.default
       newMat     <- UIO(defaultMat.copy(pattern = Pattern.Uniform(c, idTf)))
       s          <- make(center, radius, newMat)
@@ -60,13 +60,13 @@ object Scene {
       UIO(Plane(tf, material))
 
     def make(rotateX: Double = 0, rotateY: Double = 0, rotateZ: Double = 0, passingBy: Pt = Pt.origin, material: Material): ZIO[ATModule, ATError, Plane] = for {
-      rotX <- aTModule.>.rotateX(rotateX)
-      rotY <- aTModule.>.rotateY(rotateY)
-      rotZ <- aTModule.>.rotateZ(rotateZ)
-      trn  <- aTModule.>.translate(passingBy.x, passingBy.y, passingBy.z)
-      composed <- aTModule.>.compose(rotX, rotY)
-        .flatMap(aTModule.>.compose(_, rotZ))
-        .flatMap(aTModule.>.compose(_, trn))
+      rotX <- aTModule.rotateX(rotateX)
+      rotY <- aTModule.rotateY(rotateY)
+      rotZ <- aTModule.rotateZ(rotateZ)
+      trn  <- aTModule.translate(passingBy.x, passingBy.y, passingBy.z)
+      composed <- aTModule.compose(rotX, rotY)
+        .flatMap(aTModule.compose(_, rotZ))
+        .flatMap(aTModule.compose(_, trn))
     } yield Plane(composed, material)
 
     /**
@@ -74,7 +74,7 @@ object Scene {
       */
     val canonical: URIO[ATModule, Plane] =
       for {
-        tf  <- aTModule.>.id
+        tf  <- aTModule.id
         mat <- Material.default
         res <- withTransformAndMaterial(tf, mat)
       } yield res

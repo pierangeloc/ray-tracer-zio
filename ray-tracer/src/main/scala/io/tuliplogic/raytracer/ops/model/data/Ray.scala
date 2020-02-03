@@ -16,44 +16,33 @@ case class Intersection(t: Double, sceneObject: Shape) //pairs the t where a ray
 
 object rayModule {
   //TODO: make a separate operation for canonical intersect in a different module,and build the live version of this in terms of it
-  trait Service[R] {
+  trait Service {
 
     /**
       * Calculates ALL the intersections (positive and negative t) between a ray and a canonical scene object
       */
-    def canonicalIntersect(ray: Ray, s: Shape): URIO[R, List[Intersection]]
+    def canonicalIntersect(ray: Ray, s: Shape): UIO[List[Intersection]]
 
     /**
       * computes all the t such that ray intersects the sphere. If the ray is tangent to the sphere, 2 equal values are returned
       */
-    def intersect(ray: Ray, o: Shape): URIO[R, List[Intersection]]
+    def intersect(ray: Ray, o: Shape): UIO[List[Intersection]]
 
     /**
       * Calculate the hit of intersections, i.e. the intersection that has the minimal t > 0
       */
-    def hit(intersections: List[Intersection]): URIO[R, Option[Intersection]]
+    def hit(intersections: List[Intersection]): UIO[Option[Intersection]]
 
     /**
       * Applying an affine transformation to a Ray is applying it to the origin and to the direction
       */
-    def transform(at: AT, ray: Ray): URIO[R, Ray]
+    def transform(at: AT, ray: Ray): UIO[Ray]
   }
 
-  type RayModule = Has[Service[Any]]
+  type RayModule = Has[Service]
 
-  object > extends Service[RayModule] {
-    override def canonicalIntersect(ray: Ray, s: Shape): URIO[RayModule, List[Intersection]] =
-      ZIO.accessM(_.get.canonicalIntersect(ray, s))
-    override def intersect(ray: Ray, o: Shape): URIO[RayModule, List[Intersection]] =
-      ZIO.accessM(_.get.intersect(ray, o))
-    override def hit(intersections: List[Intersection]): URIO[RayModule, Option[Intersection]] =
-      ZIO.accessM(_.get.hit(intersections))
-    override def transform(at: AT, ray: Ray): URIO[RayModule, Ray] =
-      ZIO.accessM(_.get.transform(at, ray))
-  }
-
-  val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService[aTModule.Service[Any], Nothing, RayModule] { aTModule =>
-    Has(new Service[Any] {
+  val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService[aTModule.Service, Nothing, RayModule] { aTModule =>
+    Has(new Service {
       def canonicalIntersect(ray: Ray, o: Shape): URIO[Any, List[Intersection]] = o match {
         case s@Sphere(_, _) =>
           val sphereToRay = ray.origin - Pt(0, 0, 0)
@@ -96,5 +85,16 @@ object rayModule {
     })
 
   }
+
+
+
+  def canonicalIntersect(ray: Ray, s: Shape): URIO[RayModule, List[Intersection]] =
+    ZIO.accessM(_.get.canonicalIntersect(ray, s))
+  def intersect(ray: Ray, o: Shape): URIO[RayModule, List[Intersection]] =
+    ZIO.accessM(_.get.intersect(ray, o))
+  def hit(intersections: List[Intersection]): URIO[RayModule, Option[Intersection]] =
+    ZIO.accessM(_.get.hit(intersections))
+  def transform(at: AT, ray: Ray): URIO[RayModule, Ray] =
+    ZIO.accessM(_.get.transform(at, ray))
 }
 
