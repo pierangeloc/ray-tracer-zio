@@ -2,7 +2,9 @@ package io.tuliplogic.raytracer.ops.model.data
 
 import io.tuliplogic.raytracer.commons.errors.ATError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
-import io.tuliplogic.raytracer.geometry.affine.{AT, ATModule}
+import io.tuliplogic.raytracer.geometry.affine.AT
+import io.tuliplogic.raytracer.geometry.affine.aTModule
+import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import zio.{UIO, URIO, ZIO}
 
 object Scene {
@@ -23,27 +25,27 @@ object Scene {
     def withTransformAndMaterial(tf: AT, material: Material): UIO[Sphere] = UIO(tf).zipWith(UIO(material))(Sphere(_, _))
     val canonical: URIO[ATModule, Sphere] =
       for {
-        tf  <- ATModule.>.id
+        tf  <- aTModule.>.id
         mat <- Material.default
         res <- withTransformAndMaterial(tf, mat)
       } yield res
 
     val unitGlass: URIO[ATModule, Sphere] =
       for {
-        tf     <- ATModule.>.id
+        tf     <- aTModule.>.id
         defMat <- Material.default
         mat    <- UIO(defMat.copy(transparency = 1.0, refractionIndex = 1.5))
         res    <- withTransformAndMaterial(tf, mat)
       } yield res
 
     def make(center: Pt, radius: Double, mat: Material): ZIO[ATModule, ATError, Sphere] = for {
-      scale     <- ATModule.>.scale(radius, radius, radius)
-      translate <- ATModule.>.translate(center.x, center.y, center.z)
-      composed  <- ATModule.>.compose(scale, translate)
+      scale     <- aTModule.>.scale(radius, radius, radius)
+      translate <- aTModule.>.translate(center.x, center.y, center.z)
+      composed  <- aTModule.>.compose(scale, translate)
     } yield Sphere(composed, mat)
 
     def makeUniform(center: Pt, radius: Double, c: Color): ZIO[ATModule, ATError, Sphere] = for {
-      idTf       <- ATModule.>.id
+      idTf       <- aTModule.>.id
       defaultMat <- Material.default
       newMat     <- UIO(defaultMat.copy(pattern = Pattern.Uniform(c, idTf)))
       s          <- make(center, radius, newMat)
@@ -58,13 +60,13 @@ object Scene {
       UIO(Plane(tf, material))
 
     def make(rotateX: Double = 0, rotateY: Double = 0, rotateZ: Double = 0, passingBy: Pt = Pt.origin, material: Material): ZIO[ATModule, ATError, Plane] = for {
-      rotX <- ATModule.>.rotateX(rotateX)
-      rotY <- ATModule.>.rotateY(rotateY)
-      rotZ <- ATModule.>.rotateZ(rotateZ)
-      trn  <- ATModule.>.translate(passingBy.x, passingBy.y, passingBy.z)
-      composed <- ATModule.>.compose(rotX, rotY)
-        .flatMap(ATModule.>.compose(_, rotZ))
-        .flatMap(ATModule.>.compose(_, trn))
+      rotX <- aTModule.>.rotateX(rotateX)
+      rotY <- aTModule.>.rotateY(rotateY)
+      rotZ <- aTModule.>.rotateZ(rotateZ)
+      trn  <- aTModule.>.translate(passingBy.x, passingBy.y, passingBy.z)
+      composed <- aTModule.>.compose(rotX, rotY)
+        .flatMap(aTModule.>.compose(_, rotZ))
+        .flatMap(aTModule.>.compose(_, trn))
     } yield Plane(composed, material)
 
     /**
@@ -72,7 +74,7 @@ object Scene {
       */
     val canonical: URIO[ATModule, Plane] =
       for {
-        tf  <- ATModule.>.id
+        tf  <- aTModule.>.id
         mat <- Material.default
         res <- withTransformAndMaterial(tf, mat)
       } yield res

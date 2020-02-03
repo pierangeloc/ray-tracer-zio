@@ -43,14 +43,14 @@ object Camera {
       upNormalized  <- up.normalized.orDie
       left          <- UIO(fwd cross upNormalized)
       trueUp        <- UIO(left cross fwd) //this makes a real reference system LTR with fwd, up, left really orthogonal with each other
-      orientationAT <- aTModule.invertible(
+      orientationAT <- aTModule.>.invertible(
         left.x,   left.y,   left.z,   0d,
         trueUp.x, trueUp.y, trueUp.z, 0d,
         -fwd.x,   -fwd.y,   -fwd.z,   0d,
         0d,       0d,       0d,       1d
       )
-      translateTf  <- aTModule.translate(-from.x, -from.y, -from.z)
-      composed     <- aTModule.compose(translateTf,  orientationAT)
+      translateTf  <- aTModule.>.translate(-from.x, -from.y, -from.z)
+      composed     <- aTModule.>.compose(translateTf,  orientationAT)
   } yield composed
 
   /**
@@ -70,7 +70,7 @@ object Camera {
   def makeUnsafe(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): Camera =
     new DefaultRuntime{}.unsafeRun(
       Camera.make(viewFrom, viewTo, upDirection, visualAngleRad, hRes, vRes)
-      .provideManaged((matrixModule.MatrixModule.breezeLive >>> aTModule.ATModule.live).build)
+      .provideManaged((matrixModule.MatrixModule.breezeLive >>> aTModule.live).build)
     )
 
   //this is just the `identity` transformation

@@ -2,7 +2,7 @@ package io.tuliplogic.raytracer.ops.model.data
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import Scene.{Plane, Shape, Sphere}
-import io.tuliplogic.raytracer.geometry.affine.AT
+import io.tuliplogic.raytracer.geometry.affine.{AT, aTModule}
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import io.tuliplogic.raytracer.ops.model.data
 import zio.{Has, UIO, URIO, ZIO, ZLayer}
@@ -52,7 +52,7 @@ object rayModule {
       ZIO.accessM(_.get.transform(at, ray))
   }
 
-  val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService[ATModule.Service, Nothing, RayModule] { aTModule =>
+  val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService[aTModule.Service[Any], Nothing, RayModule] { aTModule =>
     Has(new Service[Any] {
       def canonicalIntersect(ray: Ray, o: Shape): URIO[Any, List[Intersection]] = o match {
         case s@Sphere(_, _) =>
