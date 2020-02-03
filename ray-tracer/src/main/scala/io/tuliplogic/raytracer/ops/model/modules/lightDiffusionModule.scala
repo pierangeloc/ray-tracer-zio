@@ -2,34 +2,33 @@ package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
 import io.tuliplogic.raytracer.ops.model.data.Color
-import zio.{UIO, ZIO}
+import zio.ZLayer.NoDeps
+import zio.{Has, UIO, ZIO, ZLayer}
 
 /**
   * This module computes the diffusion component of the light, which represents how the light hitting a surface gets diffused around
   */
-trait LightDiffusionModule {
-  val lightDiffusionModule: LightDiffusionModule.Service[Any]
-}
-
-object LightDiffusionModule {
-  trait Service[R] {
-    def diffusion(effectiveColor: Color, materialDiffusion: Double, lightV: Vec, normalV: Vec): ZIO[R, Nothing, Color]
+object lightDiffusionModule {
+  trait Service {
+    def diffusion(effectiveColor: Color, materialDiffusion: Double, lightV: Vec, normalV: Vec): UIO[Color]
   }
 
-  trait Live extends LightDiffusionModule {
-    val lightDiffusionModule: Service[Any] = new Service[Any] {
+  type LightDiffusionModule = Has[Service]
+
+  val live: NoDeps[Nothing, Has[Service]] = ZLayer.succeed(
+    new Service {
       override def diffusion(effectiveColor: Color, materialDiffusion: Double, lightV: Vec, normalV: Vec): ZIO[Any, Nothing, Color] =
         UIO(lightV dot normalV).map { projection =>
           if (projection < 0) Color.black else effectiveColor * materialDiffusion * projection
         }
     }
-  }
+  )
 
-  trait NoDiffusion extends LightDiffusionModule {
-    override val lightDiffusionModule: Service[Any] = new Service[Any] {
+  val noDiffusion: NoDeps[Nothing, Has[Service]] = ZLayer.succeed(
+    new Service {
       override def diffusion(effectiveColor: Color, materialDiffusion: Double, lightV: Vec, normalV: Vec): ZIO[Any, Nothing, Color] =
         UIO(Color.black)
     }
-  }
+  )
 
 }

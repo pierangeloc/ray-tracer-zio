@@ -2,6 +2,7 @@ package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.geometry.affine.aTModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
+import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, Shape, Sphere}
 import zio.{Has, UIO, ZIO, ZLayer}
 
@@ -19,7 +20,7 @@ object normalReflectModule {
 
   type NormalReflectModule = Has[Service]
 
-  val live = ZLayer.fromService[aTModule.Service, Nothing, NormalReflectModule] { aTModule =>
+  val live: ZLayer[ATModule, Nothing, NormalReflectModule] = ZLayer.fromService[aTModule.Service, Nothing, NormalReflectModule] { aTModule =>
 
     Has(new Service {
 
