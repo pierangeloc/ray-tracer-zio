@@ -1,26 +1,22 @@
 package io.tuliplogic.raytracer.ops.model.modules
 
-import io.tuliplogic.raytracer.geometry.affine.ATModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.affine.aTModule
+import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import io.tuliplogic.raytracer.ops.model.data.{Camera, Ray}
-import zio.macros.annotation.mockable
-import zio.{UIO, ZIO}
+import zio.{Has, IO, UIO, ZIO, ZLayer}
 
-@mockable
-trait CameraModule {
-  val cameraModule: CameraModule.Service[Any]
-}
+object cameraModule {
 
-object CameraModule {
-
-  trait Service[R] {
-    def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[R, Nothing, Ray]
+  trait Service {
+    def rayForPixel(camera: Camera, px: Int, py: Int): IO[Nothing, Ray]
   }
 
-  trait Live extends CameraModule {
-    val aTModule: ATModule.Service[Any]
+  type CameraModule = Has[Service]
 
-    val cameraModule: CameraModule.Service[Any] = new Service[Any] {
+  val live: ZLayer[ATModule, Nothing, CameraModule] = ZLayer.fromService[aTModule.Service, Nothing, CameraModule] { aTModule =>
+
+    Has(new Service {
       // Implementation: the canonical camera has the eye in Pt.origin, and the screen on the plane z = -1,
       // therefore after computing the coordinates of the point in the screen, we have to apply the _inverse of the camera transformation_
       // because the camera transformation is the transformation to be applied to thw world in order to produce the effect of moving/orienting the camera around
@@ -38,11 +34,9 @@ object CameraModule {
           origin    <- aTModule.applyTf(inverseTf, Pt.origin)
           direction <- (pixel - origin).normalized.orDie
         } yield Ray(origin, direction)
-    }
+    })
   }
 
-  object > extends CameraModule.Service[CameraModule] {
-    override def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[CameraModule, Nothing, Ray] =
-      ZIO.accessM(_.cameraModule.rayForPixel(camera, px, py))
-  }
+  def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[CameraModule, Nothing, Ray] =
+    ZIO.accessM(_.get.rayForPixel(camera, px, py))
 }
