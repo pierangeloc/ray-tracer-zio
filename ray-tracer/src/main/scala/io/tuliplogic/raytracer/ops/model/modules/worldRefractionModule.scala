@@ -3,22 +3,22 @@ package io.tuliplogic.raytracer.ops.model.modules
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
 import io.tuliplogic.raytracer.ops.model.data.{Color, Ray, World}
-import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.HitComps
-import zio.{Ref, RefM, UIO, ZIO}
+import io.tuliplogic.raytracer.ops.model.modules.phongReflectionModule.HitComps
+import io.tuliplogic.raytracer.ops.model.modules.worldModule.WorldModule
+import zio.{Has, IO, Ref, UIO, ZIO, ZLayer}
 
-trait WorldRefractionModule {
-  val worldRefractionModule: WorldRefractionModule.Service[Any]
-}
+object worldRefractionModule {
 
-object WorldRefractionModule {
-  trait Service[R] {
-    def refractedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[R, RayTracerError, Color]
+  trait Service {
+    def refractedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): IO[RayTracerError, Color]
   }
 
-  trait Live extends WorldRefractionModule {
-    val worldModule: WorldModule.Service[Any]
+  type WorldRefractionModule = Has[Service]
 
-    override val worldRefractionModule: Service[Any] = new Service[Any] {
+  val live: ZLayer[WorldModule, Nothing, WorldRefractionModule] = ZLayer.fromService[worldModule.Service, Nothing, WorldRefractionModule]{
+    worldModuleSvc =>
+
+    Has(new Service {
       def refractedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[Any, RayTracerError, Color] = {
 
         if (hitComps.shape.material.transparency == 0)
@@ -33,24 +33,20 @@ object WorldRefractionModule {
              val cosTheta_t: Double = math.sqrt(1 - sin2Theta_t)
              val direction: Vec = (hitComps.normalV * (nRatio * cosTheta_i - cosTheta_t)) - (hitComps.eyeV * nRatio)
              val refractedRay = Ray(hitComps.underPoint, direction)
-             //              println(s"refracted ray: $refractedRay for hp: ${hitComps.hitPt}, eyeV: ${hitComps.eyeV},  normal: ${hitComps.normalV}}")
-             remaining.update(_ - 1) *> worldModule.colorForRay(world, refractedRay, remaining).map(_ * hitComps.shape.material.transparency)
+             remaining.update(_ - 1) *> worldModuleSvc.colorForRay(world, refractedRay, remaining).map(_ * hitComps.shape.material.transparency)
           }
-          //          _ <- UIO(println(s"refracted color for r: $res"))
         } yield res
       }
-    }
+    })
   }
 
-  trait NoRefractionModule extends WorldRefractionModule {
-    override val worldRefractionModule: Service[Any] = new Service[Any] {
+  val noRefractionModule: ZLayer.NoDeps[Nothing, WorldRefractionModule] = ZLayer.succeed {
+    new Service {
       override def refractedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[Any, RayTracerError, Color] =
         UIO.succeed(Color.black)
     }
   }
 
-  object > extends WorldRefractionModule.Service[WorldRefractionModule] {
-    override def refractedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[WorldRefractionModule, RayTracerError, Color] =
-      ZIO.accessM(_.worldRefractionModule.refractedColor(world, hitComps, remaining))
-  }
+  def refractedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[WorldRefractionModule, RayTracerError, Color] =
+    ZIO.accessM(_.get.refractedColor(world, hitComps, remaining))
 }

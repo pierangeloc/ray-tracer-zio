@@ -3,30 +3,26 @@ package io.tuliplogic.raytracer.ops.model.modules
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
 import io.tuliplogic.raytracer.ops.model.data.Scene.Shape
 import io.tuliplogic.raytracer.ops.model.data.{Intersection, Ray}
-import io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.HitComps
-import zio.{UIO, ZIO}
+import io.tuliplogic.raytracer.ops.model.modules.normalReflectModule.NormalReflectModule
+import io.tuliplogic.raytracer.ops.model.modules.phongReflectionModule.HitComps
+import zio.{Has, IO, UIO, ZIO, ZLayer}
 
 
-trait WorldHitCompsModule {
-  val worldHitCompsModule: WorldHitCompsModule.Service[Any]
-}
-
-object WorldHitCompsModule {
-  trait Service[R] {
+object worldHitCompsModule {
+  trait Service {
     /**
       * Determines the hit components for an intersection, among the list of intersections
       * This is important to handle transparency, as the first intersection is not sufficient, and we must handle also subsequent ones to determine
       * the refraction indexes between materials
       */
-    def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[R, GenericError, HitComps]
+    def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): IO[GenericError, HitComps]
   }
+  type WorldHitCompsModule = Has[Service]
 
-  trait Live extends WorldHitCompsModule {
-    val normalReflectModule: NormalReflectModule.Service[Any]
-
-    val worldHitCompsModule: WorldHitCompsModule.Service[Any] = new Service[Any] {
-
-      override def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[Any, GenericError, HitComps] = {
+  val live: ZLayer[NormalReflectModule, Nothing, WorldHitCompsModule] =
+    ZLayer.fromService[normalReflectModule.Service, Nothing, WorldHitCompsModule] { normalReflectSvc =>
+      Has( new Service {
+        def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[Any, GenericError, HitComps] = {
         type Z = (List[Shape], Option[Double], Option[Double])
 
         /**
@@ -66,19 +62,17 @@ object WorldHitCompsModule {
 
         for {
           pt <- UIO(ray.positionAt(hit.t))
-          normalV <- normalReflectModule.normal(pt, hit.sceneObject)
+          normalV <- normalReflectSvc.normal(pt, hit.sceneObject)
           eyeV <- ray.direction.normalized.map(- _).orDie
           realNormal <- UIO(if ((eyeV dot normalV) > 0) normalV else -normalV)
-          reflectV <- normalReflectModule.reflect(ray.direction, realNormal)
+          reflectV <- normalReflectSvc.reflect(ray.direction, realNormal)
           (n1, n2) <- n1n2
         } yield HitComps(hit.sceneObject, pt, realNormal, eyeV, reflectV, n1, n2)
       }
-    }
+    })
   }
 
-  object > extends WorldHitCompsModule.Service[WorldHitCompsModule] {
-   override def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[WorldHitCompsModule, GenericError, HitComps] =
-     ZIO.accessM(_.worldHitCompsModule.hitComps(ray, hit, intersections))
-  }
+  def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[WorldHitCompsModule, GenericError, HitComps] =
+    ZIO.accessM(_.get.hitComps(ray, hit, intersections))
 
 }
