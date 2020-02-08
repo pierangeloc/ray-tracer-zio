@@ -2,6 +2,7 @@ package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Vec
 import io.tuliplogic.raytracer.ops.model.data.Color
+import io.tuliplogic.raytracer.ops.model.modules.normalReflectModule.NormalReflectModule
 import zio.{Has, UIO, ZIO, ZLayer}
 
 /**
@@ -14,7 +15,7 @@ object lightReflectionModule {
 
   type LightReflectionModule = Has[Service]
 
-  val live =
+  val live: ZLayer[NormalReflectModule, Nothing, LightReflectionModule] =
     ZLayer.fromService[normalReflectModule.Service, Nothing, LightReflectionModule]{ normalReflectSvc =>
       Has(new Service {
 

@@ -8,49 +8,41 @@ import zio.{IO, Ref, UIO, ZIO}
 
 object matrixModule {
 
-  type MatrixModule = Has[MatrixModule.Service]
+  trait Service {
+    def almostEqual(m1: M, m2: M, maxSquaredError: Double): IO[AlgebraicError, Boolean]
 
-  object MatrixModule {
+    def opposite(m: M): IO[AlgebraicError, M]
 
-    object syntax {
+    def equal(m1: M, m2: M): IO[AlgebraicError, Boolean]
 
-      implicit class RichService(s: Service) {
-        def times(α: Double, m: M): UIO[M] =
-          for {
-            m_m <- m.m
-              m_n <- m.n
-              other <- factory.hom(m_m, m_n, α)
-              res <- s.had(m, other).orDie
-          } yield res
-      }
+    def add(m1: M, m2: M): IO[AlgebraicError, M]
 
+    def mul(m1: M, m2: M): IO[AlgebraicError, M]
+
+    def had(m1: M, m2: M): IO[AlgebraicError, M]
+
+    def invert(m: M): IO[AlgebraicError, M]
+  }
+
+  type MatrixModule = Has[Service]
+
+  object syntax {
+
+    implicit class RichService(s: Service) {
+      def times(α: Double, m: M): UIO[M] =
+      for {
+              m_m <- m.m
+                m_n <- m.n
+                other <- factory.hom(m_m, m_n, α)
+                res <- s.had(m, other).orDie
+        } yield res
     }
 
-    import Types._
+  }
 
-    /*
-      - add
-      - mul
-      - invert
-     */
+  import Types._
 
-    trait Service {
-      def almostEqual(m1: M, m2: M, maxSquaredError: Double): IO[AlgebraicError, Boolean]
-
-      def opposite(m: M): IO[AlgebraicError, M]
-
-      def equal(m1: M, m2: M): IO[AlgebraicError, Boolean]
-
-      def add(m1: M, m2: M): IO[AlgebraicError, M]
-
-      def mul(m1: M, m2: M): IO[AlgebraicError, M]
-
-      def had(m1: M, m2: M): IO[AlgebraicError, M]
-
-      def invert(m: M): IO[AlgebraicError, M]
-    }
-
-    val breezeLive: ZLayer.NoDeps[Nothing, MatrixModule] = ZLayer.succeed {
+  val breezeLive: ZLayer.NoDeps[Nothing, MatrixModule] = ZLayer.succeed {
       new Service {
         private def elementWiseOp(m1: M, m2: M)(op: (Double, Double) => Double): IO[AlgebraicError, M] =
           for {
@@ -147,7 +139,6 @@ object matrixModule {
           elementWiseOp(m1, m2)(_ * _)
       }
     }
-  }
 
   def almostEqual(m1: M, m2: M, maxSquaredError: Double): ZIO[MatrixModule, AlgebraicError, Boolean] =
     ZIO.accessM(_.get.almostEqual(m1, m2, maxSquaredError))

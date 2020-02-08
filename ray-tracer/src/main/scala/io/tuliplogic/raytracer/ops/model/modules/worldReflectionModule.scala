@@ -37,12 +37,12 @@ object worldReflectionModule {
     })
   }
 
-  val noReflectionModule: ZLayer.NoDeps[Nothing, WorldReflectionModule] = ZLayer.succeed {
+  val noReflection: ZLayer.NoDeps[Nothing, WorldReflectionModule] = ZLayer.succeed {
     new Service {
       def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[Any, RayTracerError, Color] = UIO.succeed(Color.black)
     }
   }
 
-  override def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[WorldReflectionModule, RayTracerError, Color] =
+  def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[WorldReflectionModule, RayTracerError, Color] =
     ZIO.accessM(_.get.reflectedColor(world, hitComps, remaining))
 }

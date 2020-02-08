@@ -1,6 +1,7 @@
 package io.tuliplogic.raytracer.http.model
 
 import io.tuliplogic.raytracer.http.model.DrawingProgram.DrawEnv
+import io.tuliplogic.raytracer.http.model.drawingRepository.DrawingRepository
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder

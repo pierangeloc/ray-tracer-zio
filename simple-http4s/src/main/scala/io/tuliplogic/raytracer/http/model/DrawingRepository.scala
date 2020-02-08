@@ -1,24 +1,22 @@
 package io.tuliplogic.raytracer.http.model
 
 import io.tuliplogic.raytracer.commons.errors.IOError.DrawingRepoError
-import zio.macros.annotation.accessible
-import zio.{Ref, ZIO}
+import zio.{Has, IO, Ref, UIO, URIO, ZIO, ZLayer}
 import DrawingRepoModel._
+import zio.ZLayer.NoDeps
 
-@accessible(">")
-trait DrawingRepository {
-  val drawingRepository: DrawingRepository.Service[Any]
-}
+object drawingRepository {
 
-object DrawingRepository {
-  trait Service[R] {
-    def create(drawingId: DrawingId, started: Long): ZIO[R, DrawingRepoError, Unit]
-    def update(drawingId: DrawingId, drawingState: DrawingState): ZIO[R, DrawingRepoError, Unit]
-    def find(drawingId: DrawingId): ZIO[R, DrawingRepoError, DrawingState]
-    def getAllIds: ZIO[R, Nothing, List[DrawingId]]
+  trait Service {
+    def create(drawingId: DrawingId, started: Long): IO[DrawingRepoError, Unit]
+    def update(drawingId: DrawingId, drawingState: DrawingState): IO[DrawingRepoError, Unit]
+    def find(drawingId: DrawingId): IO[DrawingRepoError, DrawingState]
+    def getAllIds: UIO[List[DrawingId]]
   }
 
-  case class RefDrawingRepoService(ref: Ref[Map[DrawingId, DrawingState]]) extends Service[Any] {
+  type DrawingRepository = Has[Service]
+
+  def refDrawingRepoService(ref: Ref[Map[DrawingId, DrawingState]]): NoDeps[Nothing, Has[Service]] = ZLayer.succeed(new Service {
     def create(drawingId: DrawingId, started: Long): ZIO[Any, DrawingRepoError, Unit] = for {
       _   <- ref.update(map => map + (drawingId -> DrawingState.Started(started)))
     } yield ()
@@ -33,7 +31,17 @@ object DrawingRepository {
 
     def getAllIds: ZIO[Any, Nothing, List[DrawingId]] =
       ref.get.map(_.keys.toList.sortWith((x, y) => x.value > y.value))
-  }
+  })
+
+  def create(drawingId: DrawingId, started: Long): ZIO[DrawingRepository, DrawingRepoError, Unit] =
+    ZIO.accessM(_.get.create(drawingId, started))
+  def update(drawingId: DrawingId, drawingState: DrawingState): ZIO[DrawingRepository, DrawingRepoError, Unit] =
+    ZIO.accessM(_.get.update(drawingId, drawingState))
+  def find(drawingId: DrawingId): ZIO[DrawingRepository, DrawingRepoError, DrawingState] =
+    ZIO.accessM(_.get.find(drawingId))
+  def getAllIds: URIO[DrawingRepository, List[DrawingId]] =
+    ZIO.accessM(_.get.getAllIds)
+
 }
 
 object DrawingRepoModel {

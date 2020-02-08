@@ -11,6 +11,7 @@ import io.circe.generic.auto._
 import io.tuliplogic.raytracer.commons.errors.IOError.HttpError
 import io.tuliplogic.raytracer.http.model.DrawingRepoModel.DrawingState.{Done, Error, Started}
 import io.tuliplogic.raytracer.http.model.DrawingRepoModel.{DrawingId, DrawingState}
+import io.tuliplogic.raytracer.http.model.drawingRepository.DrawingRepository
 import org.http4s._
 import org.http4s.circe._
 import zio.clock.Clock
@@ -33,11 +34,11 @@ class DrawRoutes[R <: DrawingProgram.DrawEnv with DrawingRepository with Random 
           bundle    <- Http2World.httpScene2World(scene)
           startedAt <- zio.clock.nanoTime
           drawingId <- zio.random.nextLong.map(DrawingId.apply)
-          _         <- DrawingRepository.>.create(drawingId, startedAt / 1000).mapError(e => HttpError(e.toString))
+          _         <- drawingRepository.create(drawingId, startedAt / 1000).mapError(e => HttpError(e.toString))
           _         <- (DrawingProgram.draw(bundle).flatMap {
             case (contenType, bytes) => for {
               now       <- zio.clock.nanoTime
-              _         <- DrawingRepository.>.update(drawingId, DrawingState.Done(contenType, bytes, now - startedAt))
+              _         <- drawingRepository.update(drawingId, DrawingState.Done(contenType, bytes, now - startedAt))
             } yield ()
           }).fork
           _         <- zio.console.putStrLn(s"Triggered computation for id: $drawingId")
@@ -51,11 +52,11 @@ class DrawRoutes[R <: DrawingProgram.DrawEnv with DrawingRepository with Random 
 
     case GET -> Root / "draw" =>
       implicit def circeJsonEncoder[A](implicit decoder: Encoder[A]): EntityEncoder[F, A] = jsonEncoderOf[F, A]
-      DrawingRepository.>.getAllIds.flatMap(Ok(_))
+      drawingRepository.getAllIds.flatMap(Ok(_))
 
     case GET -> Root / "draw" / LongVar(id) =>
       for {
-        drawingState <- DrawingRepository.>.find(DrawingId(id))
+        drawingState <- drawingRepository.find(DrawingId(id))
         response     <- drawingState match {
           case e @ Error(_) =>
             implicit def circeJsonEncoder[A](implicit decoder: Encoder[A]):

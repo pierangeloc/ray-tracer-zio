@@ -31,7 +31,8 @@ object rasteringModule {
   val chunkSize: Int = 4096
   val parChunks: Int = 7//15 //nr cores - 1
 
-  val chunkRasteringModule = ZLayer.fromServices {
+  val chunkRasteringModule: ZLayer[CameraModule with WorldModule, Nothing, RasteringModule] =
+    ZLayer.fromServices[cameraModule.Service, worldModule.Service, Nothing, RasteringModule] {
     (
       cameraSvc: cameraModule.Service,
       worldSvc: worldModule.Service

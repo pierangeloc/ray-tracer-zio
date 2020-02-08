@@ -70,7 +70,7 @@ object Camera {
   def makeUnsafe(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): Camera =
     new DefaultRuntime{}.unsafeRun(
       Camera.make(viewFrom, viewTo, upDirection, visualAngleRad, hRes, vRes)
-      .provideManaged((matrixModule.MatrixModule.breezeLive >>> aTModule.live).build)
+      .provideManaged((matrixModule.breezeLive >>> aTModule.live).build)
     )
 
   //this is just the `identity` transformation

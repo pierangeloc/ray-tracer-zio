@@ -23,8 +23,9 @@ object worldModule {
   type WorldModule = Has[Service]
 
 //  val live: ZLayer[WorldTopologyModule with WorldHitCompsModule with PhongReflectionModule with WorldReflectionModule with WorldRefractionModule, Nothing, WorldModule] =
-  val live = //: ZLayer[WorldTopologyModule with WorldHitCompsModule with PhongReflectionModule with WorldReflectionModule with WorldRefractionModule, Nothing, WorldModule] =
-    ZLayer.fromServices {
+  //observation: the type inference doesn't work if I put the types in ZLayer and not on fromServices. Try with a minimal example
+  val live: ZLayer[WorldTopologyModule with WorldHitCompsModule with PhongReflectionModule with WorldReflectionModule with WorldRefractionModule, Nothing, WorldModule] =
+    ZLayer.fromServices[worldTopologyModule.Service, worldHitCompsModule.Service, phongReflectionModule.Service, worldReflectionModule.Service, worldRefractionModule.Service,  Nothing, WorldModule] {
     (worldTopology: worldTopologyModule.Service,
      worldHitComps: worldHitCompsModule.Service, //TODO: remove
      phongReflection: phongReflectionModule.Service,
@@ -56,6 +57,6 @@ object worldModule {
     })
   }
 
-  override def colorForRay(world: World, ray: Ray, remaining: Ref[Int]): ZIO[WorldModule, RayTracerError, Color] =
+  def colorForRay(world: World, ray: Ray, remaining: Ref[Int]): ZIO[WorldModule, RayTracerError, Color] =
     ZIO.accessM(_.get.colorForRay(world, ray, remaining))
 }

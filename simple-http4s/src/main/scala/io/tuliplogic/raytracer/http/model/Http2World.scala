@@ -3,7 +3,8 @@ package io.tuliplogic.raytracer.http.model
 import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
 import io.tuliplogic.raytracer.commons.errors.IOError.HttpError
-import io.tuliplogic.raytracer.geometry.affine.ATModule
+import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
+import io.tuliplogic.raytracer.geometry.affine.aTModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.http.model.Shape.{Plane, Sphere}
 import io.tuliplogic.raytracer.ops.model.data
@@ -34,26 +35,26 @@ object Http2World {
       for {
         col1 <- Color.fromHex(c1)
         col2 <- Color.fromHex(c2)
-        tf   <- ATModule.>.scale(stripSize, 1, 1)
+        tf   <- aTModule.scale(stripSize, 1, 1)
       } yield data.Pattern.Striped(col1, col2, tf)
 
     case Pattern.Checker(c1, c2, size) =>
       for {
         col1 <- Color.fromHex(c1)
         col2 <- Color.fromHex(c2)
-        tf   <- ATModule.>.scale(size, size, size)
+        tf   <- aTModule.scale(size, size, size)
       } yield data.Pattern.Checker(col1, col2, tf)
 
     case Pattern.Uniform(c) =>
       for {
         col <- Color.fromHex(c)
-        tf  <- ATModule.>.id
+        tf  <- aTModule.id
       } yield data.Pattern.Uniform(col, tf)
 
     case Pattern.GradientX(c1, c2) => for {
       col1 <- Color.fromHex(c1)
       col2 <- Color.fromHex(c2)
-      tf  <- ATModule.>.id
+      tf  <- aTModule.id
     } yield data.Pattern.GradientX(col1, col2, tf)
   }
 

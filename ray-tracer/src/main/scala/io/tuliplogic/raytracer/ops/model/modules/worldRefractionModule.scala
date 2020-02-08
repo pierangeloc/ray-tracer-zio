@@ -40,7 +40,7 @@ object worldRefractionModule {
     })
   }
 
-  val noRefractionModule: ZLayer.NoDeps[Nothing, WorldRefractionModule] = ZLayer.succeed {
+  val noRefraction: ZLayer.NoDeps[Nothing, WorldRefractionModule] = ZLayer.succeed {
     new Service {
       override def refractedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): ZIO[Any, RayTracerError, Color] =
         UIO.succeed(Color.black)

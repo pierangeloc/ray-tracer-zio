@@ -120,7 +120,7 @@ object phongReflectionModule {
     }
   }
 
-  override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[PhongReflectionModule, PhongComponents] =
+  def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): URIO[PhongReflectionModule, PhongComponents] =
     ZIO.accessM(_.get.lighting(pointLight, hitComps, inShadow))
 
 }
