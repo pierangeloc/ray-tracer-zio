@@ -33,7 +33,7 @@ object worldHitCompsModule {
         def n1n2: UIO[(Double, Double)] = {
 
           val maybeN1N2: (List[Shape], Option[Double], Option[Double]) = intersections.foldLeft[Z]((Nil, None, None)) {
-            case (in@(xs, Some(n1), Some(n2)), _) =>
+            case (in@(_, Some(_), Some(_)), _) =>
               in
             case ((conts, None, None), `hit`) =>
               val n1: Double = conts.lastOption.map(_.material.refractionIndex).getOrElse(1)

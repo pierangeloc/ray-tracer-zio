@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.ops.model.data
 
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
-import zio.{IO, UIO}
+import zio.IO
 
 case class Pixel(x: Int, y: Int)
 case class Color(red: Double, green: Double, blue: Double) { //TODO: use refined types to enforce something on these colors, and on alpha

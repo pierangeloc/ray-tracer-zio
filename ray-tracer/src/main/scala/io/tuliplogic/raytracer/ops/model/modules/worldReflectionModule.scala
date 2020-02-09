@@ -4,7 +4,7 @@ import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.ops.model.data.{Color, Ray, World}
 import io.tuliplogic.raytracer.ops.model.modules.phongReflectionModule.HitComps
 import io.tuliplogic.raytracer.ops.model.modules.worldModule.WorldModule
-import zio.{Has, IO, Ref, RefM, UIO, ZIO, ZLayer}
+import zio.{Has, IO, Ref, UIO, ZIO, ZLayer}
 
 /**
   * Determines how the world gets reflected

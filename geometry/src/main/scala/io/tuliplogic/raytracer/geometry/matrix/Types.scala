@@ -3,8 +3,6 @@ package io.tuliplogic.raytracer.geometry.matrix
 import cats.FlatMap
 import cats.implicits._
 
-import scala.reflect.ClassTag
-
 /**
   * here we can tweak using Vector vs zio Chunk vs fs2 Chunk
   */

@@ -46,7 +46,7 @@ object Material {
     reflective = reflective
   )
 
-  def gradient(from: Color, to: Color, diffuse: Double = 0.7, specular: Double = 0.9, shininess: Double = 50, reflective: Double = 0): ZIO[ATModule, Nothing, Material] = for {
+  def gradient(from: Color, to: Color, diffuse: Double = 0.7, specular: Double = 0.9, shininess: Double = 50): ZIO[ATModule, Nothing, Material] = for {
     mat  <- Material.default
       idTf <- aTModule.id
   } yield mat.copy(

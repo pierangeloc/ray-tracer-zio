@@ -4,7 +4,7 @@ import io.tuliplogic.raytracer.geometry.matrix.Types.{M, factory}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError.MatrixDimError
 import zio.{Has, ZLayer}
-import zio.{IO, Ref, UIO, ZIO}
+import zio.{IO, UIO, ZIO}
 
 object matrixModule {
 

@@ -4,7 +4,7 @@ object Dependencies {
   val http4sVersion = "0.21.0-M6"
 
   val zioVersion       = "1.0.0-RC17+273-a03ed276-SNAPSHOT"
-  val zioCatsVersion   = "2.0.0.0-RC8"
+  val zioCatsVersion   = "2.0.0.0-RC10+13-d77a9fe8-SNAPSHOT"
   val zioNioVersion    = "0.4.0"
   val zioMacrosVersion = "0.6.0"
 
@@ -12,9 +12,9 @@ object Dependencies {
   val catsVersion       = "2.0.0"
   val catsEffectVersion = "2.0.0"
   val circeVersion      = "0.12.1"
-  val scrimageVersion   = "2.1.8"
+  val scrimageVersion   = "3.0.0"
 
-  lazy val scalaTest  = "org.scalatest"  %% "scalatest"  % "3.0.5"
+  lazy val scalaTest  = "org.scalatest"  %% "scalatest"  % "3.2.0-M1"
   lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
 
   lazy val cats       = "org.typelevel" %% "cats-core"   % catsVersion
@@ -42,25 +42,25 @@ object Dependencies {
   lazy val circeParser   = "io.circe" %% "circe-parser"          % circeVersion
 
   // type-level restrictions
-  lazy val breeze       = "org.scalanlp" %% "breeze"         % "0.13.2"
-  lazy val breezeNative = "org.scalanlp" %% "breeze-natives" % "0.13.2"
-  lazy val singletonOps = "eu.timepit"   %% "singleton-ops"  % "0.3.1"
+  lazy val breeze       = "org.scalanlp" %% "breeze"         % "1.0"
+  lazy val breezeNative = "org.scalanlp" %% "breeze-natives" % "1.0"
+  lazy val singletonOps = "eu.timepit"   %% "singleton-ops"  % "0.4.1"
   lazy val refined      = "eu.timepit"   %% "refined"        % "0.9.7"
   lazy val refinedCats  = "eu.timepit"   %% "refined-cats"   % "0.9.7"
 
   lazy val circeAll = Seq(circeCore, circeGeneric, circeGenericX)
 
-  lazy val log4CatsCore  = "io.chrisdavenport" %% s"log4cats-core"  % "0.3.0"
-  lazy val log4CatsSlf4j = "io.chrisdavenport" %% s"log4cats-slf4j" % "0.3.0"
+  lazy val log4CatsCore  = "io.chrisdavenport" %% s"log4cats-core"  % "1.0.1"
+  lazy val log4CatsSlf4j = "io.chrisdavenport" %% s"log4cats-slf4j" % "1.0.1"
 
   lazy val scalafx = "org.scalafx" %% "scalafx" % "8.0.144-R12"
 
   lazy val scalaTags = "com.lihaoyi" %% "scalatags" % "0.6.8"
 
   // scrimage
-  lazy val scrimageCore    = "com.sksamuel.scrimage" %% "scrimage-core" % scrimageVersion
-  lazy val scrimageIOX     = "com.sksamuel.scrimage" %% "scrimage-io-extra" % scrimageVersion
-  lazy val scrimageFilters = "com.sksamuel.scrimage" %% "scrimage-filters" % scrimageVersion
+  lazy val scrimageCore    = "com.kyleu" %% "scrimage-core" % scrimageVersion
+  lazy val scrimageIOX     = "com.kyleu" %% "scrimage-io-extra" % scrimageVersion
+  lazy val scrimageFilters = "com.kyleu" %% "scrimage-filters" % scrimageVersion
 
   lazy val zioTest         = "dev.zio" %% "zio-test"        % zioVersion
   lazy val zioTestSbt      = "dev.zio" %% "zio-test-sbt"    % zioVersion

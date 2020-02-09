@@ -43,6 +43,9 @@ object rayModule {
 
   val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService[aTModule.Service, Nothing, RayModule] { aTModule =>
     Has(new Service {
+
+      import Ordering.Double.TotalOrdering
+
       def canonicalIntersect(ray: Ray, o: Shape): URIO[Any, List[Intersection]] = o match {
         case s@Sphere(_, _) =>
           val sphereToRay = ray.origin - Pt(0, 0, 0)

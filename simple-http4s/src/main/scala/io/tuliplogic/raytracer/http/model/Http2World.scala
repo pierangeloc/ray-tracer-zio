@@ -27,8 +27,6 @@ object Http2World {
     Pt(httpCamera.fromX, httpCamera.fromY, httpCamera.fromZ)
   private def viewTo(httpCamera: Camera): Pt = Pt(httpCamera.toX, httpCamera.toY, httpCamera.toZ)
   private def upVec(httpCamera: Camera): Vec = Vec(httpCamera.upX, httpCamera.upY, httpCamera.upZ)
-  private def hRes(httpCamera: Camera): Int  = httpCamera.hRes
-  private def vRes(httpCamera: Camera): Int  = httpCamera.vRes
 
   private def pattern(pattern: Pattern): ZIO[ATModule, GenericError, data.Pattern] = pattern match {
     case Pattern.Striped(c1, c2, stripSize) =>

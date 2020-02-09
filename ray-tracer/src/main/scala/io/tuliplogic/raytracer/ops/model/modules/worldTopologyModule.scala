@@ -29,6 +29,7 @@ object worldTopologyModule {
     ZLayer.fromService[rayModule.Service, Nothing, WorldTopologyModule] { rayModuleSvc =>
       Has(new Service {
 
+        import Ordering.Double.TotalOrdering
         def intersections(world: World, ray: Ray): UIO[List[Intersection]] =
           ZIO.traverse(world.objects)(rayModuleSvc.intersect(ray, _)).map(_.flatten.sortBy(_.t))
 

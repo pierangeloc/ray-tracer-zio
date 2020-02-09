@@ -7,8 +7,7 @@ import io.tuliplogic.raytracer.ops.model.data.Color
 import io.tuliplogic.raytracer.ops.model.data.Scene.{PointLight, Shape}
 import io.tuliplogic.raytracer.ops.model.modules.lightDiffusionModule.LightDiffusionModule
 import io.tuliplogic.raytracer.ops.model.modules.lightReflectionModule.LightReflectionModule
-import io.tuliplogic.raytracer.ops.model.modules.normalReflectModule.NormalReflectModule
-import zio.{Has, IO, UIO, URIO, ZIO, ZLayer}
+import zio.{Has, UIO, URIO, ZIO, ZLayer}
 
 object phongReflectionModule {
 
