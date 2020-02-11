@@ -24,7 +24,7 @@ object layers {
     (Blocking.live ++ (Scheduler.live >>> Clock.live))
 
   val cSerializerM: ULayer[Blocking with Clock, CanvasSerializer] =
-    canvasSerializer.ppmCanvasSerializer
+    canvasSerializer.pNGCanvasSerializer
 
   val topologyM: ULayer[ATModule, WorldTopologyModule] =
     rayModule.live >>> worldTopologyModule.live

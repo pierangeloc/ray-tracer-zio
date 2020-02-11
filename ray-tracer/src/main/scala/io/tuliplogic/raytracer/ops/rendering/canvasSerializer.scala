@@ -90,6 +90,7 @@ object canvasSerializer {
         implicit val imageWriter: ImageWriter = PngWriter.NoCompression
 
         def serializeAsByteStream(canvas: Canvas, maxColor: Int): ZStreamChunk[Any, Nothing, Byte] = {
+          println("WTTAFUCK")
         val image = for {
           w <- canvas.width
           h <- canvas.height

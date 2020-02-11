@@ -7,8 +7,9 @@ import io.circe.syntax._
 import io.circe.parser._
 import io.tuliplogic.raytracer.http.model.Shape.Sphere
 
-object httpmodelSpec extends DefaultRunnableSpec(
-  suite("parse correctly body") (
+object httpmodelSpec extends DefaultRunnableSpec {
+
+  override val spec = suite("parse correctly body") (
     test("scene with 2 spheres is decodable") {
       val mat1 = Material(
         Pattern.Striped("ff0000", "00ff00", 5),
@@ -153,4 +154,5 @@ object httpmodelSpec extends DefaultRunnableSpec(
       assert(res.isRight, equalTo(true))
     }
   )
-)
+}
+

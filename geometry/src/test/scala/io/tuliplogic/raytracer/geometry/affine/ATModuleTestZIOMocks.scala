@@ -2,9 +2,10 @@ package io.tuliplogic.raytracer.geometry.affine
 
 import io.tuliplogic.raytracer.commons.errors.{ATError, AlgebraicError}
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
+import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import io.tuliplogic.raytracer.geometry.affine.fixtures.{invertedTranslationMatrix, ptVec, translatedPtVec, translationMatrix}
 import io.tuliplogic.raytracer.geometry.matrix.Types._
-import io.tuliplogic.raytracer.geometry.matrix.{Matrix, MatrixModule}
+import io.tuliplogic.raytracer.geometry.matrix.Matrix
 import zio.test.Assertion._
 import zio.test.mock.{Method, Mock, Mockable}
 import zio.test.mock.Expectation._
@@ -15,8 +16,8 @@ object ATModuleTestZIOMocks extends DefaultRunnableSpec(
   suite("AT relies on matrix operations") {
     testM("Applying AT to a vector means invoking matrix multiplication on that vector") {
       val app: ZIO[ATModule, ATError, Pt] = for {
-        tf <- ATModule.>.translate(3d, 4d, 5d)
-        pt <- ATModule.>.applyTf(tf, Pt(1d, 2d, 3d))
+        tf <- aTModule.translate(3d, 4d, 5d)
+        pt <- aTModule.applyTf(tf, Pt(1d, 2d, 3d))
       } yield pt
 
       for {
