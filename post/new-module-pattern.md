@@ -32,11 +32,28 @@ In its initial formulation it was only using trait mix-ins, as shown In [this ta
 Here we will see the new formulation of the module pattern, that resolves some of the shortcomings of the previous version.
 
 ### The module recipe
-Let's build a module for product data access, following these simple 3 steps:
+Let's build a module for product data access, following these simple steps:
 
-1. Define an object that gives the name to the module, this can be (and typically is, in ZIO itself) a package object
+1. Define an object that gives the name to the module, this can be (not necessarily) a package object
 1. Within the module object define a `trait Service` that defines the interface our module is exposing, in our case 2 methods to retrieve a product details, and one to retrieve the related products
 1. Within the module object define a type alias like `type ModuleName = Has[Service]`
+1. Within the module object define the different implementations of `ModuleName` through `ZLayer`
+
+```scala
+import zio.{Has, ZLayer}
+
+object productRepo {
+  trait Service {
+    def getProductDetails(productId: ProductId): IO[DBError, Product]
+    def getRelatedProducts(productId: ProductId): IO[DBError, List[Product]]
+  }
+  
+  type ProductRepo = Has[Service]
+  val testRepo: ZLayer.NoDeps[Nothing, ProductRepo] = ???
+  
+}
+```
+
 
 
 
