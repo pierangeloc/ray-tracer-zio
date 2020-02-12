@@ -20,7 +20,7 @@ object worldHitCompsModule {
   type WorldHitCompsModule = Has[Service]
 
   val live: ZLayer[NormalReflectModule, Nothing, WorldHitCompsModule] =
-    ZLayer.fromService[normalReflectModule.Service, Nothing, WorldHitCompsModule] { normalReflectSvc =>
+    ZLayer.fromService[normalReflectModule.Service, WorldHitCompsModule] { normalReflectSvc =>
       Has( new Service {
         def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[Any, GenericError, HitComps] = {
         type Z = (List[Shape], Option[Double], Option[Double])

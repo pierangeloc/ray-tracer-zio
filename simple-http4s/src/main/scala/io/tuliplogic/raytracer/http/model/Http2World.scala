@@ -102,7 +102,7 @@ object Http2World {
 
   def httpScene2World(httpScene: Scene): ZIO[ATModule with Console, HttpError, SceneBundle] = (
     for {
-      worldShapes     <- ZIO.traverse(httpScene.shapes)(httpShape2Shape).mapError(e => HttpError(e.getMessage))
+      worldShapes     <- ZIO.foreach(httpScene.shapes)(httpShape2Shape).mapError(e => HttpError(e.getMessage))
       pointLightColor <- Color.fromHex(httpScene.pointLight.color).mapError(e => HttpError(e.getMessage))
       pointLight      <- UIO(data.Scene.PointLight(Pt(httpScene.pointLight.ptX, httpScene.pointLight.ptY, httpScene.pointLight.ptZ), pointLightColor))
 

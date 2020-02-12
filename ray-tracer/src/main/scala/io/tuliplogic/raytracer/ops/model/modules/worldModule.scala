@@ -25,7 +25,7 @@ object worldModule {
 //  val live: ZLayer[WorldTopologyModule with WorldHitCompsModule with PhongReflectionModule with WorldReflectionModule with WorldRefractionModule, Nothing, WorldModule] =
   //observation: the type inference doesn't work if I put the types in ZLayer and not on fromServices. Try with a minimal example
   val live: ZLayer[WorldTopologyModule with WorldHitCompsModule with PhongReflectionModule with WorldReflectionModule with WorldRefractionModule, Nothing, WorldModule] =
-    ZLayer.fromServices[worldTopologyModule.Service, worldHitCompsModule.Service, phongReflectionModule.Service, worldReflectionModule.Service, worldRefractionModule.Service,  Nothing, WorldModule] {
+    ZLayer.fromServices[worldTopologyModule.Service, worldHitCompsModule.Service, phongReflectionModule.Service, worldReflectionModule.Service, worldRefractionModule.Service, WorldModule] {
     (worldTopology: worldTopologyModule.Service,
      worldHitComps: worldHitCompsModule.Service, //TODO: remove
      phongReflection: phongReflectionModule.Service,

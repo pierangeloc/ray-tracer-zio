@@ -15,7 +15,7 @@ object worldRefractionModule {
 
   type WorldRefractionModule = Has[Service]
 
-  val live: ZLayer[WorldModule, Nothing, WorldRefractionModule] = ZLayer.fromService[worldModule.Service, Nothing, WorldRefractionModule]{
+  val live: ZLayer[WorldModule, Nothing, WorldRefractionModule] = ZLayer.fromService[worldModule.Service, WorldRefractionModule]{
     worldModuleSvc =>
 
     Has(new Service {

@@ -74,7 +74,7 @@ object phongReflectionModule {
 
   //TODO test the phongReflection in terms of the underlying dependencies
   val live: ZLayer[ATModule with LightDiffusionModule with LightReflectionModule, Nothing, PhongReflectionModule]
-    = ZLayer.fromServices[aTModule.Service, lightDiffusionModule.Service, lightReflectionModule.Service, Nothing, PhongReflectionModule] {
+    = ZLayer.fromServices[aTModule.Service, lightDiffusionModule.Service, lightReflectionModule.Service, PhongReflectionModule] {
     (atModuleSvc, lightDiffSvc, lightReflSvc) =>
       Has(new Service {
         def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {

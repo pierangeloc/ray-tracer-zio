@@ -16,7 +16,7 @@ object lightReflectionModule {
   type LightReflectionModule = Has[Service]
 
   val live: ZLayer[NormalReflectModule, Nothing, LightReflectionModule] =
-    ZLayer.fromService[normalReflectModule.Service, Nothing, LightReflectionModule]{ normalReflectSvc =>
+    ZLayer.fromService[normalReflectModule.Service, LightReflectionModule]{ normalReflectSvc =>
       Has(new Service {
 
         def computeReflection(reflEyeProjection: Double, lightIntensity: Color, materialSpecular: Double, materialShininess: Double): Color = {

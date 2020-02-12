@@ -20,7 +20,7 @@ object normalReflectModule {
 
   type NormalReflectModule = Has[Service]
 
-  val live: ZLayer[ATModule, Nothing, NormalReflectModule] = ZLayer.fromService[aTModule.Service, Nothing, NormalReflectModule] { aTModule =>
+  val live: ZLayer[ATModule, Nothing, NormalReflectModule] = ZLayer.fromService[aTModule.Service, NormalReflectModule] { aTModule =>
 
     Has(new Service {
 

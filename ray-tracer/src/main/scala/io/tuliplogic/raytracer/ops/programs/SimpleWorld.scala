@@ -37,7 +37,7 @@ object SimpleWorld extends App{
   import layers._
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
-    ZIO.traverse(-18 to -6)(z => program(Pt(2, 2, z.toDouble), Paths.get(s"$canvasFile-$z.ppm"))
+    ZIO.foreach(-18 to -6)(z => program(Pt(2, 2, z.toDouble), Paths.get(s"$canvasFile-$z.ppm"))
       .provideLayer(cSerializerM ++ (atM >>> rasteringM) ++ atM)
     ).timed.foldM(err =>
     console.putStrLn(s"Execution failed with: $err").as(1),

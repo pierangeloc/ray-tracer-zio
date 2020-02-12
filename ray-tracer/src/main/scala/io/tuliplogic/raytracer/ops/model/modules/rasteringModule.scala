@@ -32,7 +32,7 @@ object rasteringModule {
   val parChunks: Int = 7//15 //nr cores - 1
 
   val chunkRasteringModule: ZLayer[CameraModule with WorldModule, Nothing, RasteringModule] =
-    ZLayer.fromServices[cameraModule.Service, worldModule.Service, Nothing, RasteringModule] {
+    ZLayer.fromServices[cameraModule.Service, worldModule.Service, RasteringModule] {
     (
       cameraSvc: cameraModule.Service,
       worldSvc: worldModule.Service
@@ -55,7 +55,7 @@ object rasteringModule {
                   color <- worldSvc.colorForRay(world, ray, remaining)
                 } yield data.ColoredPixel(Pixel(px, py), color)
             }
-          }.flatMap(ZStream.fromChunk)
+          }.flatMap(ZStream.fromChunk(_))
         }
       })
   }

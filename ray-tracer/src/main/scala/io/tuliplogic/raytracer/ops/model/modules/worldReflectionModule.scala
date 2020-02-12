@@ -20,7 +20,7 @@ object worldReflectionModule {
   type WorldReflectionModule = Has[Service]
 
   val live: ZLayer[WorldModule, Nothing, WorldReflectionModule] =
-    ZLayer.fromService[worldModule.Service, Nothing, WorldReflectionModule] { worldModuleSvc =>
+    ZLayer.fromService[worldModule.Service, WorldReflectionModule] { worldModuleSvc =>
       Has(new Service {
         def reflectedColor(world: World, hitComps: HitComps, remaining: Ref[Int]): IO[RayTracerError, Color] =
           if (hitComps.shape.material.reflective == 0) {

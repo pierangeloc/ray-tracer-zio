@@ -14,7 +14,7 @@ object cameraModule {
 
   type CameraModule = Has[Service]
 
-  val live: ZLayer[ATModule, Nothing, CameraModule] = ZLayer.fromService[aTModule.Service, Nothing, CameraModule] { aTModule =>
+  val live: ZLayer[ATModule, Nothing, CameraModule] = ZLayer.fromService[aTModule.Service, CameraModule] { aTModule =>
 
     Has(new Service {
       // Implementation: the canonical camera has the eye in Pt.origin, and the screen on the plane z = -1,

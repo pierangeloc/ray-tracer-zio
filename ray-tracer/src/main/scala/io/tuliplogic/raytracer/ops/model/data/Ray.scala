@@ -41,7 +41,7 @@ object rayModule {
 
   type RayModule = Has[Service]
 
-  val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService[aTModule.Service, Nothing, RayModule] { aTModule =>
+  val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService[aTModule.Service, RayModule] { aTModule =>
     Has(new Service {
 
       import Ordering.Double.TotalOrdering

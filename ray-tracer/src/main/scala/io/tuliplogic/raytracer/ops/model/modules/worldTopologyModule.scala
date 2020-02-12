@@ -26,12 +26,12 @@ object worldTopologyModule {
   type WorldTopologyModule = Has[Service]
 
   val live: ZLayer[RayModule, Nothing, WorldTopologyModule] =
-    ZLayer.fromService[rayModule.Service, Nothing, WorldTopologyModule] { rayModuleSvc =>
+    ZLayer.fromService[rayModule.Service, WorldTopologyModule] { rayModuleSvc =>
       Has(new Service {
 
         import Ordering.Double.TotalOrdering
         def intersections(world: World, ray: Ray): UIO[List[Intersection]] =
-          ZIO.traverse(world.objects)(rayModuleSvc.intersect(ray, _)).map(_.flatten.sortBy(_.t))
+          ZIO.foreach(world.objects)(rayModuleSvc.intersect(ray, _)).map(_.flatten.sortBy(_.t))
 
         def isShadowed(world: World, pt: Pt): UIO[Boolean] =
           for {
