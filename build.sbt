@@ -84,7 +84,7 @@ lazy val `simple-http4s` = project
   .settings(commonSettings)
   .settings(
       name := "simple-http4s",
-      libraryDependencies ++= Seq(
+      libraryDependencies ++= (Seq(
         zio,
         zioCats exclude("dev.zio", "zio-test"),
         cats,
@@ -97,7 +97,7 @@ lazy val `simple-http4s` = project
         circeGeneric,
         circeGenericX,
         log4CatsSlf4j
-      )
+      ) ++ doobie)
   )
   .dependsOn(commons)
   .dependsOn(`ray-tracer`)

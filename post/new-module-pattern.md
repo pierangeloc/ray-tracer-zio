@@ -1,11 +1,12 @@
 # Unleash ZIO environment with `ZLayer`
 
-ZIO is designed around 3 parameters, `R, E, A`. `R` represents the _requirement_ for the effect to run, meaning we need to fulfill
-the requirement in order to make the effect _runnable_. We will dedicate this post to explore what we can do with R, as it is paramount 
-inthe ZIO architecture
+`ZIO` is designed around 3 parameters, `R, E, A`. `R` represents the _requirement_ for the effect to run, meaning we need to fulfill
+the requirement in order to make the effect _runnable_. We will dedicate this post to explore what we can do with `R`, as it plays a crucial role in `ZIO`.
 
 ## A Simple case
-Let's consider the case where we want to build a database connect string from configuration, where the configuration is represented by a case class
+Let's build a simple program for a webshop, that must retrieve from DB the details of a product, together with the IDs of the related products. 
+To access the DB we need a `DBConnection`, and each step in out program represents this through the environment type. We can then combine the two steps through the `zip` combinator,
+producing a program that, in turn, depends on the `DBConnection`.
 
 ```scala
 case class DBConnection(...)
@@ -16,7 +17,7 @@ val getProductWithRelated: ZIO[DBConnection, Nothing, (Product, List[ProductId])
     productDetails zip relatedProducts 
 ```
 
-Looking at the types above we see that the environment is a `DBConnection`, i.e. we must supply a `DBConnection` in order to run the effects, through `provide`
+To run the program we must supply a `DBConnection` through `provide`, before feeding it to ZIO runtime.
 
 ```scala
 val dbConnection: DBConnection = ???
@@ -25,11 +26,21 @@ val runnable: ZIO[Any, Nothing, (Product, List[ProductId])] = getProductWithRela
 val (product, related)  = runtime.unsafeRun(runnable)
 ```
 
-## Our first ZIO module
-The module pattern is _the way_ ZIO manages dependencies between application components, and it works well with ZIO thanks to the presence of `R` in the `ZIO` datatype.
-In its initial formulation it was only using trait mix-ins, as shown In [this talk](https://www.youtube.com/watch?v=IvL8mmB2RBM).
+Notice that the act of `provide`ing an effect with its environment eliminates the environment dependency in the resulting effect type, well represented by type `Any` of the resulting environment.
 
-Here we will see the new formulation of the module pattern, that resolves some of the shortcomings of the previous version.
+## Our first ZIO module
+The module pattern is _the way_ ZIO manages dependencies between application components.
+In its initial formulation it was only using trait mix-ins, as shown in [this talk](https://www.youtube.com/watch?v=IvL8mmB2RBM).
+
+Here we will see the new formulation of the module pattern, that resolves most of the shortcomings of the previous version.
+
+### What is a module?
+A module is a group of functions that deals with only one concern. Keeping the scope of a module limited improves our ability to understand code, in that we can focus
+ only about one concern at a time without juggling with too many concerns together in our head.
+ 
+`ZIO` iself provides the basic capabilities through modules, see yourself how `ZEnv` is defined.
+
+
 
 ### The module recipe
 Let's build a module for product data access, following these simple steps:
@@ -42,14 +53,14 @@ Let's build a module for product data access, following these simple steps:
 ```scala
 import zio.{Has, ZLayer}
 
-object productRepo {
+object UserRepo {
   trait Service {
     def getProductDetails(productId: ProductId): IO[DBError, Product]
     def getRelatedProducts(productId: ProductId): IO[DBError, List[Product]]
   }
   
-  type ProductRepo = Has[Service]
-  val testRepo: ZLayer.NoDeps[Nothing, ProductRepo] = ???
+  type UserRepo = Has[Service]
+  val testRepo: ZLayer.NoDeps[Nothing, UserRepo] = ???
   
 }
 ```
@@ -68,3 +79,117 @@ object > extends Service[UsersModule] {
   ZIO.accessM(_.get.getUser(id))
 ``` 
 It differs from previous implementation in that you must add a .get on top of it, to access the service within an `Has` 
+
+
+## APPENDIX: The _classic_ module formulation
+
+Let's see how a service to retrieve product details was formulated in the classic way.
+
+Here we define a module to cope with CRUD operations for the `User` domain object
+
+```scala
+trait UserRepo {
+  val userRepo: UserRepo.Service
+}
+
+object UserRepo {
+  trait Service {
+    def getUser(userId: UserId): IO[DBError, Option[User]]
+    def createUser(user: User): IO[DBError, Unit]
+  }
+  
+  trait Live extends UserRepo {
+    val dbConnection: Connection
+    val userRepo: Service = new Service {
+      private def runSql[A](sql: String): IO[DBError, A] = /* use dbConnection */
+
+      def getUser(userId: UserId): IO[DBError, Option[User]] = runSql[Option[User]]("select * from users where id = $userId")
+      def createUser(user: User): IO[DBError, Unit] = runSql[Unit](s"insert into users values (${user.id}, ${user.name}")
+    }
+  }
+
+  //accessor methods
+  def getUser(userId: UserId): ZIO[UserRepo, DBError, Option[User]] =
+    ZIO.accessM(_.userRepo.getUser(userId))
+  
+  def createUser(user: User): ZIO[UserRepo, DBError, Unit] =
+    ZIO.accessM(_.userRepo.createUser(user))
+
+}
+```
+
+And a module to cope with logging
+
+```scala
+trait Logging {
+  val logging: Logging.Service
+}
+
+object Logging {
+  trait Service {
+    def info(s: String): UIO[Unit]
+    def error(s: String): UIO[Unit]
+  }
+
+  trait Live extends Logging {
+    val logger: Logger
+    val logging: Logging.Service = new Service {
+      def info(s: String): UIO[Unit] = logger.info(s)
+      def error(s: String): UIO[Unit] = logger.error(s)      
+    }
+  }
+  
+  //accesspr methods
+  def info(s: String): ZIO[Logging, Nothing, Unit] = 
+    ZIO.accessM(_.logging.info(s))
+
+  def error(s: String): ZIO[Logging, Nothing, Unit] = 
+    ZIO.accessM(_.logging.error(s))
+
+}
+```
+
+Now we can combine operations provided by the different modules through the various combinators provided by ZIO, e.g.
+```scala
+val user = User(123, "Chet")
+val makeUser: ZIO[Logging with UserRepo, Nothing, Unit] = for {
+  _ <- Logging.info(s"inserting user") // ZIO[Logging, Nothing, Unit]
+  _ <- UserRepo.createUser(user)       // ZIO[UserRepo, DBError, Unit]
+  _ <- Logging.info(s"user inserted")  // ZIO[Logging, Nothing, Unit]
+} yield ()
+```
+
+Note that the type of `makeUser` is fully inferred by the compiler, and it expresses the fact that to our program requires an environment of type `Logging with UserRepo`.
+
+To run the program we must satisfy its requirements, and feed the corresponding value to ZIO runtime
+
+```scala
+val env: Logging with UserRepo = new Logging.Live with UserRepo.Live {
+  val logger: Logger = Logger(LoggerFactory.getLogger("classic-module-pattern"))
+  val dbConnection: Connection = ??? //this must be injected or passed somehow
+}
+
+val runnable: ZIO[Any, DBError, Unit] = makeUser.provide(env) // this effect has no requirements, it can be run 
+
+defaultRuntime.unsafeRun(runnable)
+```
+
+
+
+
+#### Provide partial environments
+Let's suppose we have our `makeUser: ZIO[Logging with UserRepo, Nothing, Unit] ` and we want to satisfy just part of the requirement, e.g. we want to keep the logging part but delay the 
+provisioning of `UserRepo`. `ZIO[R, E, A]` has a method `provideSome[R0](f: R0 => R): ZIO[R0, E, A]` that builds the required environment starting from a part of it
+
+```scala
+val makeUserForRepo: ZIO[UserRepo, Nothing, Unit] = makeUser.provideSome[UserRepo] { env =>
+  new Logging with UserRepo {
+    val logging = Logging.Live.logging
+    val userRepo = env.userRepo
+  }
+}
+```
+
+In this case we had a simple environment, but in case of environments coming from mixin many layers this process can be very tedious.
+
+#### Vertical composition: a module depending on another module
