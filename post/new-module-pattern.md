@@ -193,3 +193,46 @@ val makeUserForRepo: ZIO[UserRepo, Nothing, Unit] = makeUser.provideSome[UserRep
 In this case we had a simple environment, but in case of environments coming from mixin many layers this process can be very tedious.
 
 #### Vertical composition: a module depending on another module
+In many cases we have modules depending on other modules, e.g. we could have a module `UserValidation` and a `User` module that depends on `UserRepo` and `Validation`. 
+The way we can encode this is by forcing the depending module to be mixed in with the dependee modules. One way is to declare the services we need from the required modules as `val` of the module implementation (e.g. the `Live` implementation can have richer requirement than a test implementation)
+
+```scala
+trait UserValidation {
+  val userValidation: UserValidation.Service 
+}
+
+object UserValidation {
+  trait Service {
+    def validate(user: User): IO[ValidationError, Unit]
+  }
+
+  trait Live { /* Live implementation, e.g. calling a webservice to identity document validity */}
+}
+
+trait UserService {
+  val userService: UserService.Service
+}
+object UserService {
+  trait Service {
+    def registerUser(user: User): IO[ApplicationError, Unit]
+    def getUser(userId: UserID): IO[ApplicationError, Option[User]]
+  }
+  
+  trait Live extends UserService {
+    val userRepo: UserRepo.Service
+    val userValidation: UserValidation.Service
+
+    val userService = new Service {
+      def registerUser(user: User): IO[ApplicationError, Unit] = for {
+        _ <- userValidation.validate(user)
+        _ <- userRepo.createUser(user)
+      } yield ()
+
+      def getUser(userId: UserID): IO[ApplicationError, Option[User]] = userRepo.getUser(userId)
+    }
+  }
+
+}
+```
+
+When we have a program that requires `UserService`, e.g. `prg: ZIO[UserService, Nothing, Unit]` we can fulfull the requirements starting from the required module, e.g. `prg.provide(new UserService)`, the compiler will guide us in fulfilling all the required modules by mixing in all the modules our module depends on.
