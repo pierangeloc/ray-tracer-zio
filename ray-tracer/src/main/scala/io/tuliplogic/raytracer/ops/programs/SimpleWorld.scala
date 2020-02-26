@@ -11,6 +11,7 @@ import io.tuliplogic.raytracer.ops.model.modules.rasteringModule.RasteringModule
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer.CanvasSerializer
 import zio._
+import zio.clock.Clock
 
 object SimpleWorld extends App{
   val cameraFrom = Pt(2, 2, -18)
@@ -28,7 +29,7 @@ object SimpleWorld extends App{
     light      <- UIO(PointLight(Pt(0, 0, -15), Color.white))
   } yield World(light, List[Shape](s1, s2))
 
-  def program(viewFrom: Pt, path: Path): ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit] = for {
+  def program(viewFrom: Pt, path: Path): ZIO[CanvasSerializer with RasteringModule with ATModule with Clock, RayTracerError, Unit] = for {
     w      <- world
     canvas <- RaytracingProgram.drawOnCanvas(w, viewFrom, cameraTo, cameraUp, math.Pi / 3, hRes, vRes)
     _      <- canvasSerializer.serializeToFile(canvas, 255, path)
@@ -38,7 +39,7 @@ object SimpleWorld extends App{
 
   override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
     ZIO.foreach(-18 to -6)(z => program(Pt(2, 2, z.toDouble), Paths.get(s"$canvasFile-$z.ppm"))
-      .provideLayer(cSerializerM ++ (atM >>> rasteringM) ++ atM)
+      .provideLayer(cSerializerM ++ (atM >>> rasteringM) ++ atM++ ZLayer.requires[Clock])
     ).timed.foldM(err =>
     console.putStrLn(s"Execution failed with: $err").as(1),
     { case (duration, _) => console.putStrLn(s"rendering took ${duration.toMillis} ms") *> UIO.succeed(0) }

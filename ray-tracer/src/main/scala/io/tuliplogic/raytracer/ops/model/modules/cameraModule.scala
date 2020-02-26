@@ -1,7 +1,6 @@
 package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
-import io.tuliplogic.raytracer.geometry.affine.aTModule
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import io.tuliplogic.raytracer.ops.model.data.{Camera, Ray}
 import zio.{Has, IO, UIO, ZIO, ZLayer}
@@ -14,9 +13,8 @@ object cameraModule {
 
   type CameraModule = Has[Service]
 
-  val live: ZLayer[ATModule, Nothing, CameraModule] = ZLayer.fromService[aTModule.Service, CameraModule] { aTModule =>
-
-    Has(new Service {
+  val live: ZLayer[ATModule, Nothing, CameraModule] = ZLayer.fromService { aTModule =>
+    new Service {
       // Implementation: the canonical camera has the eye in Pt.origin, and the screen on the plane z = -1,
       // therefore after computing the coordinates of the point in the screen, we have to apply the _inverse of the camera transformation_
       // because the camera transformation is the transformation to be applied to thw world in order to produce the effect of moving/orienting the camera around
@@ -34,7 +32,7 @@ object cameraModule {
           origin    <- aTModule.applyTf(inverseTf, Pt.origin)
           direction <- (pixel - origin).normalized.orDie
         } yield Ray(origin, direction)
-    })
+    }
   }
 
   def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[CameraModule, Nothing, Ray] =

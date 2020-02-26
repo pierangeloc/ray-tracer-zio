@@ -32,13 +32,12 @@ object rasteringModule {
   val parChunks: Int = 7//15 //nr cores - 1
 
   val chunkRasteringModule: ZLayer[CameraModule with WorldModule, Nothing, RasteringModule] =
-    ZLayer.fromServices[cameraModule.Service, worldModule.Service, RasteringModule] {
+    ZLayer.fromServices[cameraModule.Service, worldModule.Service, rasteringModule.Service] {
     (
       cameraSvc: cameraModule.Service,
       worldSvc: worldModule.Service
     ) =>
-
-      Has(new Service {
+      new Service {
         override def raster(world: World, camera: Camera): ZStream[Any, RayTracerError, ColoredPixel] = {
 
           val pixels: Array[(Int, Int)] = for {
@@ -57,7 +56,7 @@ object rasteringModule {
             }
           }.flatMap(ZStream.fromChunk(_))
         }
-      })
+      }
   }
 
 

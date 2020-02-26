@@ -30,8 +30,8 @@ object canvasSerializer {
     ZIO.accessM(_.get.serializeToFile(canvas, maxColor, path))
 
   val ppmCanvasSerializer: ZLayer[Blocking with Clock, Nothing, CanvasSerializer] =
-    ZLayer.fromEnvironment[Blocking with Clock, CanvasSerializer] { _ =>
-      Has(
+    ZLayer.fromFunction { _ =>
+
         new Service {
           def formatHeader: String                  = "P3"
           def sizeHeader(c: Canvas): UIO[String]    = c.width.zip(c.height).map { case (w, h) => s"$w $h" }
@@ -81,7 +81,6 @@ object canvasSerializer {
                   .mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
             }
         }
-      )
   }
 
   val pNGCanvasSerializer: ZLayer.NoDeps[Nothing, CanvasSerializer] = ZLayer.succeed {

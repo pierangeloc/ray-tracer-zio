@@ -9,7 +9,7 @@ import io.tuliplogic.raytracer.ops.model.modules.phongReflectionModule.PhongRefl
 import io.tuliplogic.raytracer.ops.model.modules.rasteringModule.RasteringModule
 import io.tuliplogic.raytracer.ops.model.modules.worldHitCompsModule.WorldHitCompsModule
 import io.tuliplogic.raytracer.ops.model.modules.worldModule.WorldModule
-import io.tuliplogic.raytracer.ops.model.modules.{cameraModule, lightDiffusionModule, lightReflectionModule, normalReflectModule, phongReflectionModule, rasteringModule, worldHitCompsModule, worldModule, worldReflectionModule, worldRefractionModule, worldTopologyModule}
+import io.tuliplogic.raytracer.ops.model.modules.{cameraModule, lightDiffusionModule, lightReflectionModule, normalReflectModule, phongReflectionModule, rasteringModule, worldHitCompsModule, worldModule, worldTopologyModule}
 import io.tuliplogic.raytracer.ops.model.modules.worldTopologyModule.WorldTopologyModule
 import io.tuliplogic.raytracer.ops.programs.SimpleWorld.ULayer
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer
@@ -17,11 +17,10 @@ import io.tuliplogic.raytracer.ops.rendering.canvasSerializer.CanvasSerializer
 import zio.ZLayer
 import zio.blocking.Blocking
 import zio.clock.Clock
-import zio.scheduler.Scheduler
 
 object layers {
   val clockAndBlocking: ZLayer.NoDeps[Nothing, Blocking with Clock] =
-    (Blocking.live ++ (Scheduler.live >>> Clock.live))
+    Blocking.live ++ Clock.live
 
   val cSerializerM: ULayer[Blocking with Clock, CanvasSerializer] =
     canvasSerializer.pNGCanvasSerializer
@@ -41,9 +40,7 @@ object layers {
   val worldM: ULayer[ATModule, WorldModule] = (
     topologyM ++
       hitCompsM ++
-      phongM++
-      worldReflectionModule.noReflection ++
-      worldRefractionModule.noRefraction
+      phongM
     ) >>> worldModule.live
 
 

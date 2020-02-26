@@ -16,8 +16,8 @@ object lightReflectionModule {
   type LightReflectionModule = Has[Service]
 
   val live: ZLayer[NormalReflectModule, Nothing, LightReflectionModule] =
-    ZLayer.fromService[normalReflectModule.Service, LightReflectionModule]{ normalReflectSvc =>
-      Has(new Service {
+    ZLayer.fromService { normalReflectSvc =>
+      new Service {
 
         def computeReflection(reflEyeProjection: Double, lightIntensity: Color, materialSpecular: Double, materialShininess: Double): Color = {
           val factor = math.pow(reflEyeProjection, materialShininess)
@@ -29,7 +29,7 @@ object lightReflectionModule {
             lightReflV <- normalReflectSvc.reflect(-lightV, normalV)
             reflEyeProjection <- UIO(lightReflV dot eyeV)
           } yield if (reflEyeProjection < 0) Color.black else computeReflection(reflEyeProjection, lightIntensity, materialSpecular, materialShininess)
-      })
+      }
   }
 
   val noReflection: ZLayer.NoDeps[Nothing, LightReflectionModule] = ZLayer.succeed(

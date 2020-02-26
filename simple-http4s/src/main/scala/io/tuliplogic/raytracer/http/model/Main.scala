@@ -19,7 +19,7 @@ object Main extends App {
       imageRepoRef <- Ref.make(Map[DrawingId, DrawingState]())
       drawingRepo  = drawingRepository.refDrawingRepoService(imageRepoRef)
       _            <- HttpServer.make.serve.provideLayer {
-                        ZLayer.requires[Clock with Console with Random] ++
+                        ZLayer.identity[Clock with Console with Random] ++
                           (layers.atM >>> layers.rasteringM) ++
                           layers.atM++
                         layers.cSerializerM ++

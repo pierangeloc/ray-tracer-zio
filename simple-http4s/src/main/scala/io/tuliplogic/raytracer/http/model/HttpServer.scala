@@ -25,7 +25,7 @@ class HttpServer[R <: DrawingProgram.DrawEnv with Clock with Random with Drawing
     .runtime[R]
     .flatMap { implicit rts =>
       BlazeServerBuilder[AppTask]
-        .bindHttp(8080, "0.0.0.0")
+        .bindHttp(8085, "0.0.0.0")
         .withHttpApp(httpApp)
         .serve
         .compile

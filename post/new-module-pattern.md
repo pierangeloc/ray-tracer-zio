@@ -105,7 +105,69 @@ We can compose `layerA` and `layerB`  _horizontally_ to build a layer that has t
 We can also compose layers _vertically_, meaning the output of one layer is used as input for the subsequent layer to build the next layer, resulting in one layer with the requirement of the first and the output of the second layer: `layerA >>> layerB` 
 
 ### Example
+Here we define a module to cope with CRUD operations for the `User` domain object. We provide also a live implemntation of the module that requires a sql connection
 
+```scala
+object userRepo {
+  trait Service {
+    def getUser(userId: UserId): IO[DBError, Option[User]]
+    def createUser(user: User): IO[DBError, Unit]
+  }
+  
+  type UserRepo = Has[Service]
+  
+  
+
+  trait Live extends UserRepo {
+    val dbConnection: Connection
+    val userRepo: Service = new Service {
+      private def runSql[A](sql: String): IO[DBError, A] = /* use dbConnection */
+
+      def getUser(userId: UserId): IO[DBError, Option[User]] = runSql[Option[User]]("select * from users where id = $userId")
+      def createUser(user: User): IO[DBError, Unit] = runSql[Unit](s"insert into users values (${user.id}, ${user.name}")
+    }
+  }
+
+  //accessor methods
+  def getUser(userId: UserId): ZIO[UserRepo, DBError, Option[User]] =
+    ZIO.accessM(_.userRepo.getUser(userId))
+  
+  def createUser(user: User): ZIO[UserRepo, DBError, Unit] =
+    ZIO.accessM(_.userRepo.createUser(user))
+
+}
+```
+
+And a module to cope with logging
+
+```scala
+trait Logging {
+  val logging: Logging.Service
+}
+
+object Logging {
+  trait Service {
+    def info(s: String): UIO[Unit]
+    def error(s: String): UIO[Unit]
+  }
+
+  trait Live extends Logging {
+    val logger: Logger
+    val logging: Logging.Service = new Service {
+      def info(s: String): UIO[Unit] = logger.info(s)
+      def error(s: String): UIO[Unit] = logger.error(s)      
+    }
+  }
+  
+  //accessor methods
+  def info(s: String): ZIO[Logging, Nothing, Unit] = 
+    ZIO.accessM(_.logging.info(s))
+
+  def error(s: String): ZIO[Logging, Nothing, Unit] = 
+    ZIO.accessM(_.logging.error(s))
+
+}
+```
 
 The recipe to build a new module is:
 1. define an object (usually small cased), e.g. `usersModule`, and in that object:

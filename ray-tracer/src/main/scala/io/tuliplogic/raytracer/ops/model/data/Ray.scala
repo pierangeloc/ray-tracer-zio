@@ -2,7 +2,7 @@ package io.tuliplogic.raytracer.ops.model.data
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec._
 import Scene.{Plane, Shape, Sphere}
-import io.tuliplogic.raytracer.geometry.affine.{AT, aTModule}
+import io.tuliplogic.raytracer.geometry.affine.AT
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import io.tuliplogic.raytracer.ops.model.data
 import zio.{Has, UIO, URIO, ZIO, ZLayer}
@@ -41,8 +41,8 @@ object rayModule {
 
   type RayModule = Has[Service]
 
-  val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService[aTModule.Service, RayModule] { aTModule =>
-    Has(new Service {
+  val live: ZLayer[ATModule, Nothing, RayModule] = ZLayer.fromService { aTModule =>
+    new Service {
 
       import Ordering.Double.TotalOrdering
 
@@ -85,7 +85,7 @@ object rayModule {
           tfPt <- aTModule.applyTf(at, ray.origin)
           tfVec <- aTModule.applyTf(at, ray.direction)
         } yield Ray(tfPt, tfVec))
-    })
+    }
 
   }
 

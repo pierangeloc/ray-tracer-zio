@@ -1,6 +1,5 @@
 package io.tuliplogic.raytracer.ops.model.modules
 
-import io.tuliplogic.raytracer.geometry.affine.aTModule
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import io.tuliplogic.raytracer.ops.model.data.Scene.{Plane, Shape, Sphere}
@@ -20,9 +19,8 @@ object normalReflectModule {
 
   type NormalReflectModule = Has[Service]
 
-  val live: ZLayer[ATModule, Nothing, NormalReflectModule] = ZLayer.fromService[aTModule.Service, NormalReflectModule] { aTModule =>
-
-    Has(new Service {
+  val live: ZLayer[ATModule, Nothing, NormalReflectModule] = ZLayer.fromService { aTModule =>
+    new Service {
 
       def canonicalNormal(p: Pt, o: Shape): UIO[Vec] = o match {
         case Sphere(_, _) => UIO.succeed(p - Pt(0, 0, 0))
@@ -38,7 +36,7 @@ object normalReflectModule {
           worldNormal <- aTModule.applyTf(inverseTransposed, objectNormal)
           normalized <- worldNormal.normalized
         } yield normalized).orDie
-    })
+    }
   }
 
   def normal(p: Pt, o: Shape): ZIO[NormalReflectModule, Nothing, Vec] =

@@ -5,7 +5,7 @@ import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
 import io.tuliplogic.raytracer.geometry.affine.{AT, aTModule}
 import io.tuliplogic.raytracer.geometry.matrix.matrixModule
-import zio.{DefaultRuntime, UIO, ZIO}
+import zio.{Runtime, UIO, ZIO}
 
 /**
   * @param tf describes how the _world_ moves with respect to the camera
@@ -68,9 +68,9 @@ object Camera {
   } yield new Camera(hRes, vRes, visualAngleRad, cameraTf)
 
   def makeUnsafe(viewFrom: Pt, viewTo: Pt, upDirection: Vec, visualAngleRad: Double, hRes: Int, vRes: Int): Camera =
-    new DefaultRuntime{}.unsafeRun(
+    Runtime.default.unsafeRun(
       Camera.make(viewFrom, viewTo, upDirection, visualAngleRad, hRes, vRes)
-      .provideManaged((matrixModule.breezeLive >>> aTModule.live).build)
+      .provideLayer(matrixModule.breezeLive >>> aTModule.live)
     )
 
   //this is just the `identity` transformation

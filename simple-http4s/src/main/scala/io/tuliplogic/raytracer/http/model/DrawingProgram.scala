@@ -7,12 +7,13 @@ import io.tuliplogic.raytracer.ops.programs.RaytracingProgram
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer.CanvasSerializer
 import zio.ZIO
+import zio.clock.Clock
 import zio.console.Console
 
 object DrawingProgram {
   type DrawEnv = CanvasSerializer with RasteringModule with ATModule
 
-  def draw(sceneBundle: SceneBundle): ZIO[CanvasSerializer with RasteringModule with ATModule with Console, Nothing, (String, Array[Byte])] = for {
+  def draw(sceneBundle: SceneBundle): ZIO[CanvasSerializer with RasteringModule with ATModule with Console with Clock, Nothing, (String, Array[Byte])] = for {
     _      <- zio.console.putStrLn("Created scene bundle, now drawing the world...")
     canvas <- RaytracingProgram.drawOnCanvas(
       sceneBundle.world,

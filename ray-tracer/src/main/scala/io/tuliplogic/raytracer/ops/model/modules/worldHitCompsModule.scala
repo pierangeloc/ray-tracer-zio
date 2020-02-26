@@ -20,8 +20,8 @@ object worldHitCompsModule {
   type WorldHitCompsModule = Has[Service]
 
   val live: ZLayer[NormalReflectModule, Nothing, WorldHitCompsModule] =
-    ZLayer.fromService[normalReflectModule.Service, WorldHitCompsModule] { normalReflectSvc =>
-      Has( new Service {
+    ZLayer.fromService { normalReflectSvc =>
+      new Service {
         def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[Any, GenericError, HitComps] = {
         type Z = (List[Shape], Option[Double], Option[Double])
 
@@ -69,7 +69,7 @@ object worldHitCompsModule {
           (n1, n2) <- n1n2
         } yield HitComps(hit.sceneObject, pt, realNormal, eyeV, reflectV, n1, n2)
       }
-    })
+    }
   }
 
   def hitComps(ray: Ray, hit: Intersection, intersections: List[Intersection]): ZIO[WorldHitCompsModule, GenericError, HitComps] =

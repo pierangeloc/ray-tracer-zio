@@ -80,9 +80,8 @@ object aTModule {
   type ATModule = Has[Service]
 
 
-  val live: ZLayer[MatrixModule, Nothing, ATModule] = ZLayer.fromEnvironment { matrixModule =>
-
-    Has(new Service {
+  val live: ZLayer[MatrixModule, Nothing, ATModule] = ZLayer.fromFunction { matrixModule =>
+    new Service {
       import vectorizable.comp
 
       private def transform(tf: AT, v: Col): IO[ATError, Col] =
@@ -141,7 +140,7 @@ object aTModule {
           ).mapError(e => ATError(e.toString))
         inverse <- matrixModule.get.invert(direct).mapError(e => ATError(e.toString))
       } yield AT(direct, inverse)
-    })
+    }
   }
 
 

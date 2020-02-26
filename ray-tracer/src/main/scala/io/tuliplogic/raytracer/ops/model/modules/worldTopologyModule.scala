@@ -2,7 +2,7 @@ package io.tuliplogic.raytracer.ops.model.modules
 
 import io.tuliplogic.raytracer.geometry.affine.PointVec.Pt
 import io.tuliplogic.raytracer.ops.model.data.rayModule.RayModule
-import io.tuliplogic.raytracer.ops.model.data.{Intersection, Ray, World, rayModule}
+import io.tuliplogic.raytracer.ops.model.data.{Intersection, Ray, World}
 import zio.{Has, UIO, ZIO, ZLayer}
 
 /**
@@ -26,8 +26,8 @@ object worldTopologyModule {
   type WorldTopologyModule = Has[Service]
 
   val live: ZLayer[RayModule, Nothing, WorldTopologyModule] =
-    ZLayer.fromService[rayModule.Service, WorldTopologyModule] { rayModuleSvc =>
-      Has(new Service {
+    ZLayer.fromService{ rayModuleSvc =>
+      new Service {
 
         import Ordering.Double.TotalOrdering
         def intersections(world: World, ray: Ray): UIO[List[Intersection]] =
@@ -41,7 +41,7 @@ object worldTopologyModule {
             xs       <- intersections(world, Ray(pt, vNorm))
             hit      <- rayModuleSvc.hit(xs)
           } yield hit.exists(i => i.t > 0 && i.t < distance)
-      })
+      }
     }
 
   def intersections(world: World, ray: Ray): ZIO[WorldTopologyModule, Nothing, List[Intersection]] =
