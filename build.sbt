@@ -70,8 +70,8 @@ lazy val commonSettings = inThisBuild(
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
       libraryDependencies ++= Seq(
-        zioMacrosCore,
-        zioMacrosTest,
+//        zioMacrosCore,
+//        zioMacrosTest,
         zioTest % "test",
         zioTestSbt % "test"
       )
@@ -144,7 +144,7 @@ lazy val `ray-tracer` = project
     name := "ray-tracer",
     libraryDependencies ++= Seq(
       zio,
-      zioNio,
+//      zioNio,
       zioCats exclude("dev.zio", "zio-test"),
       cats,
       catsEffect,

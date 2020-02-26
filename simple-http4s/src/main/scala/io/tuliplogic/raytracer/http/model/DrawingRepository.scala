@@ -27,7 +27,7 @@ object drawingRepository {
     def find(drawingId: DrawingId): ZIO[Any, DrawingRepoError, DrawingState] =
       ref.get.flatMap { map =>
         ZIO.fromOption(map.get(drawingId))
-      }.mapError(_ => DrawingRepoError(s"DrawingId $drawingId not fonud"))
+      }.orElseFail(DrawingRepoError(s"DrawingId $drawingId not fonud"))
 
     def getAllIds: ZIO[Any, Nothing, List[DrawingId]] =
       ref.get.map(_.keys.toList.sortWith((x, y) => x.value > y.value))

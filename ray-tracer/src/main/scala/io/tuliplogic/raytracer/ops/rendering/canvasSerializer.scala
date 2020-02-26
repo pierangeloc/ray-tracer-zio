@@ -1,12 +1,12 @@
 package io.tuliplogic.raytracer.ops.rendering
 
-import java.nio.file.{Path, StandardOpenOption}
+import java.nio.file.Path
 
 import com.sksamuel.scrimage.nio.PngWriter
 import com.sksamuel.scrimage.{Image, ImageWriter, Pixel => SPixel}
 import io.tuliplogic.raytracer.commons.errors.IOError
 import io.tuliplogic.raytracer.ops.model.data.{Canvas, Color}
-import zio.nio.channels.AsynchronousFileChannel
+//import zio.nio.channels.AsynchronousFileChannel
 import zio.stream._
 import zio.{Chunk, Has, IO, UIO, ZIO, ZLayer}
 import mouse.all._
@@ -60,10 +60,10 @@ object canvasSerializer {
               rowArray <- Stream.fromIterable(rows)
             } yield rowToString(rowArray, maxColor)
 
-          def channelSink(channel: AsynchronousFileChannel): Sink[Exception, Nothing, Chunk[Byte], Long] =
-            Sink.foldLeftM(0L) { (pos: Long, chunk: Chunk[Byte]) =>
-              channel.write(chunk, pos).flatMap(written => UIO(pos + written))
-            }
+//          def channelSink(channel: AsynchronousFileChannel): Sink[Exception, Nothing, Chunk[Byte], Long] =
+//            Sink.foldLeftM(0L) { (pos: Long, chunk: Chunk[Byte]) =>
+//              channel.write(chunk, pos).flatMap(written => UIO(pos + written))
+//            }
 
           def serializeAsByteStream(canvas: Canvas, maxColor: Int): ZStreamChunk[Any, Nothing, Byte] =
             ZStreamChunk(
@@ -73,13 +73,13 @@ object canvasSerializer {
               ).map(_.flatMap(_.getBytes |> Chunk.fromArray))
             )
 
-          def serializeToFile(canvas: Canvas, maxColor: Int, path: Path): ZIO[Any, IOError, Unit] =
-            AsynchronousFileChannel.open(zio.nio.file.Path.fromJava(path), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
-              .mapError(e => IOError.CanvasRenderingError("Error opening file", e)).use {
-              channel =>
-                serializeAsByteStream(canvas, maxColor).run(channelSink(channel)).unit
-                  .mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
-            }
+          def serializeToFile(canvas: Canvas, maxColor: Int, path: Path): IO[IOError, Unit] = UIO(())
+//            AsynchronousFileChannel.open(zio.nio.file.Path.fromJava(path), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
+//              .mapError(e => IOError.CanvasRenderingError("Error opening file", e)).use {
+//              channel =>
+//                serializeAsByteStream(canvas, maxColor).run(channelSink(channel)).unit
+//                  .mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
+//            }
         }
   }
 
@@ -89,7 +89,7 @@ object canvasSerializer {
         implicit val imageWriter: ImageWriter = PngWriter.NoCompression
 
         def serializeAsByteStream(canvas: Canvas, maxColor: Int): ZStreamChunk[Any, Nothing, Byte] = {
-        val image = for {
+        val image: UIO[Image] = for {
           w <- canvas.width
           h <- canvas.height
           colors <- canvas.rows
@@ -101,22 +101,23 @@ object canvasSerializer {
               )
             })
         ZStream.fromEffect(image).chunkN(1).flatMap(
-          img => ZStream.fromInputStream(img.stream).mapError(e => throw e)
+          img => {println("getting image zio stream from image stream");ZStream.fromInputStream(img.stream).mapError(e => throw e)}
         )
       }
 
-      def serializeToFile(canvas: Canvas, maxColor: Int, path: Path): ZIO[Any, IOError, Unit] =
-        AsynchronousFileChannel.open(zio.nio.file.Path.fromJava(path), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
-          .mapError(e => IOError.CanvasRenderingError("Error opening file", e)).use {
-          channel =>
-            serializeAsByteStream(canvas, maxColor).run(channelSink(channel)).unit
-              .mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
-        }
+        //TODO: reintroduce this when ZIO-nio is on RC18
+      def serializeToFile(canvas: Canvas, maxColor: Int, path: Path): ZIO[Any, IOError, Unit] = UIO(())
+//        AsynchronousFileChannel.open(zio.nio.file.Path.fromJava(path), StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.READ)
+//          .mapError(e => IOError.CanvasRenderingError("Error opening file", e)).use {
+//          channel =>
+//            serializeAsByteStream(canvas, maxColor).run(channelSink(channel)).unit
+//              .mapError(e => IOError.CanvasRenderingError(e.getMessage, e))
+//        }
 
-      def channelSink(channel: AsynchronousFileChannel): Sink[Exception, Nothing, Chunk[Byte], Long] =
-        Sink.foldLeftM(0L) { (pos: Long, chunk: Chunk[Byte]) =>
-          channel.write(chunk, pos).flatMap(written => UIO(pos + written))
-        }
+//      def channelSink(channel: AsynchronousFileChannel): Sink[Exception, Nothing, Chunk[Byte], Long] =
+//        Sink.foldLeftM(0L) { (pos: Long, chunk: Chunk[Byte]) =>
+//          channel.write(chunk, pos).flatMap(written => UIO(pos + written))
+//        }
 
     }
   }

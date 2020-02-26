@@ -36,9 +36,9 @@ class DrawRoutes[R <: DrawingProgram.DrawEnv with DrawingRepository with Random 
           drawingId <- zio.random.nextLong.map(DrawingId.apply)
           _         <- drawingRepository.create(drawingId, startedAt / 1000).mapError(e => HttpError(e.toString))
           _         <- (DrawingProgram.draw(bundle).flatMap {
-            case (contenType, bytes) => for {
+            case (contentType, bytes) => for {
               now       <- zio.clock.nanoTime
-              _         <- drawingRepository.update(drawingId, DrawingState.Done(contenType, bytes, now - startedAt))
+              _         <- drawingRepository.update(drawingId, DrawingState.Done(contentType, bytes, now - startedAt))
             } yield ()
           }).fork
           _         <- zio.console.putStrLn(s"Triggered computation for id: $drawingId")
