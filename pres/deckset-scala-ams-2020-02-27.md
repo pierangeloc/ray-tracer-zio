@@ -259,10 +259,10 @@ object Metrics {
 ```scala
 val prg: ZIO[Metrics with Log, Nothing, Unit] = 
   for {
-    _ <- Log.>.info("Hello")
-    _ <- Metrics.>.inc("salutation")
-    _ <- Log.>.info("London")
-    _ <- Metrics.>.inc("subject")
+    _ <- Log.info("Hello")
+    _ <- Metrics.inc("salutation")
+    _ <- Log.info("London")
+    _ <- Metrics.inc("subject")
   } yield ()
 
 trait Prometheus extends Metrics {
@@ -290,10 +290,10 @@ runtime.unsafeRun(
 ```scala
 val prg: ZIO[Metrics with Log, Nothing, Unit] = 
   for {
-    _ <- Log.>.info("Hello")
-    _ <- Metrics.>.inc("salutation")
-    _ <- Log.>.info("London")
-    _ <- Metrics.>.inc("subject")
+    _ <- Log.info("Hello")
+    _ <- Metrics.inc("salutation")
+    _ <- Log.info("London")
+    _ <- Metrics.inc("subject")
   } yield ()
 ```
 
@@ -391,8 +391,6 @@ val getUserFromDb: ZIO[DBConnection, Nothing, User] = ???
 ```
 
 ---
-
----
 # ZIO-101: Requirements elimination
 
 [.code-highlight: none]
@@ -406,15 +404,15 @@ val getUserFromDb: ZIO[DBConnection, Nothing, User] = ???
 val provided: ZIO[Any, Nothing, User] = 
   getUserFromDb.provide(DBConnection(...))
 
-val user = Runtime.default.unsafeRun(provided)
+val user: User = Runtime.default.unsafeRun(provided)
 ```
 
 ---
 # ZIO-101: Modules
 Example: a module to collect metrics
 
-[.code-highlight: 2-4] 
-[.code-highlight: 1-4] 
+[.code-highlight: 2-5] 
+[.code-highlight: 1-5] 
 [.code-highlight: all] 
 ```scala
 type Metrics = Has[Metrics.Service]
@@ -425,7 +423,7 @@ object Metrics {
 
   //accessor method
   def inc(label: String): ZIO[Metrics, Nothing, Unit] =
-      ZIO.accessM(_.metrics.inc(label))
+      ZIO.accessM(_.get.inc(label))
   }
 }
 ```
@@ -470,12 +468,185 @@ val hasMetrics: Has[Metrics.Service] // aliased as Metrics
 val mix: Has[Log.Service] with Has[Log.Service] = hasLog ++ hasMetrics
 
 //access each service
-mix.get[Log].info("Starting the application")
+mix.get[Log.Service].info("Starting the application")
 ```
 
 ---
 
+# ZIO-101: The `Has` data type
+
+- Is more powerful than trait mixins
+- Is backed by a heterogeneus map `ServiceType -> Service`
+- Can replace/update services
+
+---
+
+# ZIO-101: `ZLayer`
+
+```scala
+ZLayer[-RIn, +E, +ROut <: Has[_]]
 ```
+
+- A recipe to build an `ROut`
+- Backed by `ZManaged`: safe acquire/release
+- `type NoDeps[+E, +B <: Has[_]] = ZLayer[Any, E, B]`
+
+---
+
+# ZIO-101: `ZLayer`
+
+Construct from value
+
+```scala
+val layer: ZLayer.NoDeps[Nothing, UserRepo] = 
+  ZLayer.succeed(new UserRepo.Service)
+```
+---
+# ZIO-101: `ZLayer`
+
+Construct from function
+
+```scala
+val layer: ZLayer[Connection, Nothing, UserRepo] = 
+  ZLayer.fromFunction { c: Connection =>
+    new UserRepo.Service
+  }
+```
+
+---
+# ZIO-101: `ZLayer`
+
+Construct from effect
+
+```scala
+import java.sql.Connection
+
+val e: ZIO[Connection, Error, UserRepo.Service]
+
+val layer: ZLayer[Connection, Error, UserRepo] = 
+  ZLayer.fromEffect(e)
+```
+
+---
+# ZIO-101: `ZLayer`
+
+Construct from resources
+
+```scala
+import java.sql.Connection
+
+val connectionLayer: ZLayer.NoDeps[Nothing, Has[Connection]] = 
+  ZLayer.fromAcquireRelease(makeConnection) { c =>
+     UIO(c.close())
+  }
+```
+
+---
+# ZIO-101: `ZLayer`
+
+Construct from other services
+
+```scala
+val usersLayer: ZLayer[UserRepo with UserValidation, Nothing, BusinessLogic] = 
+  
+  ZLayer.fromServices[UserRepo.Service, UserValidation.Service] { 
+    (repoSvc, validSvc) =>
+      new BusinessLogic.Service {
+        // use repoSvc and validSvc
+      }
+    }
+```
+
+---
+# ZIO-101: `ZLayer`
+
+Compose layers horizontally
+(_all inputs for all outputs_)
+
+```scala
+val l1: ZLayer[Connection, Nothing, UserRepo]
+val l2: ZLayer[Config, Nothing, AuthPolicy]
+
+val hor: ZLayer[Connection with Config, Nothing, UserRepo with AuthPolicy] =
+  l1 ++ l2
+```
+
+
+---
+# ZIO-101: `ZLayer`
+
+Compose layers vertically
+(_output of first for input of second_)
+
+```scala
+val l1: ZLayer[Config, Nothing, Connection]
+val l2: ZLayer[Connection, Nothing, UserRepo]
+
+val ver: ZLayer[Config, Nothing, UserRepo] =
+  l1 >>> l2
+```
+
+---
+# ZIO-101: `ZLayer`
+
+Create module instances
+
+[.code-highlight: 1-7] 
+[.code-highlight: 1-14] 
+[.code-highlight: 1-20] 
+```scala
+type UserRepo = Has[UserRepo.Service]
+
+object UserRepo {
+  trait Service {
+    def getUser(userId: UserId): IO[DBError, Option[User]]
+    def createUser(user: User): IO[DBError, Unit]
+  }
+
+  val inMemory: ZLayer.NoDeps[Nothing, UserRepo] = ZLayer.succeed(
+    new Service {
+      /* impl */
+    }
+  )
+
+  val db: ZLayer[Connection, Nothing, UserRepo] = ZLayer.fromService { conn: Connection =>
+    new Service {
+      /* impl uses conn */
+    }   
+  }
+}
+```
+
+---
+# ZIO-101: `ZLayer`
+
+Provide layers to programs
+
+[.code-highlight: 1-2] 
+[.code-highlight: 1-8] 
+[.code-highlight: 1-12] 
+[.code-highlight: 1-16] 
+```scala
+  import zio.console.Console 
+  val checkUser: ZIO[UserRepo with AuthPolicy with Console, Nothing, Boolean]
+  
+  val liveLayer = UserRepo.inMemory ++ AuthPolicy.basicPolicy ++ Console.live
+
+  val full: ZIO[Any, Nothing, Boolean] = checkUser.provideLayer(
+    liveLayer
+  )
+
+  val partial: ZIO[Console, Nothing, Boolean] = checkUser.provideSomeLayer(
+    UserRepo.inMemory ++ AuthPolicy.basicPolicy
+  )
+
+  val updated: ZIO[Console, Nothing, Boolean] = checkUser.provideLayer(
+    liveLayer ++ UserRepo.postgres
+  )
+```
+
+---
+
 ^In ray tracing we have 3 components: 
 - The world (of spheres), and ambient light
 - A Light source
@@ -665,92 +836,24 @@ case class Ray(origin: Pt, direction: Vec) {
 
 ### Transformations Module
 
-[.code-highlight: 1]
-[.code-highlight: 1, 7-14]
-[.code-highlight: 1-5, 7-14]
-[.code-highlight: 1-26]
 ```scala
 trait AT
-/* Module */
-trait ATModule {
-  val aTModule: ATModule.Service[Any]
-}
 
+type ATModule = Has[ATModule.Service]
 object ATModule {
   /* Service */
-  trait Service[R] {
-    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
-    def applyTf(tf: AT, pt: Pt): ZIO[R, ATError, Pt]
-    def compose(first: AT, second: AT): ZIO[R, ATError, AT]
+  trait Service {
+    def applyTf(tf: AT, vec: Vec): ZIO[ATError, Vec]
+    def applyTf(tf: AT, pt: Pt): ZIO[ATError, Pt]
+    def compose(first: AT, second: AT): ZIO[ATError, AT]
   }
 
-  /* Accessor */
-  object > extends Service[ATModule] {
-    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, ATError, Vec] =
-      ZIO.accessM(_.aTModule.applyTf(tf, vec))
-    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, ATError, Pt] =
-      ZIO.accessM(_.aTModule.applyTf(tf, pt))
-    def compose(first: AT, second: AT): ZIO[ATModule, ATError, AT] =
-      ZIO.accessM(_.aTModule.compose(first, second))
-  }
-}
-```
-
----
-### Transformations Module
-
-[.code-highlight: 1-26]
-```scala
-import zio.macros.annotation.accessible
-
-trait AT
-/* Module */
-@accessible(">")
-trait ATModule {
-  val aTModule: ATModule.Service[Any]
-}
-
-object ATModule {
-  /* Service */
-  trait Service[R] {
-    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
-    def applyTf(tf: AT, pt: Pt): ZIO[R, ATError, Pt]
-    def compose(first: AT, second: AT): ZIO[R, ATError, AT]
-  }
-
-  /* Accessor is generated 
-  object > extends Service[ATModule] {
-    def applyTf(tf: AT, vec: Vec): ZIO[ATModule, ATError, Vec] =
-      ZIO.accessM(_.aTModule.applyTf(tf, vec))
-    def applyTf(tf: AT, pt: Pt): ZIO[ATModule, ATError, Pt] =
-      ZIO.accessM(_.aTModule.applyTf(tf, pt))
-    def compose(first: AT, second: AT): ZIO[ATModule, ATError, AT] =
-      ZIO.accessM(_.aTModule.compose(first, second))
-  }
-  */
-}
-```
-
----
-^ This accessor object allows us to summon our module wherever necessary
-### Transformations Module
-
-[.code-highlight: 1-26]
-```scala
-trait AT
-/* Module */
-@accessible(">")
-trait ATModule {
-  val aTModule: ATModule.Service[Any]
-}
-
-object ATModule {
-  /* Service */
-  trait Service[R] {
-    def applyTf(tf: AT, vec: Vec): ZIO[R, ATError, Vec]
-    def applyTf(tf: AT, pt: Pt): ZIO[R, ATError, Pt]
-    def compose(first: AT, second: AT): ZIO[R, ATError, AT]
-  }
+  def applyTf(tf: AT, vec: Vec): ZIO[ATModule, ATError, Vec] =
+    ZIO.accessM(_.aTModule.applyTf(tf, vec))
+  def applyTf(tf: AT, pt: Pt): ZIO[ATModule, ATError, Pt] =
+    ZIO.accessM(_.aTModule.applyTf(tf, pt))
+  def compose(first: AT, second: AT): ZIO[ATModule, ATError, AT] =
+    ZIO.accessM(_.aTModule.compose(first, second))
 }
 ```
 
@@ -762,9 +865,9 @@ object ATModule {
 ```scala
 val rotatedPt = 
   for {
-    rotateX <- ATModule.>.rotateX(math.Pi / 2)
-    _       <- Log.>.info("rotated of π/2")
-    res     <- ATModule.>.applyTf(rotateX, Pt(1, 1, 1))
+    rotateX <- ATModule.rotateX(math.Pi / 2)
+    _       <- Log.info("rotated of π/2")
+    res     <- ATModule.applyTf(rotateX, Pt(1, 1, 1))
   } yield  res
 ```
 ---
@@ -776,9 +879,9 @@ val rotatedPt =
 ```scala
 val rotatedPt: ZIO[ATModule with Log, ATError, Pt] =
   for {
-    rotateX <- ATModule.>.rotateX(math.Pi / 2)
-    _       <- Log.>.info("rotated of π/2")
-    res     <- ATModule.>.applyTf(rotateX, Pt(1, 1, 1))
+    rotateX <- ATModule.rotateX(math.Pi / 2)
+    _       <- Log.info("rotated of π/2")
+    res     <- ATModule.applyTf(rotateX, Pt(1, 1, 1))
   } yield  res
 ```
 
@@ -790,8 +893,8 @@ val rotatedPt: ZIO[ATModule with Log, ATError, Pt] =
 ```scala
 val rotated: ZIO[ATModule, ATError, Vec] = 
   for {
-    rotateX <- ATModule.>.rotateX(math.Pi/2)
-    res     <- ATModule.>.applyTf(rotateX, Pt(1, 1, 1))
+    rotateX <- ATModule.rotateX(math.Pi/2)
+    res     <- ATModule.applyTf(rotateX, Pt(1, 1, 1))
   } yield res
 ```
 
@@ -816,71 +919,37 @@ z \\
 \end{pmatrix}
 $$
 
-<!--
 ---
 
-^ Given that we defined somewhere else another module to handle matrices
 ### Transformations Module - Live
 
-[.code-highlight: 1-6]
-[.code-highlight: 1-18]
+$$
+\mathtt{rotated} = \begin{pmatrix}
+\cos \pi/2 & -\sin \pi/2 & 0 & 0\\
+\sin \pi/2 & \cos \pi/2 & 0 & 0\\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 \\
+\end{pmatrix}
+\begin{pmatrix}
+x\\
+y\\
+z \\
+0\\
+\end{pmatrix}
+$$
+
+
 ```scala
-// Defined somewhere else
-object MatrixModule {
-  trait Service[R] {
-    def add(m1: M, m2: M): ZIO[R, AlgebraicError, M]
-    def mul(m1: M, m2: M): ZIO[R, AlgebraicError, M]
-  }
+val live: ZLayer[MatrixModule, Nothing, ATModule] = 
+  ZLayer.fromService { matrixSvc =>
+    new Service {
+      def applyTf(tf: AT, vec: Vec) = 
+        matrixSvc.mul(tf.direct, v)
+      
+      /* ...  */   
+    }
 }
-
-trait Live extends ATModule {
-  val matrixModule: MatrixModule.Service[Any]
-
-  val aTModule: ATModule.Service[Any] = new ATModule.Service[Any] {
-    def applyTf(tf: AT, vec: Vec): ZIO[Any, AlgebraicError, Vec] =
-      for {
-        col    <- PointVec.toCol(vec)
-        colRes <- matrixModule.mul(tf, col)
-        res    <- PointVec.colToVec(colRes)
-      } yield res
 ```
-
----
-
-^ Now that we have a live implementation of our AT, let's see if we can run our rotation (forgetting about the Log module for a moment)
-### Transformations Module - running
-
-[.code-highlight: 1]
-[.code-highlight: 1-2]
-[.code-highlight: 1-6]
-```scala
-val rotated: ZIO[ATModule, ATError, Vec]  = ...
-val program = rotatedPt.provide(new ATModule.Live{})
-// Compiler error:
-// object creation impossible, since value matrixModule 
-// in trait Live of t ype matrix.MatrixModule.Service[Any] is not defined
-// [error]   rotatedPt.provide(new ATModule.Live{})
-```
----
-
-^ If I provide the ATModule with the missing dependency, i.e. an implementation of the MatrixModule
-### Transformations Module - running
-
-[.code-highlight: 1]
-[.code-highlight: 1-5]
-[.code-highlight: 1-7]
-```scala
-val rotated: ZIO[ATModule, ATError, Vec]  = ...
-val program = rotatedPt.provide(
-  new ATModule.Live with MatrixModule.BreezeLive
-) 
-// Compiles!
-runtime.unsafeRun(program)
-// Runs!
-```
-
--->
-
 ---
 ^So now we have a tool that allows us to perform the std transformations on our points and vectors, so we are ready to build a camera
 
@@ -979,9 +1048,9 @@ case class Plane(transformation: AT, material: Material) extends Shape
 ```scala
 object Sphere {
   def make(center: Pt, radius: Double, mat: Material): ZIO[ATModule, ATError, Sphere] = for {
-    scale     <- ATModule.>.scale(radius, radius, radius)
-    translate <- ATModule.>.translate(center.x, center.y, center.z)
-    composed  <- ATModule.>.compose(scale, translate)
+    scale     <- ATModule.scale(radius, radius, radius)
+    translate <- ATModule.translate(center.x, center.y, center.z)
+    composed  <- ATModule.compose(scale, translate)
   } yield Sphere(composed, mat)
 }
 
@@ -1000,19 +1069,14 @@ case class World(pointLight: PointLight, objects: List[Shape])
 ### World Rendering - Top Down
 #### Rastering - Generate a stream of colored pixels
 
-[.code-highlight: 1-4]
-[.code-highlight: 1-9]
-[.code-highlight: 1-18]
 ```scala
-@accessible(">")
-trait RasteringModule {
-  val rasteringModule: RasteringModule.Service[Any]
-}
+type RasteringModule = Has[Service]
 object RasteringModule {
-  trait Service[R] {
+  trait Service {
     def raster(world: World, camera: Camera): 
-      ZStream[R, RayTracerError, ColoredPixel]
+      ZStream[RayTracerError, ColoredPixel]
   }
+}
 ```
 
 ---
@@ -1026,13 +1090,14 @@ object RasteringModule {
 - Camera module - Ray per pixel
 
 [.code-highlight: none]
-[.code-highlight: 1-7]
+[.code-highlight: all]
 ```scala
+type CameraModule = Has[Service]
 object CameraModule {
-  trait Service[R] {
+  trait Service {
     def rayForPixel(
       camera: Camera, px: Int, py: Int
-    ): ZIO[R, Nothing, Ray]
+    ): UIO[Ray]
   }
 }
 ```
@@ -1040,13 +1105,14 @@ object CameraModule {
 - World module - Color per ray
 
 [.code-highlight: none]
-[.code-highlight: 1-7]
+[.code-highlight: all]
 ```scala
+type WorldModule = Has[Service]
 object WorldModule {
-  trait Service[R] {
+  trait Service {
     def colorForRay(
       world: World, ray: Ray
-    ): ZIO[R, RayTracerError, Color]
+    ): IO[RayTracerError, Color]
   }
 }
 ```
@@ -1057,163 +1123,36 @@ object WorldModule {
 ### World Rendering - Top Down
 #### Rastering **Live** - Module Dependency
 
-[.code-highlight: 1-3]
-[.code-highlight: 1-6, 11-14]
-[.code-highlight: 1-20]
+[.code-highlight: 1-5]
+[.code-highlight: 1-6]
+[.code-highlight: all]
 ```scala
-trait LiveRasteringModule extends RasteringModule {
-  val cameraModule: CameraModule.Service[Any]
-  val worldModule: WorldModule.Service[Any]
-
-  val rasteringModule: Service[Any] = new Service[Any] {
-    def raster(world: World, camera: Camera): ZStream[Any, RayTracerError, ColoredPixel] = {
-      val pixels: Stream[Nothing, (Int, Int)] = ???
-      pixels.mapM{
-        case (px, py) =>
-          for {
-            ray   <- cameraModule.rayForPixel(camera, px, py)
-            color <- worldModule.colorForRay(world, ray)
-          } yield data.ColoredPixel(Pixel(px, py), color)
+val chunkRasteringModule: ZLayer[CameraModule with WorldModule, Nothing, RasteringModule] =
+  ZLayer.fromServices[cameraModule.Service, worldModule.Service, rasteringModule.Service] {
+    (cameraSvc, worldSvc) =>
+      new Service {
+        override def raster(world: World, camera: Camera): 
+          ZStream[Any, RayTracerError, ColoredPixel] = {
+          val pixels: Stream[Nothing, (Int, Int)] = ???
+          pixels.mapM{
+            case (px, py) =>
+              for {
+                ray   <- cameraModule.rayForPixel(camera, px, py)
+                color <- worldModule.colorForRay(world, ray)
+              } yield data.ColoredPixel(Pixel(px, py), color)
+          }
       }
     }
   }
-}
-```
-
-<!--
-
-^To unit test this we should mock the dependencies. ZIO-TEST provides a very convenient way to do the `Ref` trick we've seen before to an arbitrary complex scale, and it all boils down to 4 steps
-
-[.build-lists: false]
-
-### Test **LiveRasteringModule** (in short)
-
-1. Mock the services `LiveRasteringModule` depends on
-1. Use `zio-test` mocking features
-1. Assert your mocks are called as expected
-
--->
-
----
-
-### Test **LiveRasteringModule**
-1 - Define the method under test
-
-```scala
-val world = /* prepare a world */
-val camera = /* prepare a camera */
-
-val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
-  RasteringModule.>.raster(world, camera).runCollect
-```
-
----
-^The second step is make our dependencies mockable, just annotate them
-
-[.build-lists: false]
-
-### Test **LiveRasteringModule** 
-2 - Annotate the modules as mockable
-
-```scala
-import zio.macros.annotation.mockable
-
-@mockable
-trait CameraModule { ... }
-
-@mockable
-trait WorldModule { ... }
-```
-
----
-^Step nr 3: define your expectations. We expect rayForPixel, when called for pixel 0, 0 to return ray r1
-And we expect `colorForRay` when called for ray r1, to return red
-
-[.build-lists: false]
-
-### Test `LiveRasteringModule` 
-3 - Build the expectations
-
-```scala
-val rayForPixelExp: Expectation[CameraModule, Nothing, Ray] =
-  (CameraModule.rayForPixel(equalTo((camera, 0, 0))) returns value(r1)) *>
-  (CameraModule.rayForPixel(equalTo((camera, 0, 1))) returns value(r2))
-
-val colorForRayExp: Expectation[WorldModule, Nothing, Color] = 
-  (WorldModule.colorForRay(equalTo((world, r1, 5))) returns value(Color.red)) *>
-  (WorldModule.colorForRay(equalTo((world, r2, 5))) returns value(Color.green))
-```
-
----
-^Let's go back to the code we wanted to test. We must take all the expectations, flatmap/zip them and build a managed environment for our environmental effect under test. We turn the expectations into managed environments, which are similar to the environments but they have also strong guarantees of executing a release step, no matter what. Think of them as a try with resources on steroids, that works on asynchronous code as well. We'll see shortly why we have to make these expectations `Managed`
-
-### Test **LiveRasteringModule** 
-4 - Build the environment for the code under test
-
-[.code-highlight: 1-3]
-[.code-highlight: 1-20]
-```scala
-val appUnderTest: ZIO[RasteringModule, RayTracerError, List[ColoredPixel]] =
-  RasteringModule.>.raster(world, camera).runCollect
-
-appUnderTest.provideManaged(
-  worldModuleExp.managedEnv.zipWith(cameraModuleExp.managedEnv) { (wm, cm) =>
-    new LiveRasteringModule {
-      val cameraModule: CameraModule.Service[Any] = cm.cameraModule
-      val worldModule: WorldModule.Service[Any] = wm.worldModule
-        }
-      }
-    )
-```
-
----
-^And then we can assert
-
-### Test **LiveRasteringModule**
-5 - Assert on the results
-
-```scala
-assert(res, equalTo(List(
-  ColoredPixel(Pixel(0, 0), Color.red),
-  ColoredPixel(Pixel(0, 1), Color.green),
-  ColoredPixel(Pixel(1, 0), Color.blue),
-  ColoredPixel(Pixel(1, 1), Color.white),
-  ))
-)
-```
-
----
-^Here's how the whole test looks like. Why do we build managed? Managed has an acquire/release process, in the acquire we load the mocks, in the release we verify them, and we fail if this verification is unsatisfied.
-
-### Test **LiveRasteringModule**
-
-```scala
-suite("LiveRasteringModule") {
-  testM("raster should rely on cameraModule and world module") {
-    for {
-      (worldModuleExp, cameraModuleExp) <- RasteringModuleMocks.mockExpectations(world, camera)
-      res <- appUnderTest.provideManaged(
-        worldModuleExp.managedEnv.zipWith(cameraModuleExp.managedEnv) { (wm, cm) =>
-          new LiveRasteringModule {
-            val cameraModule: CameraModule.Service[Any] = cm.cameraModule
-            val worldModule: WorldModule.Service[Any] = wm.worldModule
-              }
-            }
-          )
-      } yield assert(res, equalTo(List(
-          ColoredPixel(Pixel(0, 0), Color.red),
-          ColoredPixel(Pixel(0, 1), Color.green)
-          )))
-  }
-}
 ```
 
 ---
 ^So the takeaway of this is...
 
-### **Test**
+### Layers
 
-#### Takeaway: Implement and test every layer only in terms of the immediately underlying layer
+#### Takeaway
+#### Implement and test every layer only in terms of the immediately underlying layer
 
 ---
 ^And now that we got warmed up with this, let's go on and implement all the logic through modules
@@ -1228,9 +1167,11 @@ suite("LiveRasteringModule") {
 ### Live **CameraModule**
 
 ```scala
-trait Live extends CameraModule {
-  val aTModule: ATModule.Service[Any]
-  /* implementation */
+object CameraModule {
+  val live: ZLayer[ATModule, Nothing, CameraModule] = 
+    ZLayer.fromService { atSvc => 
+      /* ... */
+    }
 }
 ```
 
@@ -1241,16 +1182,15 @@ trait Live extends CameraModule {
 ### Live **WorldModule**
 #### **WorldTopologyModule**
 
+[.code-highlight: none]
 ```scala
-trait Live extends WorldModule {
-  val worldTopologyModule: WorldTopologyModule.Service[Any]
-
-  val worldModule: Service[Any] = new Service[Any] {
-    def colorForRay(
-      world: World, ray: Ray, remaining: Ref[Int]
-    ): ZIO[Any, RayTracerError, Color] = {
-      /* use other modules */
-    }
+object WorldTopologyModule {
+  trait Service {
+    def intersections(world: World, ray: Ray): 
+      UIO[List[Intersection]]
+    
+    def isShadowed(world: World, pt: Pt): 
+      UIO[Boolean]
   }  
 }
 ```
@@ -1261,16 +1201,15 @@ trait Live extends WorldModule {
 ### Live **WorldModule**
 #### **WorldTopologyModule**
 
+[.code-highlight: all]
 ```scala
-trait Live extends WorldModule {
-  val worldTopologyModule: WorldTopologyModule.Service[Any]
-
-  val worldModule: Service[Any] = new Service[Any] {
-    def colorForRay(
-      world: World, ray: Ray, remaining: Ref[Int]
-    ): ZIO[Any, RayTracerError, Color] = {
-      /* use other modules */
-    }
+object WorldTopologyModule {
+  trait Service {
+    def intersections(world: World, ray: Ray): 
+      UIO[List[Intersection]]
+    
+    def isShadowed(world: World, pt: Pt): 
+      UIO[Boolean]
   }  
 }
 ```
@@ -1282,19 +1221,22 @@ trait Live extends WorldModule {
 ### Live **WorldModule**
 #### **WorldHitCompsModule**
 
+[.code-highlight: none]
 ```scala
-trait Live extends WorldModule {
-  val worldTopologyModule: WorldTopologyModule.Service[Any]
-  val worldHitCompsModule: WorldHitCompsModule.Service[Any]
+case class HitComps(
+  shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, 
+  rayReflectV: Vec, n1: Double = 1, n2: Double = 1
+)
 
-  val worldModule: Service[Any] = new Service[Any] {
-    def colorForRay(
-      world: World, ray: Ray, remaining: Ref[Int]
-    ): ZIO[Any, RayTracerError, Color] = {
-      /* use other modules */
-    }
-  }  
+object WorldHitCompsModule {
+  trait Service {
+    def hitComps(
+      ray: Ray, hit: Intersection, 
+      intersections: List[Intersection]
+    ): IO[GenericError, HitComps]
+  }
 }
+
 ```
 ---
 ^World hit components module
@@ -1305,13 +1247,17 @@ trait Live extends WorldModule {
 
 ```scala
 case class HitComps(
-  shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, rayReflectV: Vec
+  shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, 
+  rayReflectV: Vec, n1: Double = 1, n2: Double = 1
 )
 
-trait Service[R] {
-  def hitComps(
-   ray: Ray, hit: Intersection, intersections: List[Intersection]
-  ): ZIO[R, Nothing, HitComps]
+object WorldHitCompsModule {
+  trait Service {
+    def hitComps(
+      ray: Ray, hit: Intersection, 
+      intersections: List[Intersection]
+    ): IO[GenericError, HitComps]
+  }
 }
 ```
 ---
@@ -1320,19 +1266,21 @@ trait Service[R] {
 ### Live **WorldModule**
 #### **PhongReflectionModule**
 
+[.code-highlight: none]
 ```scala
-trait Live extends WorldModule {
-  val worldTopologyModule: WorldTopologyModule.Service[Any]
-  val worldHitCompsModule: WorldHitCompsModule.Service[Any]
-  val phongReflectionModule: PhongReflectionModule.Service[Any]
+case class PhongComponents(
+  ambient: Color, diffuse: Color, reflective: Color
+) {
+  def toColor: Color = ambient + diffuse + reflective
+}
 
-  val worldModule: Service[Any] = new Service[Any] {
-    def colorForRay(
-      world: World, ray: Ray, remaining: Ref[Int]
-    ): ZIO[Any, RayTracerError, Color] = {
-      /* use other modules */
-    }
-  }  
+object PhongReflectionModule {
+  trait Service {
+    def lighting(
+      pointLight: PointLight, hitComps: HitComps, 
+      inShadow: Boolean
+    ): UIO[PhongComponents]
+  }
 }
 ```
 ---
@@ -1342,24 +1290,20 @@ trait Live extends WorldModule {
 ### Live **WorldModule**
 #### **PhongReflectionModule**
 
-[.code-highlight: 1-5, 8-12]
-[.code-highlight: 1-17]
+[.code-highlight: all]
 ```scala
 case class PhongComponents(
   ambient: Color, diffuse: Color, reflective: Color
 ) {
-    def toColor: Color = ambient + diffuse + reflective
+  def toColor: Color = ambient + diffuse + reflective
 }
 
-trait BlackWhite extends PhongReflectionModule {
-  val phongReflectionModule: Service[Any] =
-    new Service[Any] {
-      def lighting(
-        pointLight: PointLight, hitComps: HitComps, inShadow: Boolean
-      ): UIO[PhongComponents] = {
-        if (inShadow) UIO(PhongComponents.allBlack)
-        else UIO(PhongComponents.allWhite)
-    }
+object PhongReflectionModule {
+  trait Service {
+    def lighting(
+      pointLight: PointLight, hitComps: HitComps, 
+      inShadow: Boolean
+    ): UIO[PhongComponents]
   }
 }
 ```
@@ -1371,7 +1315,7 @@ trait BlackWhite extends PhongReflectionModule {
 ```scala
 def drawOnCanvasWithCamera(world: World, camera: Camera, canvas: Canvas) = 
   for {
-    coloredPointsStream <- RasteringModule.>.raster(world, camera)
+    coloredPointsStream <- RasteringModule.raster(world, camera)
     _                   <- coloredPointsStream.mapM(cp => canvas.update(cp)).run(Sink.drain)
   } yield ()
 
@@ -1381,7 +1325,7 @@ def program(viewFrom: Pt) =
     w      <- world
     canvas <- Canvas.create()
     _      <- drawOnCanvasWithCamera(w, camera, canvas)
-    _      <- CanvasSerializer.>.serialize(canvas, 255)
+    _      <- CanvasSerializer.serialize(canvas, 255)
   } yield ()
 ```
 
