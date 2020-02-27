@@ -15,14 +15,14 @@ theme: Fira, 3
 8. Show http4s?
 
 
-# Environmental effects
+# `ZLayer`
 
 
 ## A ray tracing exercise
 
 <br/>
-Functional Scala
-London - 12 Dec 2019
+Amsterdam Scala
+28 Feb 2020
 <br/>
 <br/>
 
@@ -348,6 +348,134 @@ R => Either[E, A]
 ```
 
 ---
+# ZIO-101: Programs
+
+[.list: alignment(left)]
+[.build-lists: true]
+
+- ZIO programs are values
+- Concurrency based on fibers (green threads)
+
+[.code-highlight: none]
+[.code-highlight: 1-4]
+[.code-highlight: 1-6]
+[.code-highlight: 1-8]
+[.code-highlight: 1-10]
+```scala
+  val prg: ZIO[Console with Random, Nothing, Long] = for {
+    n <- random.nextLong                    // ZIO[Random, Nothing, Long]
+    _ <- console.putStrLn(s"Extracted $n ") // ZIO[Console, Nothing, Unit]
+  } yield n
+ 
+  val allNrs: ZIO[Console with Random, Nothing, List[Long]] = ZIO.collectAll(List.fill(100)(prg))
+  
+  val allNrsPar: ZIO[Console with Random, Nothing, List[Long]] = ZIO.collectAllPar(List.fill(100)(prg))
+  
+  val allNrsParN: ZIO[Console with Random, Nothing, List[Long]] = ZIO.collectAllParN(10)(List.fill(100)(prg))
+```
+
+---
+# ZIO-101: `R` means _requirement_
+
+[.code-highlight: none]
+[.code-highlight: 1]
+[.code-highlight: 1-3]
+[.code-highlight: 1-5]
+
+```scala
+val prg: ZIO[Console with Random, Nothing, Long] = ???
+
+val autonomous: ZIO[Any, Nothing, Long] = ???
+
+val getUserFromDb: ZIO[DBConnection, Nothing, User] = ???
+```
+
+---
+
+---
+# ZIO-101: Requirements elimination
+
+[.code-highlight: none]
+[.code-highlight: 1]
+[.code-highlight: 1-4]
+[.code-highlight: 1-6]
+
+```scala
+val getUserFromDb: ZIO[DBConnection, Nothing, User] = ???
+
+val provided: ZIO[Any, Nothing, User] = 
+  getUserFromDb.provide(DBConnection(...))
+
+val user = Runtime.default.unsafeRun(provided)
+```
+
+---
+# ZIO-101: Modules
+Example: a module to collect metrics
+
+[.code-highlight: 2-4] 
+[.code-highlight: 1-4] 
+[.code-highlight: all] 
+```scala
+type Metrics = Has[Metrics.Service]
+object Metrics {
+  trait Service {
+    def inc(label: String): IO[Nothing, Unit]
+  }
+
+  //accessor method
+  def inc(label: String): ZIO[Metrics, Nothing, Unit] =
+      ZIO.accessM(_.metrics.inc(label))
+  }
+}
+```
+
+---
+# ZIO-101: Modules
+Example: a module for logging
+
+```scala
+type Log = Has[Log.Service]
+object Log {
+  trait Service {
+    def info(s: String): IO[Nothing, Unit]
+    def error(s: String): IO[Nothing, Unit]
+  }
+
+  //accessor methods...
+}
+```
+---
+# ZIO-101: Modules
+Write a program using existing modules
+
+```scala
+val prg: ZIO[Metrics with Log, Nothing, Unit] = 
+  for {
+    _ <- Log.info("Hello")
+    _ <- Metrics.inc("salutation")
+    _ <- Log.info("Amsterdam")
+    _ <- Metrics.inc("subject")
+  } yield ()
+```
+
+---
+# ZIO-101: The `Has` data type
+
+`Has[A]` is a dependency on a service of type `A`
+
+```scala
+val hasLog: Has[Log.Service] // aliased as Log
+val hasMetrics: Has[Metrics.Service] // aliased as Metrics
+val mix: Has[Log.Service] with Has[Log.Service] = hasLog ++ hasMetrics
+
+//access each service
+mix.get[Log].info("Starting the application")
+```
+
+---
+
+```
 ^In ray tracing we have 3 components: 
 - The world (of spheres), and ambient light
 - A Light source
