@@ -9,7 +9,7 @@ import io.tuliplogic.raytracer.ops.model.modules.rasteringModule.RasteringModule
 import zio.ZIO
 import zio.clock.Clock
 import zio.stream.Sink
-import zio.duration._
+//import zio.duration._
 
 object RaytracingProgram {
 
@@ -22,8 +22,8 @@ object RaytracingProgram {
     canvas <- Canvas.create(hRes, vRes)
     _      <- ZIO.effectTotal(println(s"created canvas, now proceeding with drawing"))
 
-    to     <- drawOnCanvasWithCamera(world, camera, canvas).timeout(90.seconds)
-    _      <- ZIO.effectTotal(println(s"Timed out: ${to.isEmpty}"))
+    _     <- drawOnCanvasWithCamera(world, camera, canvas)//.timeout(90.seconds)
+//    _      <- ZIO.effectTotal(println(s"Timed out: ${to.isEmpty}"))
   } yield canvas
 
 }

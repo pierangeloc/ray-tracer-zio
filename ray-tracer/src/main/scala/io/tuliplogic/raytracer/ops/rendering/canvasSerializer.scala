@@ -101,7 +101,12 @@ object canvasSerializer {
               )
             })
         ZStream.fromEffect(image).chunkN(1).flatMap(
-          img => {println("getting image zio stream from image stream");ZStream.fromInputStream(img.stream).mapError(e => throw e)}
+          img => {
+            println("getting image zio stream from image stream")
+            println(s"img.size = ${img.width} x ${img.height}")
+            ZStream.fromIterable(img.bytes).chunkN(4096) //TODO: why isn't the input stream version not working anymore?!?!?!
+//                        ZStream.fromInputStream(img.stream).mapError(e => throw e)}
+          }
         )
       }
 
