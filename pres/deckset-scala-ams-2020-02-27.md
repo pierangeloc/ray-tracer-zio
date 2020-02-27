@@ -27,311 +27,6 @@ Amsterdam Scala
 <br/>
 
 ![right fit](img/refractive-spheres.png) 
-
-<!--
-
----
-^A couple of words about myself
-
-# 👋
-
-### Pierangelo Cecchetto
-
-### Scala Consultant - Amsterdam
-
-[.text: alignment(left)]
-
-![inline 10%](img/Twitter_Logo_WhiteOnBlue.png) @pierangelocecc
-
-![inline 40%](img/GitHub-Mark-Light-120px-plus.png) https://github.com/pierangeloc
-
----
-^In this talk we'll talk about ZIO environment, and how to use it to described a layered set of computations where each type of computatoni is delegated to a specific component
-* We'll see how to combine components and test their interactions in a purely functional way
-* And all this will be an excuse to learn not only ZIO but how a ray tracer works 
-* We will not cover all the fancy things zio offers such as concurrency, cancellation, fibers. They will be used behind the scenes but we don't discuss them here
-
-![left fit](img/sphere-red-grey.png) 
-
-[.text: alignment(left)]
-### This talk
-- **Is about**
- - ZIO environment
- - Testing
- - How ray tracing works
- 
-- **Is not about**
- - Errors, Concurrency, fibers, cancellation, runtime
- 
-
-
----
-^The agenda for the talk:
-* We'll cover the bare minimum knowledge of zio to understand the meaning of the environment
-* Build quickly the foundations to manage rays
-* Build the components to build a ray tracer
-* Test these components
-* Wire things together
-* Make pictures nicer
-# Agenda
-
-1. Build Ray Tracer components
-1. Test Ray Tracer components
-1. Wiring things together
-1. Improving rendering
-
----
-# ZIO - 101
-
-
-[.code-highlight: 1-4]
-[.code-highlight: 1-6]
-[.code-highlight: 1-10]
-```scala
-import zio.console
-
-val hello =
-  console.putStrLn("Hello Functional Scala!!!") 
-
-val runtime: Runtime[ZEnv] = new DefaultRuntime {}
-
-runtime.unsafeRun(hello)
-
-// > Hello Functional Scala!!! 
-```
-
-
----
-# ZIO - 101
-
-^If we look at our simple program, we see that the type has 3 parameters, the environment, the error channel and the output channel
-ZIO is parameterized in 3 types, the environment, the error channel and the output channel. As a mental model, think of it as a ... which can be further simplified as ... One important thing is that it is contravariant in the environment, and covariant on the E,A 
-
-[.code-highlight: 1-2]
-[.code-highlight: 1-4]
-[.code-highlight: 1-8] 
-[.code-highlight: 1-12] 
-```scala
-val hello: ZIO[Console, Nothing, Unit] =
-  console.putStrLn("Hello Functional Scala!!!") 
-
-ZIO[-R, +E, +A]
-
-       ⬇
-
-R => IO[Either[E, A]]
-
-       ⬇
-
-R => Either[E, A]
-```
-<!--
-
----
-# ZIO - 101
-
-^What does it mean when we see ZIO[Console, Nothing, Unit]?
-
-```scala
-val hello: ZIO[Console, Nothing, Unit] =
-  console.putStrLn("Hello Functional Scala!!!") 
-```
-
-- Needs a `Console` to run
-- Doesn't produce any error
-- Produce `()` as output
-
-
----
-# ZIO - 101
-
-^In the first slide we cheated a bit. Our program could not be run. Actually a generic ZIO runtime is not able to run a program that requires console.
-* The process to run an environmental effect is to satisfy all its requirements, and then execute it 
-* The way you satisfy the requirements is `provide`
-* now we eliminated the requirement, and this is witnessed in the type
-* now I can run this "autonomous" effect in a runtime that provides nothing
-* if I try to run an effect with unsatisfied requirement in an runtime that provides less than required I get an error
-
-[.code-highlight: 1-2] 
-[.code-highlight: 1-5] 
-[.code-highlight: 1-2, 6-7] 
-[.code-highlight: 1-4, 6-8] 
-[.code-highlight: 1-4, 6-9] 
-[.code-highlight: 1-4, 6, 7, 10-13]
-```scala
-val hello: ZIO[Console, Nothing, Unit] =
-  console.putStrLn("Hello Functional Scala!!!") 
-
-val runtime: Runtime[ZEnv] = 
-  new DefaultRuntime{}
-val runtime: Runtime[Console with Clock with ...] = 
-  new DefaultRuntime{}
-
-defaultRuntme.unsafeRun(hello)
-```
-
----
-# ZIO - 101
-### A tale of types
-
-[.code-highlight: none] 
-[.code-highlight: 1] 
-[.code-highlight: 1-2] 
-[.code-highlight: 1-5] 
-[.code-highlight: 1-7] 
-[.code-highlight: 1-11] 
-```scala
-val two: ZIO[Any, Nothing, Int] = ???
-val two: UIO[Int] = ???
-
-val parsedEmail: ZIO[Any, String, Email] = ???
-
-val kubeDeploy: ZIO[Kube, String, Unit] = ???
-
-val logAndDeploy: ZIO[Kube with Log, String, Unit] = ???
-```
-
----
-^ In general ZIO provides mechanisms to introduce/eliminate environemnts
-# ZIO - 101
-### Environment introduction/elimination
-
-[.code-highlight: 1] 
-[.code-highlight: 1-4] 
-[.code-highlight: 1-7] 
-[.code-highlight: 1-8] 
-```scala
-// INTRODUCE AN ENVIRONMENT
-ZIO.access(f: R => A): ZIO[R, Nothing, A]
-
-ZIO.accessM(f: R => ZIO[R, E, A]): ZIO[R, E, A]
-
-// ELIMINATE AN ENVIRONMENT
-val kubeDeploy: ZIO[Kube, Nothing, Unit]
-prg.provide(Kube.Live): ZIO[Any, Nothing, Unit]
-```
----
-^The R part in ZIO makes it very convenient to use the module pattern. We use modules to model capabilities. All capabilities in ZIO are modelled as modules
-* All we need is to adhere to a simple naming convention
-* Let's define a module that allows us to handle metrics counter incrementations.
-* Module
-* Service
-* Accessor
-Notice that we just defined an interface, or if you want an algebra
-# ZIO-101: Module Pattern
-
-### Module recipe
-
-[.code-highlight: 1-4] 
-[.code-highlight: 1-9] 
-[.code-highlight: 1-16] 
-```scala
-// the module
-trait Metrics {
-  val metrics: Metrics.Service[Any] // named as the module
-}
-object Metrics {
-  // the service
-  trait Service[R] {
-    def inc(label: String): ZIO[R, Nothing, Unit]
-  }
-
-  // the accessor
-  object > extends Service[Metrics] {
-    def inc(label: String): ZIO[Metrics, Nothing, Unit] =
-      ZIO.accessM(_.metrics.inc(label))
-  }
-}
-```
-
----
-^Now we can write a program that uses our metrics module, and let's use it in conjunction with the console module
-* SUPERB Type inference. Compiler is able to tell me that I need both these modules, I don't need to provide these capabilities beforehand like in TF
-* Let's provide a live implementation that is backed by prometheus
-* We can run it
-
-# ZIO-101: Module Pattern
-### `Metrics` and `Log` modules
-
-[.code-highlight: 1-8] 
-[.code-highlight: 1-15] 
-[.code-highlight: 1-19] 
-```scala
-val prg: ZIO[Metrics with Log, Nothing, Unit] = 
-  for {
-    _ <- Log.info("Hello")
-    _ <- Metrics.inc("salutation")
-    _ <- Log.info("London")
-    _ <- Metrics.inc("subject")
-  } yield ()
-
-trait Prometheus extends Metrics {
-  val metrics = new Metrics.Service[Any] {
-    def inc(label: String): ZIO[Any, Nothing, Unit] = 
-      ZIO.effectTotal(counter.labels(label).inc(1))
-  }
-}
-
-runtime.unsafeRun(
-  prg.provide(new Metrics.Prometheus with Log.Live)
-)
-```
-
----
-^Programs written in this style are completely testable. How do I unit test my program? I want to ensure that the counter gets called exactly once for "salutation" and once for "subject"
-* The program remains the same value (data structure) we defined in first place 
-* We define an implementation of the **SERVICE** backed by a data structure to handle state mutations
-* We build an environment where the `Metrics` service is backed by this ref, and we provide it to our program, closing the requirements
-* we run the test program, if this doesn't throw the test is green
-
-# ZIO-101: Module Pattern
-### **Testing**
-
-```scala
-val prg: ZIO[Metrics with Log, Nothing, Unit] = 
-  for {
-    _ <- Log.info("Hello")
-    _ <- Metrics.inc("salutation")
-    _ <- Log.info("London")
-    _ <- Metrics.inc("subject")
-  } yield ()
-```
-
----
-
-# ZIO-101: Module Pattern
-### **Testing**
-
-[.code-highlight: none] 
-[.code-highlight: 1] 
-[.code-highlight: 1-7] 
-[.code-highlight: 1-13] 
-[.code-highlight: 1-14] 
-[.code-highlight: 1-16] 
-[.code-highlight: 1-18] 
-```scala
-val prg: ZIO[Metrics with Log, Nothing, Unit] = /* ... */
-
-case class TestMetrics(incCalls: Ref[List[String]]) 
-  extends Metrics.Service[Any] {
-  def inc(label: String): ZIO[Any, Nothing, Unit] =
-    incCalls.update(xs => xs :+ label).unit
-}
-
-val test =  for {
-  ref <- Ref.make(List[String]())
-  _   <- prg.provide(new Log.Live with Metrics {
-           val metrics = TestMetrics(ref)
-         })
-  calls <- ref.get
-  _     <- UIO.effectTotal(assert(calls == List("salutation", "subject")))
-} yield ()
-
-runtime.unsafeRun(test)
-```
-
--->
-
 ---
 # ZIO-101
 
@@ -409,7 +104,7 @@ val user: User = Runtime.default.unsafeRun(provided)
 
 ---
 # ZIO-101: Modules
-Example: a module to collect metrics
+Example: a module to collect metrics[^1]
 
 [.code-highlight: 2-5] 
 [.code-highlight: 1-5] 
@@ -427,6 +122,8 @@ object Metrics {
   }
 }
 ```
+
+[^1]: ZIO 1.0.0-RC17+443
 
 ---
 # ZIO-101: Modules
@@ -1140,7 +837,7 @@ val chunkRasteringModule: ZLayer[CameraModule with WorldModule, Nothing, Rasteri
     (cameraSvc, worldSvc) =>
       new Service {
         override def raster(world: World, camera: Camera): 
-          ZStream[Any, RayTracerError, ColoredPixel] = {
+          Stream[Any, RayTracerError, ColoredPixel] = {
           val pixels: Stream[Nothing, (Int, Int)] = ???
           pixels.mapM{
             case (px, py) =>
@@ -1397,8 +1094,8 @@ class DrawRoutes[R <: CanvasSerializer with RasteringModule with ATModule] {
 
 ---
 ![left fit](img/modules-5.png) 
-### And in main
-##### Provide the layers
+# And in main
+## **Provide the layers**
 
 ```scala
 val world: ZLayer[ATModule, Nothing, WorldModule] = 
@@ -1417,7 +1114,7 @@ object Main extends zio.App {
 ```
 ---
 
-### Swapping modules
+### **Swapping modules**
 
 ![left fit](img/refractive-without-refraction-blue.png) 
 
@@ -1433,7 +1130,7 @@ val world: ZLayer[ATModule, Nothing, WorldModule] =
 --- 
 [.autoscale: false]
 
-### Swapping modules
+### **Swapping modules**
 
 ![left fit](img/refractive-with-refraction-blue.png) 
 
@@ -1453,10 +1150,10 @@ val world: ZLayer[ATModule, Nothing, WorldModule] =
 ### Conclusion - **ZLayer**
 [.text: alignment(left)]
 
-- Deps graph in the code 💪
+- Dependency graph in the code 💪
 - Type safety, no magic 🙌
 - Compiler helps to satisfy requirements 🤗
-- Join ZIO Discord channel 😊
+- Try it out, and join ZIO Discord channel 😊
 
 ---
 
