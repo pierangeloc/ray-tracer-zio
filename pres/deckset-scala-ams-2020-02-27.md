@@ -1157,7 +1157,7 @@ val world: ZLayer[ATModule, Nothing, WorldModule] =
 
 ---
 
-# Thank you!
+# **Thank you!**
 
 ![inline 10%](img/Twitter_Logo_WhiteOnBlue.png) @pierangelocecc
 
