@@ -462,10 +462,12 @@ val prg: ZIO[Metrics with Log, Nothing, Unit] =
 
 `Has[A]` is a dependency on a service of type `A`
 
+[.code-highlight: none] 
+[.code-highlight: all] 
 ```scala
-val hasLog: Has[Log.Service] // aliased as Log
-val hasMetrics: Has[Metrics.Service] // aliased as Metrics
-val mix: Has[Log.Service] with Has[Log.Service] = hasLog ++ hasMetrics
+val hasLog: Has[Log.Service]         // type Log     = Has[Log.Service]
+val hasMetrics: Has[Metrics.Service] // type Metrics = Has[Metrics.Service]
+val mix: Log with Metrics = hasLog ++ hasMetrics
 
 //access each service
 mix.get[Log.Service].info("Starting the application")
@@ -474,6 +476,12 @@ mix.get[Log.Service].info("Starting the application")
 ---
 
 # ZIO-101: The `Has` data type
+
+```scala
+val mix: Log with Metrics = hasLog ++ hasMetrics
+
+mix.get[Log.Service].info("Starting the application")
+```
 
 - Is more powerful than trait mixins
 - Is backed by a heterogeneus map `ServiceType -> Service`
@@ -560,7 +568,7 @@ val usersLayer: ZLayer[UserRepo with UserValidation, Nothing, BusinessLogic] =
 ---
 # ZIO-101: `ZLayer`
 
-Compose layers horizontally
+Compose horizontally
 (_all inputs for all outputs_)
 
 ```scala
@@ -575,7 +583,7 @@ val hor: ZLayer[Connection with Config, Nothing, UserRepo with AuthPolicy] =
 ---
 # ZIO-101: `ZLayer`
 
-Compose layers vertically
+Compose vertically
 (_output of first for input of second_)
 
 ```scala
@@ -640,7 +648,7 @@ Provide layers to programs
     UserRepo.inMemory ++ AuthPolicy.basicPolicy
   )
 
-  val updated: ZIO[Console, Nothing, Boolean] = checkUser.provideLayer(
+  val updated: ZIO[Any, Nothing, Boolean] = checkUser.provideLayer(
     liveLayer ++ UserRepo.postgres
   )
 ```
@@ -1074,7 +1082,7 @@ type RasteringModule = Has[Service]
 object RasteringModule {
   trait Service {
     def raster(world: World, camera: Camera): 
-      ZStream[RayTracerError, ColoredPixel]
+      Stream[RayTracerError, ColoredPixel]
   }
 }
 ```
@@ -1308,173 +1316,6 @@ object PhongReflectionModule {
 }
 ```
 
----
-^We have enough elements now to build a first version of our program
-### Display the first canvas / 1
-
-```scala
-def drawOnCanvasWithCamera(world: World, camera: Camera, canvas: Canvas) = 
-  for {
-    coloredPointsStream <- RasteringModule.raster(world, camera)
-    _                   <- coloredPointsStream.mapM(cp => canvas.update(cp)).run(Sink.drain)
-  } yield ()
-
-def program(viewFrom: Pt) =
-  for {
-    camera <- cameraFor(viewFrom: Pt)
-    w      <- world
-    canvas <- Canvas.create()
-    _      <- drawOnCanvasWithCamera(w, camera, canvas)
-    _      <- CanvasSerializer.serialize(canvas, 255)
-  } yield ()
-```
-
----
-^If we try to provide environments to our program, we see that the compiler guides us to close the holes
-### Display the first canvas / 2
-
-[.code-highlight: 1-2]
-[.code-highlight: 1-9]
-[.code-highlight: 1-19]
-```scala
-def program(viewFrom: Pt):
-  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
-
-program(Pt(2, 2, -10))
-  .provide(
-    new CanvasSerializer.PNGCanvasSerializer 
-    with RasteringModule.ChunkRasteringModule 
-    with ATModule.Live
-  )
-// Members declared in zio.blocking.Blocking
-// [error]   val blocking: zio.blocking.Blocking.Service[Any] = ???
-// [error]
-// [error]   // Members declared in modules.RasteringModule.ChunkRasteringModule
-// [error]   val cameraModule: modules.CameraModule.Service[Any] = ???
-// [error]   val worldModule: modules.WorldModule.Service[Any] = ???
-// [error]
-// [error]   // Members declared in geometry.affine.ATModule.Live
-// [error]   val matrixModule: geometry.matrix.MatrixModule.Service[Any] = ???
-```
-
----
-^We can close the holes bit by bit following the compiler
-I find this more readable than implicits not found thrown when a typeclass lookup is not successful when adopting tagless final technique
-### Display the first canvas / 3
-
-```scala
-def program(viewFrom: Pt):
-  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
-
-program(Pt(2, 2, -10))
-  .provide(
-    new CanvasSerializer.PNGCanvasSerializer 
-    with RasteringModule.ChunkRasteringModule 
-    with ATModule.Live 
-    with CameraModule.Live 
-    with MatrixModule.BreezeLive 
-    with WorldModule.Live
-    )
-  )
-// [error]   // Members declared in io.tuliplogic.raytracer.ops.model.modules.WorldModule.Live
-// [error]   val phongReflectionModule: io.tuliplogic.raytracer.ops.model.modules.PhongReflectionModule.Service[Any] = ???
-// [error]   val worldHitCompsModule: io.tuliplogic.raytracer.ops.model.modules.WorldHitCompsModule.Service[Any] = ???
-// [error]   val worldReflectionModule: io.tuliplogic.raytracer.ops.model.modules.WorldReflectionModule.Service[Any] = ???
-// [error]   val worldRefractionModule: io.tuliplogic.raytracer.ops.model.modules.WorldRefractionModule.Service[Any] = ???
-// [error]   val worldTopologyModule: io.tuliplogic.raytracer.ops.model.modules.WorldTopologyModule.Service[Any] = ???
-```
-
----
-^One nice thing of using simple intersection types is that we can create modules that satisfy multiple dependencies, e.g.
-### Display the first canvas - /4
-
-Group modules in **trait**
-
-[.code-highlight: 2-12]
-[.code-highlight: 1-12]
-```scala
-type BasicModules = 
-  NormalReflectModule.Live
-  with RayModule.Live
-  with ATModule.Live
-  with MatrixModule.BreezeLive
-  with WorldModule.Live
-  with WorldTopologyModule.Live
-  with WorldHitCompsModule.Live
-  with CameraModule.Live
-  with RasteringModule.Live
-  with Blocking.Live
-```
-
----
-^Given that definition, we can just provide our program with the missing module, which is the phong reflection module, and we are done
-### Display the first canvas - /5
-
-Group modules
-
-```scala
-def program(viewFrom: Pt):
-  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
-
-program(Pt(2, 2, -10))
-  .provide(new BasicModules with PhongReflectionModule.BlackWhite)
-```
-
----
-^This is the whole program that produces these images that I then put together in a gif
-### Display the first canvas - /6
-![left fit](img/simple-world-shadows-anim.gif) 
-
-Group modules
-
-```scala
-def program(viewFrom: Pt):
-  ZIO[CanvasSerializer with RasteringModule with ATModule, RayTracerError, Unit]
-
-def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
-    ZIO.traverse(-18 to -6)(z => program(Pt(2, 2, z))
-      .provide(
-        new BasicModules with PhongReflectionModule.BlackWhite
-      )
-    ).foldM(err =>
-      console.putStrLn(s"Execution failed with: $err").as(1),
-      _ => UIO.succeed(0)
-    )
-```
----
-
-![left fit](img/modules-4.png) 
-### Live **PhongReflectionModule**
-#### With **LightDiffusion** 
-
-```scala
-trait Live extends PhongReflectionModule {
-  val aTModule: ATModule.Service[Any]
-  val normalReflectModule: NormalReflectModule.Service[Any]
-  val lightDiffusionModule: LightDiffusionModule.Service[Any]
-}
-```
----
-^Let's swap our dependency with another one and we have a way better image
-
-![left fit](img/phong-animated.gif) 
-
-### Live **PhongReflectionModule**
-#### With **LightDiffusion** 
-
-
-[.code-highlight: 1-1]
-[.code-highlight: 1-2]
-[.code-highlight: 1-3]
-[.code-highlight: 1-6]
-```scala
-program(Pt(2, 2, -10))
-  .provide(
-    new BasicModules 
-    with PhongReflectionModule.Live
-    // with PhongReflectionModule.BlackWhite
-  )
-```
 
 ---
 ^So far we didn't look at the color of objects, or their material properties, but that's what makes the colors of an object. So we define a data type that collects the material properties that make how it looks like
@@ -1505,162 +1346,78 @@ case class Material(
 
 
 ```scala
-trait Live extends PhongReflectionModule {
-  val aTModule: ATModule.Service[Any]
-  val normalReflectModule: NormalReflectModule.Service[Any]
-  val lightDiffusionModule: LightDiffusionModule.Service[Any]
-  val lightReflectionModule: LightReflectionModule.Service[Any]
-}
-```
----
-^ Let's add some realism by handling how the light is reflected on the surface towards the camera, so we have a light reflection module
+object PhongReflectionModule {
+  trait Service { }
 
-![left fit](img/three-spheres-opaque.png) 
-
-### Spheres reflect **light source**
-
-```scala
-
-program(
-  from = Pt(57, 20, z),
-  to = Pt(20, 0, 20)
-).provide {
-  new BasicModules 
-  with PhongReflectionModule.Live
-  with LightReflectionModule.Live
+  val live: ZLayer[ATModule 
+    with LightDiffusionModule 
+    with LightReflectionModule, 
+    Nothing, 
+    PhongReflectionModule]
 }
 ```
 
 ---
-
-![left fit](img/modules-6.png) 
-### **Reflective** surfaces
+![left fit](img/modules-5.png) 
+### Drawing program
 
 ```scala
-trait Live extends WorldModule {
-  val worldTopologyModule: WorldTopologyModule.Service[Any]
-  val worldHitCompsModule: WorldHitCompsModule.Service[Any]
-  val phongReflectionModule: PhongReflectionModule.Service[Any]
-  val worldReflectionModule: WorldReflectionModule.Service[Any]
+def draw(sceneBundle: SceneBundle): 
+  ZIO[CanvasSerializer 
+    with RasteringModule 
+    with ATModule,
+    Nothing, 
+    Array[Byte]]
 ```
 
 ---
-^In our hit components we have already computed the reflected ray. All we have to do is compute how that reflected ray sees the world, find the color, multiply it by the `reflective` parameter of our material, and add it to the natural color of the object that we computed so far. The computation is delegated to the `WorldReflectionModule`
+![left fit](img/modules-5.png) 
+### With Http4s
 
-![left fit](img/hit-components.png) 
-
-### **Reflective** surfaces
-#### Use **WorldReflection**
-
-[.code-highlight: 1-4]
-[.code-highlight: 1-13]
-[.code-highlight: 1-14]
-[.code-highlight: 1-19]
 ```scala
-trait Live extends WorldModule {
-  val worldTopologyModule: WorldTopologyModule.Service[Any]
-  val worldHitCompsModule: WorldHitCompsModule.Service[Any]
-  val phongReflectionModule: PhongReflectionModule.Service[Any]
-  val worldReflectionModule: WorldReflectionModule.Service[Any]
+class DrawRoutes[R <: CanvasSerializer with RasteringModule with ATModule] {
+  type F[A] = RIO[R, A]
+  private val http4sDsl = new Http4sDsl[F] {}
+  import http4sDsl._
 
-  val worldModule: Service[Any] = 
-    new Service[Any] {
-      def colorForRay(world: World, ray: Ray): ZIO[Any, RayTracerError, Color] =
-        {
-         /* ...  */ 
-          for {
-            color <- /* standard computation of color */  
-            reflectedColor <- worldReflectionModule.reflectedColor(world, hc) 
-          } yield color + reflectedColor
-      }
-    }
-}
-```
-
----
-^The WorldReflectionModule is responsible for computing the view of the world from a reflected ray perspective
-
-![left fit](img/hit-components.png) 
-
-### Implement **WorldReflection** Live
-
-[.code-highlight: 1, 4-9]
-[.code-highlight: 1, 4-10]
-[.code-highlight: 1-2, 4-11]
-[.code-highlight: 1-16]
-```scala
-trait Live extends WorldReflectionModule {
-  val worldModule: WorldModule.Service[Any]
-
-  val worldReflectionModule = new WorldReflectionModule.Service[Any] {
-    def reflectedColor(world: World, hitComps: HitComps, remaining: Int):
-      ZIO[Any, RayTracerError, Color] =
-      if (hitComps.shape.material.reflective == 0) {
-        UIO(Color.black)
-      } else {
-        val reflRay = Ray(hitComps.overPoint, hitComps.rayReflectV)
-        worldModule.colorForRay(world, reflRay, remaining).map(c =>
-          c * hitComps.shape.material.reflective
-        )
+  val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
+    case req @ POST -> Root / "draw" =>
+      req.decode[Scene] { scene =>
+        (for {
+          bundle    <- Http2World.httpScene2World(scene)
+          bytes     <- draw(bundle)
+        } yield bytes).foldM {
+          e => InternalServerError(s"something went wrong"),
+          Ok(bytes, "image/png")
+        }
       }
   }
 }
 ```
---- 
-![left fit](img/modules-7.png) 
-### **Reflective** surfaces
-##### Circular dependency
 
 ---
-^Calculating reflection can be pretty expensive, as it's like having a much higher number of observers for which we have to calculate all the rays. It can also introduce explosive behavior, like when you look at 2 mirrors face 2 face and you see the infinite, so we introduce also a mechanism to limit the recursion depth, but I don't talk about it here.
-But considering it's expensive, it can be handy to provide an implementation of the reflectin module that does nothing and returns black. This can be useful if I want to first check how an image looks like approx and then later compute it in all its beauty
-
-### Implement **WorldReflection** Dummy
-
-```scala
-trait NoReflection extends WorldReflectionModule {
-  val worldReflectionModule = new WorldReflectionModule.Service[Any] {
-    def reflectedColor(
-      world: World, 
-      hitComps: HitComps, 
-      remaining: Int
-    ): ZIO[Any, RayTracerError, Color] = UIO.succeed(Color.black)
-  }
-}
-```
-
---- 
-
-### Spheres
-
-![left fit](img/refractive-without-refraction-without-reflection-blue.png) 
-
-[.build-lists: false]
-
-- Red: reflective = 0.9
-- Green/white: reflective = 0.6
-- Blue: reflective = 0.9, transparency: 1
+![left fit](img/modules-5.png) 
+### And in main
+##### Provide the layers
 
 ```scala
-program(
-  from = Pt(57, 20, z),
-  to = Pt(20, 0, 20)
-).provide {
-  new BasicModules 
-  with PhongReflectionModule.Live
-  with WorldReflectionModule.NoReflection
+val world: ZLayer[ATModule, Nothing, WorldModule] = 
+  (topologyM ++ hitCompsM ++ phongM) >>> worldModule.live  
+
+val rastering: ZLayer[ATModule, Nothing, RasteringModule] = 
+  (world ++ cameraModule.live) >>> rasteringModule.chunkRasteringModule
+
+val full: ZLayer.NoDeps[Nothing, Rastering] = (layers.atM >>> rastering)
+
+object Main extends zio.App {
+
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
+    httpProgram.provideLayer(full)
 }
-⠀
-⠀
-⠀
-⠀
-⠀
-⠀⠀
 ```
+---
 
---- 
-
-### Spheres
+### Swapping modules
 
 ![left fit](img/refractive-without-refraction-blue.png) 
 
@@ -1670,50 +1427,13 @@ program(
 - Blue: reflective = 0.9, transparency: 1
 
 ```scala
-program(
-  from = Pt(57, 20, z),
-  to = Pt(20, 0, 20)
-).provide {
-  new BasicModules 
-  with PhongReflectionModule.Live
-  with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-}
-⠀
-⠀
-⠀
-⠀
-⠀
-⠀⠀
+val world: ZLayer[ATModule, Nothing, WorldModule] = 
+  (topologyM ++ hitCompsM ++ phongM) >>> worldModule.opaque
 ```
-
---- 
-
-### Spheres
-
-![left fit](img/refractive-without-refraction-blue.png) 
-
-[.build-lists: false]
-
-- Red: reflective = 0.9
-- Green/white: reflective = 0.6
-- Blue: reflective = 0.9, transparency: 1
-
-```scala
-program(
-  from = Pt(57, 20, z),
-  to = Pt(20, 0, 20)
-).provide {
-  new BasicModules 
-  with PhongReflectionModule.Live
-  with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-  with WorldRefractionModule.NoRefraction⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-}
-```
-
 --- 
 [.autoscale: false]
 
-### Spheres
+### Swapping modules
 
 ![left fit](img/refractive-with-refraction-blue.png) 
 
@@ -1723,68 +1443,19 @@ program(
 - Green/white: reflective = 0.6
 - Blue: reflective = 0.9, transparency: 1
 
-```scala
-program(
-  from = Pt(57, 20, z),
-  to = Pt(20, 0, 20)
-).provide {
-  new BasicModules 
-  with PhongReflectionModule.Live
-  with WorldReflectionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-  with WorldRefractionModule.Live⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-}
-⠀
-⠀
-⠀
-⠀
-```
-
-<!--
-
----
-
-### Alternative approach
-#### Provide partial environments
 
 ```scala
-val program: ZIO[RasteringModule, Nothing, Unit]
-
-val partial = program
-  .provideSome[WorldReflectionModule](
-    f: WorldReflectionModule => RasteringModule
-  ): ZIO[WorldReflectionModule, E, A]
-
-partial.provide(new WorldReflectionModule.Live)
+val world: ZLayer[ATModule, Nothing, WorldModule] = 
+  (topologyM ++ hitCompsM ++ phongM) >>> worldModule.live
 ```
-
--->
-
----
-[.text: alignment(left)]
-### Conclusion - **Environmental Effects**
-
-```scala
-ZIO[R, E, A]
-```
-
-Build purely functional, testable, modular applications
-
-- Do not require HKT, typeclasses, etc
-- Do not abuse typeclasses
-- Can group capabilities
-- Can provide capabilities one at a time  - `provideSome` 
-- Are not dependent on implicits (survive refactoring)
-
 ---
 
-### Conclusion - **Environmental Effects**
+### Conclusion - **ZLayer**
 [.text: alignment(left)]
 
-- Low entry barrier, very mechanical 🙌
-- Macros help with boilerplate 🎉
-- Compiler is your friend 🤗
-- Handle circular dependencies 💪
-- Try it out! 👊
+- Deps graph in the code 💪
+- Type safety, no magic 🙌
+- Compiler helps to satisfy requirements 🤗
 - Join ZIO Discord channel 😊
 
 ---

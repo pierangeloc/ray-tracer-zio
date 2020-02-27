@@ -33,10 +33,7 @@ object rasteringModule {
 
   val chunkRasteringModule: ZLayer[CameraModule with WorldModule, Nothing, RasteringModule] =
     ZLayer.fromServices[cameraModule.Service, worldModule.Service, rasteringModule.Service] {
-    (
-      cameraSvc: cameraModule.Service,
-      worldSvc: worldModule.Service
-    ) =>
+    (cameraSvc, worldSvc) =>
       new Service {
         override def raster(world: World, camera: Camera): ZStream[Any, RayTracerError, ColoredPixel] = {
 

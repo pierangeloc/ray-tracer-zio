@@ -80,7 +80,7 @@ object aTModule {
   type ATModule = Has[Service]
 
 
-  val live: ZLayer[MatrixModule, Nothing, ATModule] = ZLayer.fromFunction { matrixModule =>
+  val live: ZLayer[MatrixModule, Nothing, ATModule] = ZLayer.fromService { matrixSvc =>
     new Service {
       import vectorizable.comp
 
@@ -91,7 +91,7 @@ object aTModule {
           _ <- if (v_m != 4 || v_n != 1)
             ZIO.fail(ATError(s"can't apply an affine transformation to a matrix $v_m x $v_n while expecting a matrix (vector) 4 x 1"))
           else ZIO.unit
-          res <- matrixModule.get.mul(tf.direct, v).orDie
+          res <- matrixSvc.mul(tf.direct, v).orDie
         } yield res
 
       override def applyTf(tf: AT, vec: Vec): UIO[Vec] =
@@ -110,15 +110,15 @@ object aTModule {
 
       override def compose(first: AT, second: AT): UIO[AT] =
         for {
-          direct  <- matrixModule.get.mul(second.direct, first.direct).orDie
-          inverse <- matrixModule.get.mul(first.inverse, second.inverse).orDie
+          direct  <- matrixSvc.mul(second.direct, first.direct).orDie
+          inverse <- matrixSvc.mul(first.inverse, second.inverse).orDie
         } yield new AT(direct, inverse)
 
       override def invert(tf: AT): UIO[AT] = UIO.succeed(AT(tf.inverse, tf.direct))
 
       override def transpose(tf: AT): UIO[AT] = for {
         direct <- tf.direct.transpose
-        inverse <- matrixModule.get.invert(direct).orDie
+        inverse <- matrixSvc.invert(direct).orDie
       } yield AT(direct, inverse)
 
       override def invertible(
@@ -138,7 +138,7 @@ object aTModule {
               comp(x41, x42, x43, x44)
             )
           ).mapError(e => ATError(e.toString))
-        inverse <- matrixModule.get.invert(direct).mapError(e => ATError(e.toString))
+        inverse <- matrixSvc.invert(direct).mapError(e => ATError(e.toString))
       } yield AT(direct, inverse)
     }
   }

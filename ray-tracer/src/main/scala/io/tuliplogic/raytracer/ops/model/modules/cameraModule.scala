@@ -13,7 +13,7 @@ object cameraModule {
 
   type CameraModule = Has[Service]
 
-  val live: ZLayer[ATModule, Nothing, CameraModule] = ZLayer.fromService { aTModule =>
+  val live: ZLayer[ATModule, Nothing, CameraModule] = ZLayer.fromService { atSvc =>
     new Service {
       // Implementation: the canonical camera has the eye in Pt.origin, and the screen on the plane z = -1,
       // therefore after computing the coordinates of the point in the screen, we have to apply the _inverse of the camera transformation_
@@ -27,9 +27,9 @@ object cameraModule {
           origX     <- UIO(camera.halfWidth - xOffset)
           origY     <- UIO(camera.halfHeight - yOffset)
           //transform the coordinates by the inverse
-          inverseTf <- aTModule.invert(camera.tf)
-          pixel     <- aTModule.applyTf(inverseTf, Pt(origX, origY, -1))
-          origin    <- aTModule.applyTf(inverseTf, Pt.origin)
+          inverseTf <- atSvc.invert(camera.tf)
+          pixel     <- atSvc.applyTf(inverseTf, Pt(origX, origY, -1))
+          origin    <- atSvc.applyTf(inverseTf, Pt.origin)
           direction <- (pixel - origin).normalized.orDie
         } yield Ray(origin, direction)
     }
