@@ -104,8 +104,8 @@ object canvasSerializer {
           img => {
             println("getting image zio stream from image stream")
             println(s"img.size = ${img.width} x ${img.height}")
-            ZStream.fromIterable(img.bytes).chunkN(4096) //TODO: why isn't the input stream version not working anymore?!?!?!
-//                        ZStream.fromInputStream(img.stream).mapError(e => throw e)}
+            val is = img.stream //making it strict to overcome bug in fromInputStream
+            ZStream.fromInputStream(is).mapError(e => throw e)
           }
         )
       }
