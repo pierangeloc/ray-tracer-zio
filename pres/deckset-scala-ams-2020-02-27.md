@@ -22,11 +22,12 @@ theme: Fira, 3
 
 <br/>
 Amsterdam Scala
-28 Feb 2020
+27 Feb 2020
 <br/>
 <br/>
 
 ![right fit](img/refractive-spheres.png) 
+
 ---
 # ZIO-101
 
