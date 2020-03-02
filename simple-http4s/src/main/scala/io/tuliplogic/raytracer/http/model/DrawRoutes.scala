@@ -40,7 +40,7 @@ class DrawRoutes[R <: DrawingProgram.DrawEnv with DrawingRepository with Random 
               now       <- zio.clock.nanoTime
               _         <- drawingRepository.update(drawingId, DrawingState.Done(contentType, bytes, now - startedAt))
             } yield ()
-          }).fork
+          }).forkDaemon
           _         <- zio.console.putStrLn(s"Triggered computation for id: $drawingId")
         } yield drawingId
 
