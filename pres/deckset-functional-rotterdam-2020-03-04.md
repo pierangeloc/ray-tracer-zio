@@ -126,7 +126,7 @@ object Metrics {
 }
 ```
 
-[^1]: ZIO 1.0.0-RC17+443
+[^1]: ZIO 1.0.0-RC18
 
 ---
 # ZIO-101: Modules
@@ -152,7 +152,7 @@ val prg: ZIO[Metrics with Log, Nothing, Unit] =
   for {
     _ <- Log.info("Hello")
     _ <- Metrics.inc("salutation")
-    _ <- Log.info("Amsterdam")
+    _ <- Log.info("Rotterdam")
     _ <- Metrics.inc("subject")
   } yield ()
 ```
