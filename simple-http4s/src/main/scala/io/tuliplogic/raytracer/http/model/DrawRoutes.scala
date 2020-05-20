@@ -23,6 +23,8 @@ class DrawRoutes[R <: DrawingProgram.DrawEnv with DrawingRepository with Random 
   private val http4sDsl = new Http4sDsl[F] {}
   import http4sDsl._
 
+  implicitly[EntityEncoder[F, String]]
+
   val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
     case req @ POST -> Root / "draw" =>
       implicit def circeJsonDecoder[A](implicit decoder: Decoder[A]):

@@ -22,8 +22,8 @@ theme: Fira, 3
 
 <br/>
 
-**Functional Rotterdam**
-**04 Mar 2020**
+**NTM Session**
+**30 Mar 2020**
 
 <br/>
 <br/>

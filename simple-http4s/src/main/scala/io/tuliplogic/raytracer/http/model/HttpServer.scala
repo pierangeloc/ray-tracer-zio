@@ -21,7 +21,7 @@ class HttpServer[R <: DrawingProgram.DrawEnv with Clock with Random with Drawing
 
   def httpApp: HttpApp[AppTask] = router.orNotFound
 
-  val serve: ZIO[R, Throwable, Unit] = ZIO
+  val serve: AppTask[Unit] = ZIO
     .runtime[R]
     .flatMap { implicit rts =>
       BlazeServerBuilder[AppTask]
