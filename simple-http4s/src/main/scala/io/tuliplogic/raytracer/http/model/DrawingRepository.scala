@@ -1,9 +1,8 @@
 package io.tuliplogic.raytracer.http.model
 
 import io.tuliplogic.raytracer.commons.errors.IOError.DrawingRepoError
-import zio.{Has, IO, Ref, UIO, URIO, ZIO, ZLayer}
+import zio.{Has, IO, Layer, Ref, UIO, URIO, ZIO, ZLayer}
 import DrawingRepoModel._
-import zio.ZLayer.NoDeps
 
 object drawingRepository {
 
@@ -16,7 +15,7 @@ object drawingRepository {
 
   type DrawingRepository = Has[Service]
 
-  def refDrawingRepoService(ref: Ref[Map[DrawingId, DrawingState]]): NoDeps[Nothing, Has[Service]] = ZLayer.succeed(new Service {
+  def refDrawingRepoService(ref: Ref[Map[DrawingId, DrawingState]]): Layer[Nothing, Has[Service]] = ZLayer.succeed(new Service {
     def create(drawingId: DrawingId, started: Long): ZIO[Any, DrawingRepoError, Unit] = for {
       _   <- ref.update(map => map + (drawingId -> DrawingState.Started(started)))
     } yield ()

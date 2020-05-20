@@ -7,7 +7,7 @@ import io.tuliplogic.raytracer.ops.model.data.Color
 import io.tuliplogic.raytracer.ops.model.data.Scene.{PointLight, Shape}
 import io.tuliplogic.raytracer.ops.model.modules.lightDiffusionModule.LightDiffusionModule
 import io.tuliplogic.raytracer.ops.model.modules.lightReflectionModule.LightReflectionModule
-import zio.{Has, UIO, URIO, ZIO, ZLayer}
+import zio.{Has, Layer, UIO, URIO, ZIO, ZLayer}
 
 object phongReflectionModule {
 
@@ -109,7 +109,7 @@ object phongReflectionModule {
       }
   }
 
-  val blackWhite: ZLayer.NoDeps[Nothing, PhongReflectionModule] = ZLayer.succeed {
+  val blackWhite: Layer[Nothing, PhongReflectionModule] = ZLayer.succeed {
     new Service {
 
       override def lighting(pointLight: PointLight, hitComps: HitComps, inShadow: Boolean): UIO[PhongComponents] = {

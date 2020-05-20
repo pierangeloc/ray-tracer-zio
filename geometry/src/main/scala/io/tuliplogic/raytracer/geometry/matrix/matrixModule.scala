@@ -3,8 +3,7 @@ package io.tuliplogic.raytracer.geometry.matrix
 import io.tuliplogic.raytracer.geometry.matrix.Types.{M, factory}
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError
 import io.tuliplogic.raytracer.commons.errors.AlgebraicError.MatrixDimError
-import zio.{Has, ZLayer}
-import zio.{IO, UIO, ZIO}
+import zio.{Has, IO, Layer, UIO, ZIO, ZLayer}
 
 object matrixModule {
 
@@ -42,7 +41,7 @@ object matrixModule {
 
   import Types._
 
-  val breezeLive: ZLayer.NoDeps[Nothing, MatrixModule] = ZLayer.succeed {
+  val breezeLive: Layer[Nothing, MatrixModule] = ZLayer.succeed {
       new Service {
         private def elementWiseOp(m1: M, m2: M)(op: (Double, Double) => Double): IO[AlgebraicError, M] =
           for {

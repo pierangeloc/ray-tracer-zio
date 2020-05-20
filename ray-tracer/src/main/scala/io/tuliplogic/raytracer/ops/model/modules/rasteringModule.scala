@@ -5,8 +5,8 @@ import io.tuliplogic.raytracer.ops.model.data
 import io.tuliplogic.raytracer.ops.model.data.{Camera, Color, ColoredPixel, Pixel, World}
 import io.tuliplogic.raytracer.ops.model.modules.cameraModule.CameraModule
 import io.tuliplogic.raytracer.ops.model.modules.worldModule.WorldModule
-import zio.stream.{ZStream, ZStreamChunk}
-import zio.{Chunk, Has, Ref, ZIO, ZLayer}
+import zio.stream.ZStream
+import zio.{Chunk, Has, Layer, Ref, ZIO, ZLayer}
 
 
 //TODO: PERFORMANCE IMPROVEMENTS:
@@ -42,7 +42,7 @@ object rasteringModule {
             y <- (0 until camera.vRes).toArray
           } yield (x, y)
 
-          ZStreamChunk.fromChunks(pixels.grouped(chunkSize).map(Chunk.fromArray).toList: _*).chunks.mapMPar(parChunks) { chunk =>
+          ZStream.fromChunks(pixels.grouped(chunkSize).map(Chunk.fromArray).toList: _*).mapChunksM { chunk =>
             chunk.mapM {
               case (px, py) =>
                 for {
@@ -51,13 +51,13 @@ object rasteringModule {
                   color <- worldSvc.colorForRay(world, ray, remaining)
                 } yield data.ColoredPixel(Pixel(px, py), color)
             }
-          }.flatMap(ZStream.fromChunk(_))
+          }
         }
       }
   }
 
 
-  val allWhiteTestRasteringModule: ZLayer.NoDeps[Nothing, RasteringModule] = ZLayer.succeed {
+  val allWhiteTestRasteringModule: Layer[Nothing, RasteringModule] = ZLayer.succeed {
     new Service {
       override def raster(world: World, camera: Camera): ZStream[Any, RayTracerError, ColoredPixel] =
         for {

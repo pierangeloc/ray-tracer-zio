@@ -14,12 +14,12 @@ import io.tuliplogic.raytracer.ops.model.modules.worldTopologyModule.WorldTopolo
 import io.tuliplogic.raytracer.ops.programs.SimpleWorld.ULayer
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer.CanvasSerializer
-import zio.ZLayer
+import zio.{Layer, ZLayer}
 import zio.blocking.Blocking
 import zio.clock.Clock
 
 object layers {
-  val clockAndBlocking: ZLayer.NoDeps[Nothing, Blocking with Clock] =
+  val clockAndBlocking: Layer[Nothing, Blocking with Clock] =
     Blocking.live ++ Clock.live
 
   val cSerializerM: ULayer[Blocking with Clock, CanvasSerializer] =
@@ -46,5 +46,5 @@ object layers {
 
   val rasteringM: ZLayer[ATModule, Nothing, RasteringModule] = (worldM ++ cameraModule.live) >>> rasteringModule.chunkRasteringModule
 
-  val atM: ZLayer.NoDeps[Nothing, ATModule] =  matrixModule.breezeLive >>>  aTModule.live
+  val atM: Layer[Nothing, ATModule] =  matrixModule.breezeLive >>>  aTModule.live
 }

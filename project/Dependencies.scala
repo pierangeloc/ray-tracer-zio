@@ -3,9 +3,8 @@ import sbt._
 object Dependencies {
   val http4sVersion = "0.21.0-M6"
 
-  val zioVersion       = "1.0.0-RC17+466-57fa86ba-SNAPSHOT"
-  val zioCatsVersion   = "2.0.0.0-RC10+15-0d63bded+20200302-2213-SNAPSHOT"
-  val zioNioVersion    = "0.4.0"
+  val zioVersion       = "1.0.0-RC19-2"
+  val zioCatsVersion   = "2.0.0.0-RC14"
   val zioMacrosVersion = "0.6.0"
 
   val fs2Version        = "2.0.0"
@@ -25,7 +24,6 @@ object Dependencies {
   lazy val zio         = "dev.zio"       %% "zio"              % zioVersion
   lazy val zioStreams  = "dev.zio"       %% "zio-streams"      % zioVersion
   lazy val zioCats     = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
-//  lazy val zioNio      = "dev.zio"       %% "zio-nio"          % zioNioVersion
 
   lazy val fs2 = "co.fs2" %% "fs2-io" % fs2Version
 
