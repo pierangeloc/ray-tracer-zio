@@ -2,6 +2,7 @@ import sbt._
 
 object Dependencies {
   val http4sVersion = "0.21.0-M6"
+  val tapirZioVersion = "0.15.2"
 
   val zioVersion       = "1.0.0-RC19-2"
   val zioCatsVersion   = "2.0.0.0-RC14"
@@ -32,12 +33,19 @@ object Dependencies {
   lazy val http4sDsl    = "org.http4s" %% "http4s-dsl"          % http4sVersion
   lazy val http4sCirce  = "org.http4s" %% "http4s-circe"        % http4sVersion
 
+  lazy val tapirZio        = "com.softwaremill.sttp.tapir" %% "tapir-zio"               % "0.15.3"
+  lazy val tapirCirce      = "com.softwaremill.sttp.tapir" %% "tapir-json-circe"        % "0.15.3"
+  lazy val tapirZioHttp4s  = "com.softwaremill.sttp.tapir" %% "tapir-zio-http4s-server" % "0.15.3"
+
+  lazy val newType = "io.estatico" %% "newtype" % "0.4.4"
+
   lazy val http4sAll = Seq(http4sServer, http4sClient, http4sDsl, http4sCirce)
 
   lazy val circeCore     = "io.circe" %% s"circe-core"           % circeVersion
   lazy val circeGeneric  = "io.circe" %% s"circe-generic"        % circeVersion
   lazy val circeGenericX = "io.circe" %% s"circe-generic-extras" % circeVersion
   lazy val circeParser   = "io.circe" %% "circe-parser"          % circeVersion
+  lazy val circeRefined  = "io.circe" %% "circe-refined"         % circeVersion
 
   val doobieVersion = "0.8.8"
 

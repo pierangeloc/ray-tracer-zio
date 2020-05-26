@@ -6,12 +6,14 @@ enablePlugins(ScalafmtPlugin)
 lazy val commonSettings = inThisBuild(
     Seq(
       scalaVersion := "2.13.1",
+      scalacOptions ++= Seq("-Ymacro-annotations"),
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       updateOptions := updateOptions.value.withLatestSnapshots(false),
       addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
       testFrameworks ++= Seq(new TestFramework("zio.test.sbt.ZTestFramework")),
       libraryDependencies ++= Seq(
+        newType,
 //        zioMacrosCore,
 //        zioMacrosTest,
         zioTest % "test",
@@ -34,10 +36,14 @@ lazy val `simple-http4s` = project
         http4sServer,
         http4sDsl,
         http4sCirce,
+        tapirZio,
+        tapirZioHttp4s,
+        tapirCirce,
         circeCore,
         circeParser,
         circeGeneric,
         circeGenericX,
+        circeRefined,
         log4CatsSlf4j
       ) ++ doobie)
   )
