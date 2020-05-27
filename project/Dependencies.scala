@@ -37,7 +37,7 @@ object Dependencies {
   lazy val tapirCirce      = "com.softwaremill.sttp.tapir" %% "tapir-json-circe"        % "0.15.3"
   lazy val tapirZioHttp4s  = "com.softwaremill.sttp.tapir" %% "tapir-zio-http4s-server" % "0.15.3"
 
-  lazy val newType = "io.estatico" %% "newtype" % "0.4.4"
+  lazy val newType = "io.estatico" %% "newtype" % "0.4.3"
 
   lazy val http4sAll = Seq(http4sServer, http4sClient, http4sDsl, http4sCirce)
 
