@@ -24,7 +24,7 @@ class HttpServer[R <: DrawingProgram.DrawEnv with Clock with Random with Drawing
   val serve: AppTask[Unit] = ZIO
     .runtime[R]
     .flatMap { implicit rts =>
-      BlazeServerBuilder[AppTask]
+      BlazeServerBuilder[AppTask](rts.platform.executor.asEC)
         .bindHttp(8085, "0.0.0.0")
         .withHttpApp(httpApp)
         .serve

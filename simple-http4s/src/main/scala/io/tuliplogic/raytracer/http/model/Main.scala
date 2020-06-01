@@ -5,7 +5,7 @@ import io.tuliplogic.raytracer.ops.programs.layers
 import zio.clock.Clock
 import zio.console._
 import zio.random.Random
-import zio.{App, Ref, ZEnv, ZIO, ZLayer}
+import zio.{App, ExitCode, Ref, ZEnv, ZIO, ZLayer}
 
 /**
   *
@@ -14,7 +14,7 @@ import zio.{App, Ref, ZEnv, ZIO, ZLayer}
   */
 object Main extends App {
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] = {
     (for {
       imageRepoRef <- Ref.make(Map[DrawingId, DrawingState]())
       drawingRepo  = drawingRepository.refDrawingRepoService(imageRepoRef)
@@ -26,8 +26,8 @@ object Main extends App {
                         drawingRepo
                       }
     } yield ()).foldM(
-      err => putStr(s"Error running application $err") *> ZIO.succeed(1),
-      _ => ZIO.succeed(0))
+      err => putStr(s"Error running application $err") *> ZIO.succeed(ExitCode.failure),
+      _ => ZIO.succeed(ExitCode.success))
 
   }
 
