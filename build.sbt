@@ -3,6 +3,7 @@ import Dependencies._
 enablePlugins(JmhPlugin)
 enablePlugins(ScalafmtPlugin)
 
+
 lazy val commonSettings = inThisBuild(
     Seq(
       scalaVersion := "2.13.1",
@@ -26,26 +27,32 @@ lazy val commonSettings = inThisBuild(
 lazy val `simple-http4s` = project
   .in(file("simple-http4s"))
   .settings(commonSettings)
+  .enablePlugins(JavaServerAppPackaging)
   .settings(
-      name := "simple-http4s",
-      libraryDependencies ++= (Seq(
-        zio,
-        zioCats exclude("dev.zio", "zio-test"),
-        cats,
-        catsEffect,
-        http4sServer,
-        http4sDsl,
-        http4sCirce,
-        tapirZio,
-        tapirZioHttp4s,
-        tapirCirce,
-        circeCore,
-        circeParser,
-        circeGeneric,
-        circeGenericX,
-        circeRefined,
-        log4CatsSlf4j
-      ) ++ doobie)
+    mainClass in Compile := Some("io.tuliplogic.raytracer.http.model.attapirato.SimpleApp"),
+    packageName in Docker := "ray-tracer-zio",
+    dockerBaseImage := "openjdk:jre-alpine"
+  )
+  .settings(
+    name := "simple-http4s",
+    libraryDependencies ++= (Seq(
+      zio,
+      zioCats exclude("dev.zio", "zio-test"),
+      cats,
+      catsEffect,
+      http4sServer,
+      http4sDsl,
+      http4sCirce,
+      tapirZio,
+      tapirZioHttp4s,
+      tapirCirce,
+      circeCore,
+      circeParser,
+      circeGeneric,
+      circeGenericX,
+      circeRefined,
+      log4CatsSlf4j
+    ) ++ doobie)
   )
   .dependsOn(commons)
   .dependsOn(`ray-tracer`)
