@@ -13,9 +13,9 @@ object phongReflectionModule {
 
   /**
     *
-    * @param shape
-    * @param hitPt
-    * @param normalV normal vector to the surface of $obj at $pt
+    * @param shape the shape
+    * @param hitPt the hit point
+    * @param normalV normal vector to the surface of shape at hitPt
     * @param eyeV the eye vector, going from the eye to the surface point
     * @param rayReflectV the reflection vector of the RAY
     */
