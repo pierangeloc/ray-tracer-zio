@@ -1,18 +1,17 @@
 package io.tuliplogic.raytracer.http.model.attapirato
 
-import io.tuliplogic.raytracer.http.model.attapirato.types.{AccessToken, UserCreated, UserId}
+import io.tuliplogic.raytracer.http.model.attapirato.types.AppError
+import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, CreateUser, UserCreated, UserId}
 import zio.{App, ExitCode, Task, UIO, ZIO}
 
 object endpoints {
-  import types.{Error, CreateUser, UserCreated}
   import sttp.tapir._
   import sttp.tapir.json.circe._
   import io.circe.generic.auto._
-  import io.circe._
   import io.circe.refined._
 
-  val createUser: Endpoint[CreateUser, Error, UserCreated, Nothing] =
-    endpoint.post.in("user").in(jsonBody[CreateUser]).out(jsonBody[UserCreated]).errorOut(jsonBody[Error])
+  val createUser: Endpoint[CreateUser, AppError, UserCreated, Nothing] =
+    endpoint.post.in("user").in(jsonBody[CreateUser]).out(jsonBody[UserCreated]).errorOut(jsonBody[AppError])
 
 }
 
@@ -20,7 +19,7 @@ object zioEndpoints {
   import sttp.tapir.ztapir._
   import eu.timepit.refined.auto._
 
-  val t: ZServerEndpoint[Any, types.CreateUser, types.Error, UserCreated] =
+  val t: ZServerEndpoint[Any, CreateUser, AppError, UserCreated] =
     endpoints.createUser.zServerLogic(_ => UIO(UserCreated(UserId("123"), AccessToken("456"))))
 }
 
