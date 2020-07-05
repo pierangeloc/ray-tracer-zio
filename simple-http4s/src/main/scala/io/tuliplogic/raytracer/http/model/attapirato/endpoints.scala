@@ -1,5 +1,6 @@
 package io.tuliplogic.raytracer.http.model.attapirato
 
+import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, Scene}
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, CreateUser, UserCreated, UserId}
 import zio.{App, ExitCode, Task, UIO, ZIO}
@@ -12,7 +13,11 @@ object endpoints {
 
   val createUser: Endpoint[CreateUser, AppError, UserCreated, Nothing] =
     endpoint.post.in("user").in(jsonBody[CreateUser]).out(jsonBody[UserCreated]).errorOut(jsonBody[AppError])
+    .description("Create a user")
 
+  val drawImage: Endpoint[Scene, AppError, DrawResponse, Nothing] =
+    endpoint.post.in("scene").in(jsonBody[Scene]).out(jsonBody[DrawResponse]).errorOut(jsonBody[AppError])
+    .description("Draw an image from a given Scene description")
 }
 
 object zioEndpoints {

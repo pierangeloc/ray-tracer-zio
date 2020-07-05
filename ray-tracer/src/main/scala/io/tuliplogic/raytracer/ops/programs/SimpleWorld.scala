@@ -10,7 +10,7 @@ import io.tuliplogic.raytracer.ops.model.data.{Color, Material, World}
 import io.tuliplogic.raytracer.ops.model.modules.rasteringModule.RasteringModule
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer.CanvasSerializer
-import zio._
+import zio.{ExitCode, _}
 import zio.clock.Clock
 
 object SimpleWorld extends App{
@@ -37,12 +37,12 @@ object SimpleWorld extends App{
 
   import layers._
 
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, ExitCode] =
     ZIO.foreach(-18 to -6)(z => program(Pt(2, 2, z.toDouble), Paths.get(s"$canvasFile-$z.ppm"))
       .provideLayer(cSerializerM ++ (atM >>> rasteringM) ++ atM++ ZLayer.requires[Clock])
     ).timed.foldM(err =>
-    console.putStrLn(s"Execution failed with: $err").as(1),
-    { case (duration, _) => console.putStrLn(s"rendering took ${duration.toMillis} ms") *> UIO.succeed(0) }
+    console.putStrLn(s"Execution failed with: $err").exitCode,
+    { case (duration, _) => console.putStrLn(s"rendering took ${duration.toMillis} ms") *> UIO.succeed(ExitCode.success) }
   )
 
 }

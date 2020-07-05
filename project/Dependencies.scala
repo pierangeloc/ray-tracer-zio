@@ -4,8 +4,8 @@ object Dependencies {
   val http4sVersion = "0.21.0-M6"
   val tapirZioVersion = "0.15.2"
 
-  val zioVersion       = "1.0.0-RC19-2"
-  val zioCatsVersion   = "2.0.0.0-RC14"
+  val zioVersion       = "1.0.0-RC21"
+  val zioCatsVersion   = "2.1.3.0-RC16"
   val zioMacrosVersion = "0.6.0"
 
   val fs2Version        = "2.0.0"
