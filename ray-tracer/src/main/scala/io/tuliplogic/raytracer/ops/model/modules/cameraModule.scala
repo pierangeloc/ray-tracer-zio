@@ -17,7 +17,7 @@ object cameraModule {
     new Service {
       // Implementation: the canonical camera has the eye in Pt.origin, and the screen on the plane z = -1,
       // therefore after computing the coordinates of the point in the screen, we have to apply the _inverse of the camera transformation_
-      // because the camera transformation is the transformation to be applied to thw world in order to produce the effect of moving/orienting the camera around
+      // because the camera transformation is the transformation to be applied to the world in order to produce the effect of moving/orienting the camera around
       // This transformation must be applied both to the point in the camera, and to the origin. Then the computation of the ray is trivial.
       override def rayForPixel(camera: Camera, px: Int, py: Int): ZIO[Any, Nothing, Ray] =
         for {

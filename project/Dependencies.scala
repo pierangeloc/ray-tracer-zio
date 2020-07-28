@@ -1,16 +1,16 @@
 import sbt._
 
 object Dependencies {
-  val http4sVersion = "0.21.0-M6"
+  val http4sVersion = "0.21.6"
   val tapirZioVersion = "0.15.2"
 
-  val zioVersion       = "1.0.0-RC21"
-  val zioCatsVersion   = "2.1.3.0-RC16"
+  val zioVersion       = "1.0.0-RC21-2"
+  val zioCatsVersion   = "2.1.4.0-RC17"
   val zioMacrosVersion = "0.6.0"
 
   val fs2Version        = "2.0.0"
   val catsVersion       = "2.0.0"
-  val catsEffectVersion = "2.0.0"
+  val catsEffectVersion = "2.1.4"
   val circeVersion      = "0.12.1"
   val scrimageVersion   = "3.0.0"
 
@@ -33,9 +33,11 @@ object Dependencies {
   lazy val http4sDsl    = "org.http4s" %% "http4s-dsl"          % http4sVersion
   lazy val http4sCirce  = "org.http4s" %% "http4s-circe"        % http4sVersion
 
-  lazy val tapirZio        = "com.softwaremill.sttp.tapir" %% "tapir-zio"               % "0.15.3"
-  lazy val tapirCirce      = "com.softwaremill.sttp.tapir" %% "tapir-json-circe"        % "0.15.3"
-  lazy val tapirZioHttp4s  = "com.softwaremill.sttp.tapir" %% "tapir-zio-http4s-server" % "0.15.3"
+  lazy val tapirZio           = "com.softwaremill.sttp.tapir" %% "tapir-zio"                % "0.15.3"
+  lazy val tapirCirce         = "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % "0.15.3"
+  lazy val tapirZioHttp4s     = "com.softwaremill.sttp.tapir" %% "tapir-zio-http4s-server"  % "0.15.3"
+  lazy val tapirOpenAPI       = "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs"       % "0.16.10"
+  lazy val tapirOpenAPICirce  = "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % "0.16.10"
 
   lazy val newType = "io.estatico" %% "newtype" % "0.4.3"
 

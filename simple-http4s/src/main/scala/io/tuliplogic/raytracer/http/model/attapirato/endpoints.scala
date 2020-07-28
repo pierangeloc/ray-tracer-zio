@@ -49,7 +49,7 @@ object SimpleApp extends App {
     .runtime[Any]
     .flatMap { implicit rts =>
       BlazeServerBuilder[Task](rts.platform.executor.asEC)
-        .bindHttp(8089, "localhost")
+        .bindHttp(8090, "localhost")
         .withHttpApp(Router("/"-> userRoutes ).orNotFound)
         .serve
         .compile

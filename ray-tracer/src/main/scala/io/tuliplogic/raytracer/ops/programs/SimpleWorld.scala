@@ -41,8 +41,8 @@ object SimpleWorld extends App{
     ZIO.foreach(-18 to -6)(z => program(Pt(2, 2, z.toDouble), Paths.get(s"$canvasFile-$z.ppm"))
       .provideLayer(cSerializerM ++ (atM >>> rasteringM) ++ atM++ ZLayer.requires[Clock])
     ).timed.foldM(err =>
-    console.putStrLn(s"Execution failed with: $err").exitCode,
-    { case (duration, _) => console.putStrLn(s"rendering took ${duration.toMillis} ms") *> UIO.succeed(ExitCode.success) }
+    console.putStrLn(s"Execution failed with: $err").as(ExitCode.success),
+    { case (duration, _) => console.putStrLn(s"rendering took ${duration.toMillis} ms") *> UIO.succeed(ExitCode.failure) }
   )
 
 }
