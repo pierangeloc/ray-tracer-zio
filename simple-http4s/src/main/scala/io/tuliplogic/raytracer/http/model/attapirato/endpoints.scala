@@ -1,8 +1,10 @@
 package io.tuliplogic.raytracer.http.model.attapirato
 
-import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, Scene}
+import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, DrawingId, DrawingStatus, Scene}
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, CreateUser, UserCreated, UserId}
+import org.http4s.HttpRoutes
+import sttp.tapir.swagger.http4s.SwaggerHttp4s
 import zio.{App, ExitCode, Task, UIO, ZIO}
 
 object endpoints {
@@ -26,6 +28,10 @@ object zioEndpoints {
 
   val t: ZServerEndpoint[Any, CreateUser, AppError, UserCreated] =
     endpoints.createUser.zServerLogic(_ => UIO(UserCreated(UserId("123"), AccessToken("456"))))
+
+
+  val draw: ZServerEndpoint[Any, Scene, AppError, DrawResponse] =
+    endpoints.drawImage.zServerLogic(_ => UIO(DrawResponse(DrawingId("123"), DrawingStatus.Done)))
 }
 
 
@@ -39,20 +45,33 @@ object SimpleApp extends App {
 
   import org.http4s.server.Router
   import org.http4s.server.blaze.BlazeServerBuilder
+  import sttp.tapir.docs.openapi._
+  import sttp.tapir.openapi.Server
+  import sttp.tapir.openapi.circe.yaml._
+  import cats.implicits._
+
 
   override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] =
     (serve orElse zio.console.putStrLn("ERROR")).as(ExitCode.success)
 
-  val userRoutes = zioEndpoints.t.toRoutes
+  val userRoutes: HttpRoutes[Task] = zioEndpoints.t.toRoutes
+  val drawRoutes: HttpRoutes[Task] = zioEndpoints.draw.toRoutes
+  val openApiDocs = endpoints.createUser.toOpenAPI("simple user management", "1.0")
+    .servers(List(Server("localhost:8090").description("local server")))
+  val docsRoutes = new SwaggerHttp4s(openApiDocs.toYaml)
+
+  val allRoutes: HttpRoutes[Task] = docsRoutes.routes[Task] <+> userRoutes <+> drawRoutes
 
   val serve: Task[Unit] = ZIO
     .runtime[Any]
     .flatMap { implicit rts =>
       BlazeServerBuilder[Task](rts.platform.executor.asEC)
         .bindHttp(8090, "localhost")
-        .withHttpApp(Router("/"-> userRoutes ).orNotFound)
+        .withHttpApp(Router("/"-> allRoutes ).orNotFound)
         .serve
         .compile
         .drain
     }
 }
+
+//        .withHttpApp(Router("/"->( userRoutes <+> docsRoutes.routes).orNotFound))

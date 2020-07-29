@@ -33,11 +33,12 @@ object Dependencies {
   lazy val http4sDsl    = "org.http4s" %% "http4s-dsl"          % http4sVersion
   lazy val http4sCirce  = "org.http4s" %% "http4s-circe"        % http4sVersion
 
-  lazy val tapirZio           = "com.softwaremill.sttp.tapir" %% "tapir-zio"                % "0.15.3"
-  lazy val tapirCirce         = "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % "0.15.3"
-  lazy val tapirZioHttp4s     = "com.softwaremill.sttp.tapir" %% "tapir-zio-http4s-server"  % "0.15.3"
+  lazy val tapirZio           = "com.softwaremill.sttp.tapir" %% "tapir-zio"                % "0.16.10"
+  lazy val tapirCirce         = "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % "0.16.10"
+  lazy val tapirZioHttp4s     = "com.softwaremill.sttp.tapir" %% "tapir-zio-http4s-server"  % "0.16.10"
   lazy val tapirOpenAPI       = "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs"       % "0.16.10"
   lazy val tapirOpenAPICirce  = "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % "0.16.10"
+  lazy val tapirSwagger       = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s"  % "0.16.10"
 
   lazy val newType = "io.estatico" %% "newtype" % "0.4.3"
 
@@ -71,6 +72,15 @@ object Dependencies {
 
   lazy val log4CatsCore  = "io.chrisdavenport" %% s"log4cats-core"  % "1.0.1"
   lazy val log4CatsSlf4j = "io.chrisdavenport" %% s"log4cats-slf4j" % "1.0.1"
+
+  val zioLoggingVersion = "0.3.2"
+  val logging = List(
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+    "ch.qos.logback" % "logback-classic" % "1.2.3",
+    "net.logstash.logback" % "logstash-logback-encoder" % "6.4",
+    "org.codehaus.janino" % "janino" % "3.1.2",
+    "dev.zio" %% "zio-logging-slf4j" % zioLoggingVersion
+  )
 
   lazy val scalafx = "org.scalafx" %% "scalafx" % "8.0.144-R12"
 

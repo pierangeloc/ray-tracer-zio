@@ -19,7 +19,7 @@ lazy val commonSettings = inThisBuild(
 //        zioMacrosTest,
         zioTest % "test",
         zioTestSbt % "test"
-      )
+      ) ++ logging
     )
 )
 
@@ -45,6 +45,9 @@ lazy val `simple-http4s` = project
       http4sCirce,
       tapirZio,
       tapirZioHttp4s,
+      tapirOpenAPI,
+      tapirOpenAPICirce,
+      tapirSwagger,
       tapirCirce,
       circeCore,
       circeParser,
