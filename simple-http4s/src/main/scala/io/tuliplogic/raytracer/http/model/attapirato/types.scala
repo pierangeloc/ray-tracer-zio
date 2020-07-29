@@ -5,7 +5,17 @@ import io.estatico.newtype.macros.newtype
 
 object types {
 
-  case class AppError(code: Int, message: String)
+  sealed trait AppError extends Throwable {
+    val cause: Option[Throwable] = None
+
+    override def getCause: Throwable = cause.orNull
+  }
+
+  object AppError {
+    case class APIError(code: Int, message: String)                                                   extends AppError
+    case class DBError(code: Int, message: String, override val cause: Option[Throwable] = None)      extends AppError
+    case class DrawingError(code: Int, message: String, override val cause: Option[Throwable] = None) extends AppError
+  }
 
   object user {
     @newtype case class AccessToken(value: NonEmptyString)

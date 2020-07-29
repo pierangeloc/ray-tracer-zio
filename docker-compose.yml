@@ -1,0 +1,11 @@
+version: "3.3"
+
+services:
+  db:
+    image: postgres:9
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=ray-tracer
+      - POSTGRES_USER=ray-tracer
+      - POSTGRES_DB=ray-tracer
