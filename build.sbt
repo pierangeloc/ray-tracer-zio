@@ -55,7 +55,7 @@ lazy val `simple-http4s` = project
       circeGenericX,
       circeRefined,
       log4CatsSlf4j
-    ) ++ db)
+    ) ++ db ++ cfg)
   )
   .dependsOn(commons)
   .dependsOn(`ray-tracer`)

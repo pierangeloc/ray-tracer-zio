@@ -84,6 +84,12 @@ object Dependencies {
     "dev.zio" %% "zio-logging-slf4j" % zioLoggingVersion
   )
 
+  val cfg = List(
+    "com.github.pureconfig"   %% "pureconfig-cats-effect" % "0.12.2",
+    "com.github.pureconfig"   %% "pureconfig-generic" % "0.12.2",
+    "eu.timepit"              %% "refined-pureconfig"     % "0.9.13"
+  )
+
   lazy val scalafx = "org.scalafx" %% "scalafx" % "8.0.144-R12"
 
   lazy val scalaTags = "com.lihaoyi" %% "scalatags" % "0.6.8"
