@@ -5,9 +5,9 @@ import eu.timepit.refined.api.Refined
 import eu.timepit.refined.string.MatchesRegex
 import io.circe.{Decoder, Encoder, KeyDecoder, KeyEncoder}
 import sttp.tapir.Schema
-
 import io.estatico.newtype.Coercible
 import io.estatico.newtype.ops._
+import zio.Has
 package object attapirato {
   // ----- Coercible codecs -----
   implicit def coercibleDecoder[A: Coercible[B, *], B: Decoder]: Decoder[A] =
@@ -32,4 +32,6 @@ package object attapirato {
 
   type EmailPred = MatchesRegex[W.`"""^[A-Za-z0-9+_.-]+@(.+)$"""`.T]
   type EmailValue = String Refined EmailPred
+
+  type Configuration = Has[Config]
 }

@@ -52,14 +52,16 @@ object Dependencies {
 
   val doobieVersion = "0.8.8"
 
-  val doobie: Seq[ModuleID] =
+  val db: Seq[ModuleID] =
     Seq(
       "org.tpolecat" %% "doobie-core"     % doobieVersion,
       "org.tpolecat" %% "doobie-h2"       % doobieVersion, // H2 driver 1.4.199 + type mappings.
       "org.tpolecat" %% "doobie-hikari"   % doobieVersion, // HikariCP transactor.
       "org.tpolecat" %% "doobie-postgres" % doobieVersion, // Postgres driver 42.2.5 + type mappings.
-      "org.tpolecat" %% "doobie-refined"  % doobieVersion  // For refined types
-    )
+      "org.tpolecat" %% "doobie-refined"  % doobieVersion,  // For refined types,
+      "org.flywaydb" %  "flyway-core"     % "6.3.0"
+
+  )
 
   // type-level restrictions
   lazy val breeze       = "org.scalanlp" %% "breeze"         % "1.0"
