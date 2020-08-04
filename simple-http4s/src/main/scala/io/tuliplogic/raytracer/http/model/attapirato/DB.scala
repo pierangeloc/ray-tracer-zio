@@ -4,6 +4,7 @@ import cats.effect.Blocker
 import zio.interop.catz._
 import doobie.hikari.HikariTransactor
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.{BootstrapError, DBError}
+import org.flywaydb.core.Flyway
 import zio.blocking.Blocking
 import zio.{Has, Runtime, Task, ZIO, ZLayer}
 
@@ -34,10 +35,11 @@ object DB {
   def runFlyWay: ZIO[Transactor, BootstrapError, Int] =
     ZIO.service[HikariTransactor[Task]].flatMap { transactor =>
       transactor.configure { ds =>
-        Task {
-          val flyway = org.flywaydb.core.Flyway.configure().dataSource(ds).load()
-          flyway.migrate()
-        }
+        for {
+          flyway <- Task(Flyway.configure().dataSource(ds).load())
+          _      <- Task(flyway.baseline())
+          res    <- Task(flyway.migrate())
+        } yield res
       }.mapError(t => BootstrapError(200, "Error running flyway", Some(t)))
     }
 

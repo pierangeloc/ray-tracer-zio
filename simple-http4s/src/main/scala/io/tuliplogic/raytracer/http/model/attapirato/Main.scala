@@ -7,7 +7,6 @@ import zio.{App, ExitCode, Task, URIO, ZIO, ZLayer}
 
 object Main extends App {
 
-
   def fail(b: Boolean): Task[Unit] = if (b) Task.fail(new Exception()) else Task.succeed(())
 
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =

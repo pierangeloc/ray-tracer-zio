@@ -22,6 +22,7 @@ object Config {
   def fromTypesafeConfig(): Layer[BootstrapError, Has[Config]] = (
     for {
       tsConfig <- Task.effect(ConfigFactory.load())
+      _ <- Task(println("tsConfig: \n" + tsConfig))
       cfg <- ConfigSource.fromConfig(tsConfig).loadF[Task, Config]
     } yield cfg
   ).mapError(e =>
