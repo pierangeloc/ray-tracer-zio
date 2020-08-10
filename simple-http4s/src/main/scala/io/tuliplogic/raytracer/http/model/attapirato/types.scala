@@ -1,5 +1,7 @@
 package io.tuliplogic.raytracer.http.model.attapirato
 
+import java.util.UUID
+
 import eu.timepit.refined.types.string.NonEmptyString
 import io.estatico.newtype.macros.newtype
 
@@ -20,10 +22,12 @@ object types {
 
   object user {
     @newtype case class AccessToken(value: NonEmptyString)
-    @newtype case class UserId(value: NonEmptyString)
+    @newtype case class UserId(value: UUID)
     @newtype case class Email(value: EmailValue)
+    @newtype case class PasswordHash(value: NonEmptyString)
 
-    case class CreateUser(email: Email)
+    case class User(id: UserId, email: Email, password: Option[PasswordHash])
+    case class CreateUserCmd(email: Email)
     case class UserCreated(userId: UserId, accessToken: AccessToken)
   }
 

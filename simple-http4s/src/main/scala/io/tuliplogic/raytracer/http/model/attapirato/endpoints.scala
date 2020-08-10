@@ -1,8 +1,10 @@
 package io.tuliplogic.raytracer.http.model.attapirato
 
+import java.util.UUID
+
 import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, DrawingId, DrawingStatus, Scene}
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, CreateUser, UserCreated, UserId}
+import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, CreateUserCmd, UserCreated, UserId}
 import org.http4s.HttpRoutes
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
 import zio.{App, ExitCode, Task, UIO, ZIO}
@@ -13,8 +15,8 @@ object endpoints {
   import io.circe.generic.auto._
   import io.circe.refined._
 
-  val createUser: Endpoint[CreateUser, APIError, UserCreated, Nothing] =
-    endpoint.post.in("user").in(jsonBody[CreateUser]).out(jsonBody[UserCreated]).errorOut(jsonBody[APIError])
+  val createUser: Endpoint[CreateUserCmd, APIError, UserCreated, Nothing] =
+    endpoint.post.in("user").in(jsonBody[CreateUserCmd]).out(jsonBody[UserCreated]).errorOut(jsonBody[APIError])
     .description("Create a user")
 
   val drawImage: Endpoint[Scene, APIError, DrawResponse, Nothing] =
@@ -26,8 +28,8 @@ object zioEndpoints {
   import sttp.tapir.ztapir._
   import eu.timepit.refined.auto._
 
-  val t: ZServerEndpoint[Any, CreateUser, APIError, UserCreated] =
-    endpoints.createUser.zServerLogic(_ => UIO(UserCreated(UserId("123"), AccessToken("456"))))
+  val t: ZServerEndpoint[Any, CreateUserCmd, APIError, UserCreated] =
+    endpoints.createUser.zServerLogic(_ => UIO(UserCreated(UserId(UUID.randomUUID()), AccessToken("456"))))
 
   val draw: ZServerEndpoint[Any, Scene, APIError, DrawResponse] =
     endpoints.drawImage.zServerLogic(_ => UIO(DrawResponse(DrawingId("123"), DrawingStatus.Done)))
