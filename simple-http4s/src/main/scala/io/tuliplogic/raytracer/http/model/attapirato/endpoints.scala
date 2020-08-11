@@ -97,14 +97,10 @@ object SimpleApp extends App {
 
   val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]
 
-
-
   val serve = for {
     allRoutes <- ZIO.mapParN(userRoutes, drawRoutes)((r1, r2) => r1 <+> r2 <+> docsRoutes)
     _         <- serveRoutes(allRoutes)
   } yield ()
-
-//  val allRoutes: HttpRoutes[Task] = docsRoutes <+> userRoutes <+> drawRoutes
 
   def serveRoutes(rs: HttpRoutes[Task]): Task[Unit] = ZIO
     .runtime[Any]
