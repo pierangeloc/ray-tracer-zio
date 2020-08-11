@@ -21,26 +21,38 @@ object types {
   }
 
   object user {
+
     @newtype case class AccessToken(value: NonEmptyString)
     @newtype case class UserId(value: UUID)
     @newtype case class Email(value: EmailValue)
     @newtype case class PasswordHash(value: NonEmptyString)
 
-    case class User(id: UserId, email: Email, password: Option[PasswordHash])
-    case class CreateUserCmd(email: Email)
-    case class UserCreated(userId: UserId, accessToken: AccessToken)
+    case class User(id: UserId, email: Email, password: Option[PasswordHash], accessToken: Option[AccessToken])
+
+    object Cmd {
+      case class CreateUser(email: Email)
+      case class UpdatePassword(userId: UserId, passwordHash: PasswordHash)
+      case class Login(userId: UserId, passwordHash: PasswordHash)
+    }
+
+    object Event {
+      case class UserCreated(userId: UserId)
+      case class PasswordUpdated(userId: UserId)
+      case class LoginSuccess(userId: UserId, accessToken: AccessToken)
+    }
+
   }
 
   object drawing {
     case class Material(
                          pattern: Pattern,
-                         ambient: Option[Double], //TODO refine Double > 0 && < 1
-                         diffuse: Option[Double], //TODO refine Double > 0 && < 1
-                         specular: Option[Double], //TODO refine Double > 0 && < 1 specularity of the surface to the light source
-                         shininess: Option[Double], //TODO refine Double > 10 && < 200 shininess of the surface to the light source
-                         reflective: Option[Double], //TODO refine Double [0, 1] generic reflectiveness of the surface, of generic rays not only coming from the light sourcex
-                         transparency: Option[Double], //TODO refine Double [0, 1] how transparent the material is
-                         refractionIndex: Option[Double] //TODO refine Double [0, 1] the material refraction index (for vacuum it's 1)
+                         ambient: Option[Double],         //TODO refine Double > 0 && < 1
+                         diffuse: Option[Double],         //TODO refine Double > 0 && < 1
+                         specular: Option[Double],        //TODO refine Double > 0 && < 1 specularity of the surface to the light source
+                         shininess: Option[Double],       //TODO refine Double > 10 && < 200 shininess of the surface to the light source
+                         reflective: Option[Double],      //TODO refine Double [0, 1] generic reflectiveness of the surface, of generic rays not only coming from the light sourcex
+                         transparency: Option[Double],    //TODO refine Double [0, 1] how transparent the material is
+                         refractionIndex: Option[Double]  //TODO refine Double [0, 1] the material refraction index (for vacuum it's 1)
                        )
 
     sealed trait Pattern
