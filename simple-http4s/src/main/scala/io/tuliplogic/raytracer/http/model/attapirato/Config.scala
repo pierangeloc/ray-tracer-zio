@@ -26,6 +26,6 @@ object Config {
       cfg <- ConfigSource.fromConfig(tsConfig).loadF[Task, Config]
     } yield cfg
   ).mapError(e =>
-    BootstrapError(300, "Error reading configuration", Some(e))
+    BootstrapError("Error reading configuration", Some(e))
   ).toLayer
 }

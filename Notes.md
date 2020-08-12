@@ -6,3 +6,6 @@ I use Tapir because it integrates smoothly with ZIO and makes the shape of the r
 TO TEST:
 
 ```http localhost:8089/user email=pierangeloc@gmail.com```
+
+To create a user:
+```http localhost:8090/```

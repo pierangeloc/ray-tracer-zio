@@ -14,10 +14,10 @@ object types {
   }
 
   object AppError {
-    case class APIError(code: Int, message: String)                                                   extends AppError
-    case class DBError(code: Int, message: String, override val cause: Option[Throwable] = None)      extends AppError
-    case class DrawingError(code: Int, message: String, override val cause: Option[Throwable] = None) extends AppError
-    case class BootstrapError(code: Int, message: String, override val cause: Option[Throwable] = None) extends AppError
+    case class APIError(message: String)                                                   extends AppError
+    case class DBError(message: String, override val cause: Option[Throwable] = None)      extends AppError
+    case class DrawingError(message: String, override val cause: Option[Throwable] = None) extends AppError
+    case class BootstrapError(message: String, override val cause: Option[Throwable] = None) extends AppError
   }
 
   object user {

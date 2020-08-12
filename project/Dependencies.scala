@@ -75,13 +75,13 @@ object Dependencies {
   lazy val log4CatsCore  = "io.chrisdavenport" %% s"log4cats-core"  % "1.0.1"
   lazy val log4CatsSlf4j = "io.chrisdavenport" %% s"log4cats-slf4j" % "1.0.1"
 
-  val zioLoggingVersion = "0.3.2"
+  val zioLoggingVersion = "0.4.0"
   val logging = List(
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-    "ch.qos.logback" % "logback-classic" % "1.2.3",
-    "net.logstash.logback" % "logstash-logback-encoder" % "6.4",
-    "org.codehaus.janino" % "janino" % "3.1.2",
-    "dev.zio" %% "zio-logging-slf4j" % zioLoggingVersion
+    "com.typesafe.scala-logging"  %% "scala-logging"            % "3.9.2",
+    "ch.qos.logback"              % "logback-classic"           % "1.2.3",
+    "net.logstash.logback"        % "logstash-logback-encoder"  % "6.4",
+    "org.codehaus.janino"         % "janino"                    % "3.1.2",
+    "dev.zio"                     %% "zio-logging-slf4j"        % zioLoggingVersion
   )
 
   val cfg = List(

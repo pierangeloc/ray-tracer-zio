@@ -5,24 +5,29 @@ import io.tuliplogic.raytracer.http.model.attapirato.types.AppError
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.BootstrapError
 import io.tuliplogic.raytracer.http.model.attapirato.users.UsersRepo
 import zio.blocking.Blocking
+import zio.logging.{Logging, log}
+import zio.logging.slf4j.Slf4jLogger
 import zio.{App, ExitCode, URIO, ZIO, ZLayer}
 
 object Main extends App {
 
+  val slf4jLogger = Slf4jLogger.make((_, s) => s)
+
   override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =
-    program.provideCustomLayer(layer)
+    program
       .catchAll {
-        case e @ BootstrapError(_, _, _) => zio.console.putStrLn(s"Error bootstrapping: ${e.message}; ${e.cause.foreach(_.printStackTrace())}")
-        case other => zio.console.putStrLn(s"Other error at startup, $other")
-      }.exitCode
+        case e @ BootstrapError(_, _) => log.error(s"Error bootstrapping: ${e.message}; ${e.cause.foreach(_.printStackTrace())}")
+        case other => log.error(s"Other error at startup, $other")
+      }.provideCustomLayer((ZLayer.identity[Blocking] ++ slf4jLogger) >>> layer).exitCode
 
-  val layer: ZLayer[Blocking, AppError, UsersRepo with Transactor] =
-    (Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor >+> UsersRepo.doobieLive
+  val transactorLayer = (Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor
+  val layer: ZLayer[Blocking with Logging, AppError with Product, Transactor with Logging with UsersRepo] =
+    (transactorLayer ++ ZLayer.identity[Logging]) >+> UsersRepo.doobieLive
 
-  val program: ZIO[UsersRepo with Transactor, BootstrapError, Unit] =
+  val program: ZIO[UsersRepo with Transactor with Logging, BootstrapError, Unit] =
     for {
       _ <- DB.runFlyWay
-      _ <- SimpleApp.serve.mapError(e => BootstrapError(100, "Error starting http server", Some(e)))
+      _ <- SimpleApp.serve.mapError(e => BootstrapError("Error starting http server", Some(e)))
     } yield ()
 
 }

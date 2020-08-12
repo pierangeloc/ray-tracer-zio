@@ -12,7 +12,9 @@ import org.http4s.HttpRoutes
 import sttp.tapir.openapi.OpenAPI
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
 import zio.blocking.Blocking
-import zio.{App, ExitCode, Task, UIO, URIO, ZIO, ZLayer}
+import zio.logging.slf4j.Slf4jLogger
+import zio.logging.{Logging, log}
+import zio.{App, ExitCode, Task, UIO, ULayer, URIO, ZIO, ZLayer}
 
 object endpoints {
   import sttp.tapir._
@@ -44,12 +46,12 @@ object zioEndpoints {
   import eu.timepit.refined.auto._
 
   object user {
-    val createUser: ZServerEndpoint[UsersRepo, CreateUser, APIError, UserCreated] =
+    val createUser: ZServerEndpoint[UsersRepo with Logging, CreateUser, APIError, UserCreated] =
       endpoints.createUser.zServerLogic( createUser =>
         UIO.effectTotal(UUID.randomUUID()).flatMap { id => {
           val userId = UserId(id)
           UsersRepo.createUser(User(userId, createUser.email, None, None))
-            .bimap(_ => APIError(200, "Error creating user"), _ => UserCreated(userId))
+            .foldM(e => log.throwable("Error creating user", e) *> ZIO.fail(APIError("Error creating user")), _ => ZIO.succeed(UserCreated(userId)))
 
         }
       }
@@ -78,18 +80,22 @@ object SimpleApp extends App {
   import sttp.tapir.openapi.circe.yaml._
   import cats.implicits._
 
+  val slf4jLogger: ULayer[Logging] = Slf4jLogger.make((_, s) => s)
+
   val layer: ZLayer[Blocking, types.AppError, UsersRepo] =
-    (Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor >>> UsersRepo.doobieLive
+    (((Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor) ++ slf4jLogger) >>> UsersRepo.doobieLive
 
   override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] =
-    (serve orElse zio.console.putStrLn("couldn't start the http server"))
-      .provideCustomLayer(layer)
+    serve
       .catchAll {
-        case BootstrapError(_, _, _) => zio.console.putStrLn("Error bootstrapping")
-        case other => zio.console.putStrLn(s"Other error at startup, $other")
-      }.exitCode
+        case BootstrapError(_, _) => log.error("Error bootstrapping")
+        case other => log.throwable(s"Other error at startup", other)
+      }
+      .provideSomeLayer[zio.ZEnv](layer ++ slf4jLogger)
+      .exitCode
 
-  val userRoutes: URIO[UsersRepo, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
+
+  val userRoutes: URIO[UsersRepo with Logging, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
   val drawRoutes: URIO[Any, HttpRoutes[Task]] = zioEndpoints.draw.toRoutesR
 
   val openApiDocs: OpenAPI = endpoints.createUser.toOpenAPI("simple user management", "1.0")

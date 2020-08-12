@@ -29,7 +29,7 @@ object DB {
           blocker = blocker,
           user = config.db.user,
           pass = config.db.password
-        ).toManagedZIO.mapError(t => DBError(100, "Error creating Hikari transactor", Some(t)))
+        ).toManagedZIO.mapError(t => DBError("Error creating Hikari transactor", Some(t)))
     } yield transactor).toLayer
 
   def runFlyWay: ZIO[Transactor, BootstrapError, Int] =
@@ -40,7 +40,7 @@ object DB {
           _      <- Task(flyway.baseline())
           res    <- Task(flyway.migrate())
         } yield res
-      }.mapError(t => BootstrapError(200, "Error running flyway", Some(t)))
+      }.mapError(t => BootstrapError("Error running flyway", Some(t)))
     }
 
 }
