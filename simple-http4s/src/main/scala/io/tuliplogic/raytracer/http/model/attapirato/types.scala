@@ -4,6 +4,9 @@ import java.util.UUID
 
 import eu.timepit.refined.types.string.NonEmptyString
 import io.estatico.newtype.macros.newtype
+import zio.ZIO
+
+import scala.util.Random
 
 object types {
 
@@ -26,19 +29,24 @@ object types {
 
     @newtype case class AccessToken(value: NonEmptyString)
     object AccessToken {
-      def generate(length: Int) = zio.random.nextString(length).map(s => AccessToken(NonEmptyString.unsafeFrom(s)))
-
+      def generate(length: Int) = ZIO.effectTotal(
+        AccessToken(
+          NonEmptyString.unsafeFrom(Random.alphanumeric.take(length).mkString(""))
+        )
+      )
     }
+
     @newtype case class UserId(value: UUID)
     @newtype case class Email(value: EmailValue)
     @newtype case class PasswordHash(value: NonEmptyString)
+    @newtype case class ClearPassword(value: NonEmptyString)
 
     case class User(id: UserId, email: Email, password: Option[PasswordHash], accessToken: Option[AccessToken])
 
     object Cmd {
       case class CreateUser(email: Email)
-      case class UpdatePassword(userId: UserId, passwordHash: PasswordHash)
-      case class Login(userId: UserId, passwordHash: PasswordHash)
+      case class UpdatePassword(email: Email, password: ClearPassword)
+      case class Login(email: Email, password: ClearPassword)
     }
 
     object Event {

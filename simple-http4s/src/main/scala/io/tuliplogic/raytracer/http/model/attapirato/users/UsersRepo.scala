@@ -120,7 +120,7 @@ object UsersRepo {
       sql"""
            |update users
            |  set "access_token"            = ${accessToken.value.value},
-           |      "access_token_expires_at" = ${expiresAt}
+           |      "access_token_expires_at" = ${expiresAt.toEpochSecond}
            |  where id = ${userId.value}
            |""".stripMargin.update
   }
