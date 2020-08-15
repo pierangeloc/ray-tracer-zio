@@ -7,7 +7,6 @@ import doobie.hikari.HikariTransactor
 import io.tuliplogic.raytracer.http.model.attapirato.DB
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.DBError
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, Email, PasswordHash, User, UserId}
-import zio.logging.{Logger, Logging}
 import zio.{IO, Task, URLayer, ZIO, ZLayer}
 
 object UsersRepo {
@@ -34,8 +33,8 @@ object UsersRepo {
     ZIO.accessM(_.get.updatePassword(userId, newPassword))
 
 
-  val doobieLive: URLayer[DB.Transactor with Logging, UsersRepo] =
-    ZLayer.fromServices[HikariTransactor[Task], Logger[String], UsersRepo.Service] { (transactor, logging) =>
+  val doobieLive: URLayer[DB.Transactor, UsersRepo] =
+    ZLayer.fromService[HikariTransactor[Task], UsersRepo.Service] { transactor =>
       new Service {
 
         import doobie.implicits._
@@ -54,8 +53,6 @@ object UsersRepo {
             .mapError(e => DBError(s"Error fetching user with email = $email", Some(e)))
 
         override def createUser(user: User): IO[DBError, Unit] = {
-          ZIO.effectTotal(println(s"Creating user $user")) *>
-          logging.info(s"Creating user $user") *>
           Queries.createUser(user)
             .run.transact(transactor)
             .mapError(e => DBError(s"Error creating user with id = ${user.id}", Some(e)))
