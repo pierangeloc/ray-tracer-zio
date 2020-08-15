@@ -1,10 +1,12 @@
 package io.tuliplogic.raytracer.http.model.attapirato.users
 
+import java.time.ZonedDateTime
+
 import doobie._
 import doobie.hikari.HikariTransactor
 import io.tuliplogic.raytracer.http.model.attapirato.DB
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.DBError
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.{Email, PasswordHash, User, UserId}
+import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, Email, PasswordHash, User, UserId}
 import zio.logging.{Logger, Logging}
 import zio.{IO, Task, URLayer, ZIO, ZLayer}
 
@@ -15,6 +17,7 @@ object UsersRepo {
     def getUserByEmail(email: Email): IO[DBError, Option[User]]
     def createUser(user: User): IO[DBError, Unit]
     def updatePassword(userId: UserId, newPassword: PasswordHash): IO[DBError, Unit]
+    def updateAccessToken(userId: UserId, newAccessToken: AccessToken, expiresAt: ZonedDateTime): IO[DBError, Unit]
   }
 
   // accessor methods
@@ -66,6 +69,12 @@ object UsersRepo {
             .mapError(e => DBError(s"Error updating password for user with id = $userId", Some(e)))
             .unit
 
+        override def updateAccessToken(userId: UserId, newAccessToken: AccessToken, expiresAt: ZonedDateTime): IO[DBError, Unit] =
+          Queries.updateAccessToken(userId, newAccessToken, expiresAt)
+            .run.transact(transactor)
+            .mapError(e => DBError(s"Error updating access token for user with id = $userId", Some(e)))
+            .unit
+
       }
     }
 
@@ -73,6 +82,7 @@ object UsersRepo {
 
 
     import doobie.implicits._
+    import doobie.implicits.javatime._
     import doobie.refined.implicits._
     import doobie.postgres.implicits._
     import io.tuliplogic.raytracer.http.model.attapirato.doobieUtils._
@@ -102,6 +112,15 @@ object UsersRepo {
       sql"""
            |update users
            |  set "password_hash" = ${newPassword.value.value}
+           |  where id = ${userId.value}
+           |""".stripMargin.update
+
+    Put[ZonedDateTime]
+    def updateAccessToken(userId: UserId, accessToken: AccessToken, expiresAt: ZonedDateTime): Update0 =
+      sql"""
+           |update users
+           |  set "access_token"            = ${accessToken.value.value},
+           |      "access_token_expires_at" = ${expiresAt}
            |  where id = ${userId.value}
            |""".stripMargin.update
   }

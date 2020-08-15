@@ -29,13 +29,14 @@ lazy val `simple-http4s` = project
   .settings(commonSettings)
   .enablePlugins(JavaServerAppPackaging)
   .settings(
-    mainClass in Compile := Some("io.tuliplogic.raytracer.http.model.attapirato.SimpleApp"),
+    mainClass in Compile := Some("io.tuliplogic.raytracer.http.model.attapirato.Main"),
     packageName in Docker := "ray-tracer-zio",
     dockerBaseImage := "openjdk:jre-alpine"
   )
   .settings(
     name := "simple-http4s",
-    libraryDependencies ++= (Seq(
+    mainClass in reStart := Some("io.tuliplogic.raytracer.http.model.attapirato.Main"),
+      libraryDependencies ++= (Seq(
       zio,
       zioCats exclude("dev.zio", "zio-test"),
       cats,
@@ -54,7 +55,8 @@ lazy val `simple-http4s` = project
       circeGeneric,
       circeGenericX,
       circeRefined,
-      log4CatsSlf4j
+      log4CatsSlf4j,
+      bcrypt
     ) ++ db ++ cfg)
   )
   .dependsOn(commons)

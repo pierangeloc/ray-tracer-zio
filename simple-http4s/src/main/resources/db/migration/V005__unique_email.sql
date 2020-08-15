@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "email_unique" ON "public"."users" USING BTREE ("email");

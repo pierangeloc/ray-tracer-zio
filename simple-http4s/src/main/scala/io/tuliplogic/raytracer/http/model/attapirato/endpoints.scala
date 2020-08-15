@@ -51,7 +51,9 @@ object zioEndpoints {
         UIO.effectTotal(UUID.randomUUID()).flatMap { id => {
           val userId = UserId(id)
           UsersRepo.createUser(User(userId, createUser.email, None, None))
-            .foldM(e => log.throwable("Error creating user", e) *> ZIO.fail(APIError("Error creating user")), _ => ZIO.succeed(UserCreated(userId)))
+            .foldM(e =>
+              log.throwable(s"Error creating user. Error class is ${e.message}", e) *> ZIO.fail(APIError("Error creating user")),
+              _ => ZIO.succeed(UserCreated(userId)))
 
         }
       }

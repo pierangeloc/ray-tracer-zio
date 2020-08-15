@@ -90,8 +90,7 @@ object Dependencies {
     "eu.timepit"              %% "refined-pureconfig"     % "0.9.13"
   )
 
-  lazy val scalafx = "org.scalafx" %% "scalafx" % "8.0.144-R12"
-
+  lazy val bcrypt    = "com.github.t3hnar" %% "scala-bcrypt" % "4.3.0"
   lazy val scalaTags = "com.lihaoyi" %% "scalatags" % "0.6.8"
 
   // scrimage

@@ -8,21 +8,27 @@ import io.estatico.newtype.macros.newtype
 object types {
 
   sealed trait AppError extends Throwable {
-    val cause: Option[Throwable] = None
+    val message: String
+    val cause: Option[Throwable]
 
     override def getCause: Throwable = cause.orNull
+    override def getMessage: String = message
   }
 
   object AppError {
-    case class APIError(message: String)                                                   extends AppError
-    case class DBError(message: String, override val cause: Option[Throwable] = None)      extends AppError
-    case class DrawingError(message: String, override val cause: Option[Throwable] = None) extends AppError
-    case class BootstrapError(message: String, override val cause: Option[Throwable] = None) extends AppError
+    case class APIError(message: String) extends AppError { val cause = None }
+    case class DBError(message: String, cause: Option[Throwable] = None)      extends AppError
+    case class DrawingError(message: String, cause: Option[Throwable] = None) extends AppError
+    case class BootstrapError(message: String, cause: Option[Throwable] = None) extends AppError
   }
 
   object user {
 
     @newtype case class AccessToken(value: NonEmptyString)
+    object AccessToken {
+      def generate(length: Int) = zio.random.nextString(length).map(s => AccessToken(NonEmptyString.unsafeFrom(s)))
+
+    }
     @newtype case class UserId(value: UUID)
     @newtype case class Email(value: EmailValue)
     @newtype case class PasswordHash(value: NonEmptyString)
