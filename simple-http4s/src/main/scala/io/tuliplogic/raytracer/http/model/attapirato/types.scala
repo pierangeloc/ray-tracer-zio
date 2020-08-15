@@ -112,17 +112,19 @@ object types {
                        hRes: Int,
                        vRes: Int
                      )
-    case class Scene(shapes: List[Shape], pointLight: PointLight, camera: Camera)
 
-    @newtype case class DrawingId(value: String)
+    case class SceneDescription(shapes: List[Shape], pointLight: PointLight, camera: Camera)
+    case class Scene(id: SceneId, description: SceneDescription, status: SceneStatus)
 
-    sealed trait DrawingStatus
-    object DrawingStatus {
-      case object InProgress extends DrawingStatus
-      case object Done extends DrawingStatus
+    @newtype case class SceneId(value: String)
+
+    sealed trait SceneStatus
+    object SceneStatus {
+      case object InProgress extends SceneStatus
+      case object Done extends SceneStatus
     }
 
-    case class DrawResponse(drawingId: DrawingId, status: DrawingStatus)
+    case class DrawResponse(drawingId: SceneId, status: SceneStatus)
   }
 
 

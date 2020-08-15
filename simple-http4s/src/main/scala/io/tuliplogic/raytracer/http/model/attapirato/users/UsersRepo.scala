@@ -82,7 +82,6 @@ object UsersRepo {
 
 
     import doobie.implicits._
-    import doobie.implicits.javatime._
     import doobie.refined.implicits._
     import doobie.postgres.implicits._
     import io.tuliplogic.raytracer.http.model.attapirato.doobieUtils._
@@ -115,7 +114,6 @@ object UsersRepo {
            |  where id = ${userId.value}
            |""".stripMargin.update
 
-    Put[ZonedDateTime]
     def updateAccessToken(userId: UserId, accessToken: AccessToken, expiresAt: ZonedDateTime): Update0 =
       sql"""
            |update users

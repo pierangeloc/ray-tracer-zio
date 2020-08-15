@@ -1,7 +1,7 @@
 package io.tuliplogic.raytracer.http.model.attapirato
 
 
-import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, DrawingId, DrawingStatus, Scene}
+import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, SceneId, SceneStatus, SceneDescription}
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.Event.{LoginSuccess, PasswordUpdated, UserCreated}
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.Cmd.{CreateUser, Login, UpdatePassword}
@@ -31,8 +31,8 @@ object endpoints {
     endpoint.post.in("login").in(jsonBody[Login]).out(jsonBody[LoginSuccess]).errorOut(jsonBody[APIError])
       .description("Login to obtain an access token")
 
-  val drawImage: Endpoint[Scene, APIError, DrawResponse, Nothing] =
-    endpoint.post.in("scene").in(jsonBody[Scene]).out(jsonBody[DrawResponse]).errorOut(jsonBody[APIError])
+  val drawImage: Endpoint[SceneDescription, APIError, DrawResponse, Nothing] =
+    endpoint.post.in("scene").in(jsonBody[SceneDescription]).out(jsonBody[DrawResponse]).errorOut(jsonBody[APIError])
       .description("Draw an image from a given Scene description")
 }
 
@@ -59,8 +59,8 @@ object zioEndpoints {
       )
   }
 
-  val draw: ZServerEndpoint[Any, Scene, APIError, DrawResponse] =
-    endpoints.drawImage.zServerLogic(_ => UIO(DrawResponse(DrawingId("123"), DrawingStatus.Done)))
+  val draw: ZServerEndpoint[Any, SceneDescription, APIError, DrawResponse] =
+    endpoints.drawImage.zServerLogic(_ => UIO(DrawResponse(SceneId("123"), SceneStatus.Done)))
 }
 
 
