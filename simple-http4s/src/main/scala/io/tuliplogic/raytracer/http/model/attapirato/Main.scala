@@ -13,7 +13,7 @@ import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.logging.{Logging, log}
 import zio.logging.slf4j.Slf4jLogger
-import zio.{App, ExitCode, URIO, URLayer, ZIO, ZLayer}
+import zio.{App, ExitCode, URIO, ZIO, ZLayer}
 
 object Main extends App {
 
@@ -27,19 +27,25 @@ object Main extends App {
       }.provideCustomLayer((ZLayer.identity[Blocking with Clock] ++ slf4jLogger) >>> layer).exitCode
   }
 
+  type BaseLayer = Blocking with Clock with Logging
+  val baseBaseLayer = ZLayer.identity[BaseLayer]
+
   val transactorLayer: ZLayer[Blocking, AppError, Transactor] = (Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor
-  val usersLayer: URLayer[Transactor with Logging with Clock, Users] =
-    (UsersRepo.doobieLive ++ ZLayer.identity[Clock] ++ ZLayer.identity[Logging]) >>> Users.live
 
-  val l1: ZLayer[Blocking with Logging with Transactor, Nothing, ATModule with RasteringModule with CanvasSerializer with PngRenderer with Logging with ScenesRepo] = (((layers.atM >+> layers.rasteringM) ++ layers.cSerializerM) >+> PngRenderer.live) ++ ZLayer.identity[Logging] ++ ScenesRepo.doobieLive
+  val baseLayer: ZLayer[BaseLayer, AppError, Transactor with BaseLayer] =
+    transactorLayer ++ baseBaseLayer
+
+  val usersLayer: ZLayer[Transactor with BaseLayer, AppError, Users] =
+  (UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+
+  val l1: ZLayer[Blocking with Logging with Transactor, Nothing, ATModule with RasteringModule with CanvasSerializer with PngRenderer with Logging with ScenesRepo] =
+  (((layers.atM >+> layers.rasteringM) ++ layers.cSerializerM) >+> PngRenderer.live) ++ ZLayer.identity[Logging] ++ ScenesRepo.doobieLive
   val scenesLayer: ZLayer[Blocking with Logging with Transactor, Nothing, Scenes] =
-     l1 >>>
-      Scenes.live
+  l1 >>>
+  Scenes.live
 
-  val baseLayer: ZLayer[Blocking with Logging with Clock, AppError, Transactor with Logging with Blocking with Clock] =
-    transactorLayer ++ ZLayer.identity[Logging] ++ ZLayer.identity[Clock] ++ ZLayer.identity[Blocking]
 
-  val layer: ZLayer[Blocking with Logging with Clock, AppError, Transactor with Logging with Blocking with Clock with Users with Scenes] =
+  val layer: ZLayer[Blocking with Logging with Clock, AppError, Transactor with BaseLayer with Users with Scenes] =
     baseLayer >+> (usersLayer ++ scenesLayer)
 
   val program: ZIO[Users with Logging with Transactor with Scenes, BootstrapError, Unit] =

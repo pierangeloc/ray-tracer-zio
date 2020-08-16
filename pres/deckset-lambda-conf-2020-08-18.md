@@ -321,6 +321,11 @@ val l2: ZLayer[Connection, Nothing, UserRepo]
 val ver: ZLayer[Config, Nothing, UserRepo] =
   l1 >>> l2
 ```
+
+---
+# ZIO-101: `ZLayer`
+`ZIO` uses ZLayer to provide the basic modules, all bundled in `ZEnv`
+
 ---
 
 # Digression
@@ -467,14 +472,104 @@ val live: URLayer[UsersRepo with Logging with Clock, Has[Service]] =
 ```
 
 ---
+^Let's go now to the Http layer definition. For this, my tool of choice is TAPIR.
+First of, it adheres to the functional design principles of composability and modularity. Endpoints are values
 
 #### Http Layer
 
-Endpoints definition
+Tapir: **endpoints as values**
 
 ```scala
+val login: Endpoint[Login, APIError, LoginSuccess, Nothing] =
+  endpoint.post.in("login").in(jsonBody[Login]).out(jsonBody[LoginSuccess]).errorOut(jsonBody[APIError])
+    .description("Login to obtain an access token")
+```
+
+---
+^The first thing we can do with this, is have documentation for free
+
+#### Http Layer
+
+Tapir: OpenAPI  **documentation for free**
+
+```scala
+val openApiDocs: OpenAPI = Seq(
+  ...
+  endpoints.login,
+  ...
+).toOpenAPI("Ray Tracing as a Service", "1.0")
+  .servers(List(Server("localhost:8090").description("local server")))
+
+val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]
+```
+
+![right 60%](img/swagger.png)
+
+---
+
+^Sencondly, Tapir has a fabulous integration with ZIO
+#### Http Layer
+
+Tapir: Integration with ZIO
+
+[.code-highlight: 1-5] 
+[.code-highlight: 1-8] 
+[.code-highlight: 1-9] 
+[.code-highlight: 1-14] 
+```scala
+// bind endpoint with module
+val loginWithLogic: ZServerEndpoint[Users, Login, APIError, LoginSuccess] =
+  endpoints.login.zServerLogic(login =>
+    Users.login(login.email, login.password)
+  )
+
+//make HttpRoutes for http4s
+val loginRoute:    URIO[Users, HttpRoutes[Task]]  = loginWithLogic.toRoutesR
+val getSceneRoute: URIO[Scenes, HttpRoutes[Task]] = getSceneWithLogic.toRoutesR
+
+val serve: RIO[Users with Scenes with Logging, Unit] = for {
+  allRoutes <- ZIO.mergeAll(List(loginRoute, getSceneRoute))(docsRoutes)(_ <+> _)
+  _         <- serveRoutes(allRoutes)
+} yield ()
+```
+
+---
+
+^Only in the main we provide layer
+#### Putting things together
+
+```scala
+val program: ZIO[Users with Logging with Transactor with Scenes, BootstrapError, Unit] =
+  for {
+    _ <- log.info("Running Flyway migration...")
+    _ <- DB.runFlyWay
+    _ <- log.info("Flyway migration performed!")
+    _ <- serve.mapError(e => BootstrapError("Error starting http server", Some(e)))
+  } yield ()
+
+override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =
+  program.provideCustomLayer(???)
+
+
+//we are looking for a Layer[?, Nothing, Users with Logging with Transactor with Scenes]
+```
+
+---
+#### Putting things together
+
+As usual, follow the types!
+
+```scala
+val program: ZIO[Users with Logging with Transactor with Scenes, BootstrapError, Unit] 
+
+//Look for the layer producing the module we need
+val live: URLayer[UsersRepo with Logging with Clock, Users] = ???
+
+
 
 ```
+
+
 
 
 

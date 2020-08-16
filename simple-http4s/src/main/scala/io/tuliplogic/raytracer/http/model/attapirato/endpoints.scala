@@ -170,9 +170,9 @@ object AllRoutes {
     import sttp.tapir.openapi.circe.yaml._
     import cats.implicits._
 
-    val createUser: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
-    val updateUserPwd: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.updatePassword.toRoutesR
-    val loginUser: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.login.toRoutesR
+    val createUser: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
+    val updateUserPwd: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.updatePassword.toRoutesR
+    val loginUser: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.login.toRoutesR
     val triggerRendering: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.triggerRendering.toRoutesR
     val getScene: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.getScene.toRoutesR
     val getSceneImage: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.getSceneImage.toRoutesR

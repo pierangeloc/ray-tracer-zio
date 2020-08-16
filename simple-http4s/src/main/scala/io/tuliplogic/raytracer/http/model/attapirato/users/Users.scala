@@ -9,7 +9,7 @@ import io.tuliplogic.raytracer.http.model.attapirato.types.user.Event.{LoginSucc
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, ClearPassword, Email, PasswordHash, User, UserId}
 import zio.clock.Clock
 import zio.logging.{Logger, Logging}
-import zio.{Has, IO, UIO, URLayer, ZIO, ZLayer}
+import zio.{IO, UIO, URLayer, ZIO, ZLayer}
 
 object Users {
 
@@ -28,7 +28,7 @@ object Users {
   def login(userEmail: Email, clearPassword: ClearPassword): ZIO[Users, APIError, LoginSuccess] =
   ZIO.accessM(_.get.login(userEmail, clearPassword))
 
-  val live: URLayer[UsersRepo with Logging with Clock, Has[Service]] =
+  val live: URLayer[UsersRepo with Logging with Clock, Users] =
     ZLayer.fromServices[UsersRepo.Service, Logger[String], Clock.Service, Service] { (usersRepo, logger, clock) =>
     import com.github.t3hnar.bcrypt._
 
