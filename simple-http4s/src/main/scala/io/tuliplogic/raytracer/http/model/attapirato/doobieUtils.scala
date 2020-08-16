@@ -1,9 +1,12 @@
 package io.tuliplogic.raytracer.http.model.attapirato
 
 
-import cats.Eq
-import doobie.{Put, Read}
+import cats.data.NonEmptyList
+import cats.{Eq, Show}
+import doobie.{Get, Put, Read}
+import io.circe.Json
 import io.estatico.newtype.Coercible
+import org.postgresql.util.PGobject
 
 object doobieUtils {
 
@@ -31,4 +34,22 @@ object doobieUtils {
 //
 //  val userId: UserId = ???
 //  val fragment = sql"select * from users where user_id = $userId"
+
+  implicit val showPGobject: Show[PGobject] = Show.show(_.getValue.take(250))
+
+  implicit val jsonGet: Get[Json] = {
+    import cats.implicits._
+    import io.circe.parser._
+    Get.Advanced.other[PGobject](NonEmptyList.of("json")).temap[Json] { o =>
+      parse(o.getValue).leftMap(_.show)
+    }
+  }
+
+  implicit val jsonPut: Put[Json] =
+    Put.Advanced.other[PGobject](NonEmptyList.of("json")).tcontramap[Json] { j =>
+      val o = new PGobject
+      o.setType("json")
+      o.setValue(j.noSpaces)
+      o
+    }
 }

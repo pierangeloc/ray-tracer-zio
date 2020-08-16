@@ -3,6 +3,7 @@ package io.tuliplogic.raytracer.http.model.attapirato.drawings
 
 import doobie.hikari.HikariTransactor
 import doobie.{Query0, Update0}
+import io.circe.Json
 import io.tuliplogic.raytracer.http.model.attapirato.DB
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.DBError
 import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{Scene, SceneDescription, SceneId}
@@ -36,7 +37,6 @@ object ScenesRepo {
       new Service {
         import doobie.implicits._
         import zio.interop.catz._
-        import io.circe.parser._
         import io.circe.generic.auto._
 
         override def createScene(userId: UserId, sceneId: SceneId, scene: SceneDescription): IO[DBError, Unit] =
@@ -56,8 +56,8 @@ object ScenesRepo {
             .unique
             .transact(transactor)
             .mapError(e => DBError(s"Could not get scene $sceneId for user $userId", Some(e)))
-            .flatMap { s =>
-              ZIO.fromEither(parse(s).flatMap(json => json.as[Scene]))
+            .flatMap { json =>
+              ZIO.fromEither(json.as[Scene])
                 .mapError(e => DBError(s"Could not scene description returned from DB for scene $sceneId for user $userId", Some(e)))
             }
 
@@ -68,10 +68,10 @@ object ScenesRepo {
             .mapError(e => DBError(s"Could not get scenes for user $userId", Some(e)))
             .flatMap { parseScenes }
 
-        def parseScenes(xs: List[String]): IO[DBError, List[Scene]] =
-          ZIO.foreach(xs)(s => ZIO.fromEither
-            (parse(s).flatMap(json => json.as[Scene]))
-              .mapError(e => DBError(s"Could not decode scene description", Some(e))))
+        def parseScenes(xs: List[Json]): IO[DBError, List[Scene]] =
+          ZIO.foreach(xs)(json => ZIO.fromEither
+            (json.as[Scene])
+          ).mapError(e => DBError(s"Could not decode scene description", Some(e)))
 
         override def getSceneImage(userId: UserId, sceneId: SceneId): IO[DBError, Array[Byte]] =
           Queries.getSceneImage(userId, sceneId)
@@ -87,21 +87,21 @@ object ScenesRepo {
     import doobie.implicits._
     import doobie.postgres.implicits._
     import io.tuliplogic.raytracer.http.model.attapirato.doobieUtils._
-
     import io.circe.generic.auto._
     import io.circe.syntax._
 
     def createScene(userId: UserId, sceneId: SceneId, scene: SceneDescription): Update0 =
       sql"""
-           |insert into drawings (
-           |'id, user_id, scene'
+           |INSERT INTO "drawings" (
+           |  "id",
+           |  "user_id",
+           |  "scene"
            |) VALUES (
-           |${sceneId},
-           |${userId},
-           |${scene.asJson.spaces2},
+           |  ${sceneId},
+           |  ${userId},
+           |  ${scene.asJson}
            |)
            |""".stripMargin.update
-
 
     def saveScene(userId: UserId, sceneId: SceneId, png: Array[Byte]): Update0 =
       sql"""
@@ -113,16 +113,16 @@ object ScenesRepo {
            |)
            |""".stripMargin.update
 
-    def getScene(userId: UserId, sceneId: SceneId): Query0[String] =
+    def getScene(userId: UserId, sceneId: SceneId): Query0[Json] =
       sql"""select scene from drawings
            |  where id = ${sceneId}
            |  and user_id = ${userId}
-         """.stripMargin.query[String]
+         """.stripMargin.query[Json]
 
-    def getScenes(userId: UserId): Query0[String] =
+    def getScenes(userId: UserId): Query0[Json] =
       sql"""select scene from drawings
            |  where user_id = ${userId}
-         """.stripMargin.query[String]
+         """.stripMargin.query[Json]
 
     def getSceneImage(userId: UserId, sceneId: SceneId): Query0[Array[Byte]] =
       sql"""select scene from drawings

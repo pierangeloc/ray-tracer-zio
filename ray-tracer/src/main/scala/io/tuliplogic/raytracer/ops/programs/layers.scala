@@ -22,7 +22,7 @@ object layers {
   val clockAndBlocking: Layer[Nothing, Blocking with Clock] =
     Blocking.live ++ Clock.live
 
-  val cSerializerM: ULayer[Blocking with Clock, CanvasSerializer] =
+  val cSerializerM: ULayer[Blocking, CanvasSerializer] =
     canvasSerializer.pNGCanvasSerializer
 
   val topologyM: ULayer[ATModule, WorldTopologyModule] =

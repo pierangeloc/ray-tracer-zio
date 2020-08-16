@@ -1,16 +1,20 @@
 package io.tuliplogic.raytracer.http.model.attapirato
 
 
-import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, SceneId, SceneStatus, SceneDescription}
+import java.util.UUID
+
+import io.tuliplogic.raytracer.http.model.attapirato.drawings.Scenes
+import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, SceneDescription}
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.Event.{LoginSuccess, PasswordUpdated, UserCreated}
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.Cmd.{CreateUser, Login, UpdatePassword}
+import io.tuliplogic.raytracer.http.model.attapirato.types.user.UserId
 import io.tuliplogic.raytracer.http.model.attapirato.users.Users
 import org.http4s.HttpRoutes
 import sttp.tapir.openapi.OpenAPI
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
 import zio.logging.Logging
-import zio.{Task, UIO, URIO, ZIO}
+import zio.{RIO, Task, URIO, ZIO}
 
 object endpoints {
   import sttp.tapir._
@@ -59,8 +63,14 @@ object zioEndpoints {
       )
   }
 
-  val draw: ZServerEndpoint[Any, SceneDescription, APIError, DrawResponse] =
-    endpoints.drawImage.zServerLogic(_ => UIO(DrawResponse(SceneId("123"), SceneStatus.Done)))
+  object scenes {
+    val triggerRendering: ZServerEndpoint[Scenes, SceneDescription, APIError, DrawResponse] =
+      endpoints.drawImage.zServerLogic( sceneDescription =>
+        Scenes.createScene(UserId(UUID.fromString("07bebf03-6e15-410b-87ff-1bb70b1387ae")), sceneDescription)
+          .map(scene => DrawResponse(scene.id, scene.status))
+      )
+  }
+
 }
 
 
@@ -138,16 +148,17 @@ object AllRoutes {
     val createUser: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
     val updateUserPwd: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.updatePassword.toRoutesR
     val loginUser: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.login.toRoutesR
-    val drawRoutes: UIO[HttpRoutes[Task]] = zioEndpoints.draw.toRoutesR
+
+    val triggerRendering: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.triggerRendering.toRoutesR
 
     val openApiDocs: OpenAPI = endpoints.createUser.toOpenAPI("simple user management", "1.0")
       .servers(List(Server("localhost:8090").description("local server")))
 
     val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]
 
-    val allRoutes: List[URIO[Users with Logging, HttpRoutes[Task]]] = List(createUser, updateUserPwd, loginUser, drawRoutes)
+    val allRoutes: List[URIO[Users with Scenes with Logging, HttpRoutes[Task]]] = List(createUser, updateUserPwd, loginUser, triggerRendering)
 
-  val serve = for {
+  val serve: RIO[Users with Scenes with Logging, Unit] = for {
       allRoutes <- ZIO.mergeAll(allRoutes)(docsRoutes)(_ <+> _)
       _         <- serveRoutes(allRoutes)
     } yield ()

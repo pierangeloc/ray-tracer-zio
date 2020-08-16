@@ -21,7 +21,7 @@ object Main extends App {
       _            <- HttpServer.make.serve.provideLayer {
                         ZLayer.identity[Clock with Console with Random] ++
                           (layers.atM >>> layers.rasteringM) ++
-                          layers.atM++
+                          layers.atM ++
                         layers.cSerializerM ++
                         drawingRepo
                       }

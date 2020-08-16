@@ -116,7 +116,7 @@ object types {
     case class SceneDescription(shapes: List[Shape], pointLight: PointLight, camera: Camera)
     case class Scene(id: SceneId, description: SceneDescription, status: SceneStatus)
 
-    @newtype case class SceneId(value: String)
+    @newtype case class SceneId(value: UUID)
 
     sealed trait SceneStatus
     object SceneStatus {

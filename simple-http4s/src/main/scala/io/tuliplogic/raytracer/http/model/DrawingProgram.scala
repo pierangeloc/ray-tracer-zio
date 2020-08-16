@@ -1,7 +1,8 @@
 package io.tuliplogic.raytracer.http.model
 
+import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
-import io.tuliplogic.raytracer.http.model.Http2World.SceneBundle
+import io.tuliplogic.raytracer.ops.model.data.World
 import io.tuliplogic.raytracer.ops.model.modules.rasteringModule.RasteringModule
 import io.tuliplogic.raytracer.ops.programs.RaytracingProgram
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer
@@ -12,6 +13,16 @@ import zio.console.Console
 
 object DrawingProgram {
   type DrawEnv = CanvasSerializer with RasteringModule with ATModule
+
+  case class SceneBundle(
+                          world: World,
+                          viewFrom: Pt,
+                          viewTo: Pt,
+                          viewUp: Vec,
+                          visualAngleRad: Double,
+                          hRes: Int,
+                          vRes: Int
+                        )
 
   def draw(sceneBundle: SceneBundle): ZIO[CanvasSerializer with RasteringModule with ATModule with Console with Clock, Nothing, (String, Array[Byte])] = for {
     _      <- zio.console.putStrLn("Created scene bundle, now drawing the world...")
