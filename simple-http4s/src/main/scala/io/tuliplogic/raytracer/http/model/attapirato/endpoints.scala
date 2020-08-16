@@ -40,16 +40,16 @@ object endpoints {
       .description("Draw an image from a given Scene description")
 
   val getAllScenes: Endpoint[String, APIError, List[Scene], Nothing] =
-    endpoint.get.in("scene" / path[String]).out(jsonBody[List[Scene]]).errorOut(jsonBody[APIError])
+    endpoint.get.in("scene" / path[String]("sceneId")).out(jsonBody[List[Scene]]).errorOut(jsonBody[APIError])
       .description("Fetch all the scene descriptions for the authenticated user")
 
   val getScene: Endpoint[String, APIError, Scene, Nothing] =
-    endpoint.get.in("scene" / path[String])
+    endpoint.get.in("scene" / path[String]("sceneId"))
       .out(jsonBody[Scene]).errorOut(jsonBody[APIError])
       .description("Fetch all a single scene descriptions for the authenticated user")
 
   val getSceneImage: Endpoint[String, APIError, Array[Byte], Nothing] =
-    endpoint.get.in("scene" / path[String] / "png")
+    endpoint.get.in("scene" / path[String]("sceneId") / "png")
       .out(byteArrayBody).errorOut(jsonBody[APIError])
       .description("Fetch the image of a single scene")
 
@@ -177,7 +177,14 @@ object AllRoutes {
     val getScene: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.getScene.toRoutesR
     val getSceneImage: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.getSceneImage.toRoutesR
 
-    val openApiDocs: OpenAPI = endpoints.createUser.toOpenAPI("simple user management", "1.0")
+    val openApiDocs: OpenAPI = Seq(
+      endpoints.createUser,
+      endpoints.updatePassword,
+      endpoints.login,
+      endpoints.renderScene,
+      endpoints.getScene,
+      endpoints.getSceneImage,
+    ).toOpenAPI("Ray Tracing as a Service", "1.0")
       .servers(List(Server("localhost:8090").description("local server")))
 
     val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]

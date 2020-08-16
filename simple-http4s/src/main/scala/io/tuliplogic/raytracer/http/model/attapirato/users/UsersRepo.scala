@@ -32,7 +32,6 @@ object UsersRepo {
   def updatePassword(userId: UserId, newPassword: PasswordHash): ZIO[UsersRepo, DBError, Unit] =
     ZIO.accessM(_.get.updatePassword(userId, newPassword))
 
-
   val doobieLive: URLayer[DB.Transactor, UsersRepo] =
     ZLayer.fromService[HikariTransactor[Task], UsersRepo.Service] { transactor =>
       new Service {

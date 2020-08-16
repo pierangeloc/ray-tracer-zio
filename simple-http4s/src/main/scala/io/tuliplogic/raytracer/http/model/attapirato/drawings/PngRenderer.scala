@@ -24,6 +24,7 @@ object PngRenderer {
       (serializer, rastering, at) =>
       new Service {
         override def draw(sceneBundle: SceneBundle): UIO[Chunk[Byte]] = for {
+
           canvas <- RaytracingProgram.drawOnCanvas(
             sceneBundle.world,
             sceneBundle.viewFrom,
@@ -31,7 +32,7 @@ object PngRenderer {
             sceneBundle.viewUp,
             sceneBundle.visualAngleRad,
             sceneBundle.hRes, sceneBundle.vRes
-          ).orDie.provide(Has(rastering) ++ Has(at))
+          ).orDie.provideLayer(ZLayer.succeed(rastering) ++ ZLayer.succeed(at))
           bs     <- canvasSerializer.serializeAsByteStream(canvas, 255).runCollect.provide(Has(serializer))
         } yield bs
       }
