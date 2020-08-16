@@ -36,7 +36,7 @@ object Scenes {
   def getSceneImage(userId: UserId, sceneId: SceneId): ZIO[Scenes, APIError, Array[Byte]] =
     ZIO.accessM(_.get.getSceneImage(userId, sceneId))
 
-  val live: URLayer[ScenesRepo with PngRenderer with ATModule with Logging, Has[Service]] =
+  val live: URLayer[ScenesRepo with PngRenderer with ATModule with Logging, Scenes] =
     ZLayer.fromServices[ScenesRepo.Service, PngRenderer.Service, aTModule.Service, Logger[String], Service] { (scenesRepo, renderer, atModule, logger) =>
       new Service {
 

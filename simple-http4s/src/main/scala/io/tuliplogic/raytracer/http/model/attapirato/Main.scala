@@ -13,7 +13,7 @@ import zio.blocking.Blocking
 import zio.clock.Clock
 import zio.logging.{Logging, log}
 import zio.logging.slf4j.Slf4jLogger
-import zio.{App, ExitCode, URIO, ZIO, ZLayer}
+import zio.{App, ExitCode, URIO, URLayer, ZIO, ZLayer}
 
 object Main extends App {
 
@@ -24,29 +24,8 @@ object Main extends App {
       .catchAll {
         case e @ BootstrapError(_, _) => log.error(s"Error bootstrapping: ${e.message}; ${e.cause.foreach(_.printStackTrace())}")
         case other => log.error(s"Other error at startup, $other")
-      }.provideCustomLayer((ZLayer.identity[Blocking with Clock] ++ slf4jLogger) >>> layer).exitCode
+      }.provideCustomLayer((ZLayer.identity[Blocking with Clock] ++ slf4jLogger) >>> Layers.programLayer).exitCode
   }
-
-  type BaseLayer = Blocking with Clock with Logging
-  val baseBaseLayer = ZLayer.identity[BaseLayer]
-
-  val transactorLayer: ZLayer[Blocking, AppError, Transactor] = (Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor
-
-  val baseLayer: ZLayer[BaseLayer, AppError, Transactor with BaseLayer] =
-    transactorLayer ++ baseBaseLayer
-
-  val usersLayer: ZLayer[Transactor with BaseLayer, AppError, Users] =
-  (UsersRepo.doobieLive ++ baseLayer) >>> Users.live
-
-  val l1: ZLayer[Blocking with Logging with Transactor, Nothing, ATModule with RasteringModule with CanvasSerializer with PngRenderer with Logging with ScenesRepo] =
-  (((layers.atM >+> layers.rasteringM) ++ layers.cSerializerM) >+> PngRenderer.live) ++ ZLayer.identity[Logging] ++ ScenesRepo.doobieLive
-  val scenesLayer: ZLayer[Blocking with Logging with Transactor, Nothing, Scenes] =
-  l1 >>>
-  Scenes.live
-
-
-  val layer: ZLayer[Blocking with Logging with Clock, AppError, Transactor with BaseLayer with Users with Scenes] =
-    baseLayer >+> (usersLayer ++ scenesLayer)
 
   val program: ZIO[Users with Logging with Transactor with Scenes, BootstrapError, Unit] =
     for {
@@ -55,5 +34,27 @@ object Main extends App {
       _ <- log.info("Flyway migration performed!")
       _ <- AllRoutes.serve.mapError(e => BootstrapError("Error starting http server", Some(e)))
     } yield ()
+
+}
+
+object Layers {
+  type AppEnv = Blocking with Clock with Logging
+  val baseLayer = ZLayer.identity[AppEnv]
+
+  val transactorLayer: ZLayer[Blocking, AppError, Transactor] = (Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor
+
+  val withTransactor: ZLayer[AppEnv, AppError, Transactor with AppEnv] =
+    transactorLayer ++ baseLayer
+
+  val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
+    (UsersRepo.doobieLive ++ withTransactor) >>> Users.live
+
+  val pngRendererLayer: URLayer[Blocking, ATModule with RasteringModule with CanvasSerializer with PngRenderer] =
+    ((layers.atM >+> layers.rasteringM) ++ layers.cSerializerM) >+> PngRenderer.live
+
+  val scenesLayer: ZLayer[Transactor with Blocking with Logging, Nothing, Scenes] =
+    (ScenesRepo.doobieLive ++ pngRendererLayer ++ ZLayer.identity[Logging]) >>> Scenes.live
+
+  val programLayer: ZLayer[AppEnv, AppError, Users with Scenes with Transactor with Logging] = (transactorLayer ++ baseLayer) >+> (usersLayer ++ scenesLayer)
 
 }

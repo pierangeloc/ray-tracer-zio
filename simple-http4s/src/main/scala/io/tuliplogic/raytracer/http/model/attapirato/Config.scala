@@ -5,7 +5,7 @@ import pureconfig.ConfigSource
 import pureconfig.module.catseffect.syntax._
 import pureconfig.generic.auto._
 import zio.interop.catz._
-import zio.{Has, Layer, Task}
+import zio.{Layer, Task}
 
 case class Config(
     db: Database
@@ -19,7 +19,7 @@ case class Database(
 
 object Config {
 
-  def fromTypesafeConfig(): Layer[BootstrapError, Has[Config]] = (
+  def fromTypesafeConfig(): Layer[BootstrapError, Configuration] = (
     for {
       tsConfig <- Task.effect(ConfigFactory.load())
       cfg <- ConfigSource.fromConfig(tsConfig).loadF[Task, Config]
