@@ -8,14 +8,14 @@ import io.tuliplogic.raytracer.http.model.attapirato.types
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
 import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{Scene, SceneDescription, SceneId, SceneStatus}
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.UserId
-import zio.logging.{Logger, Logging}
+import zio.logging.{Logger, Logging, log}
 import zio.{Has, IO, UIO, URLayer, ZIO, ZLayer}
 
 object Scenes {
 
   trait Service {
     def createScene(userId: UserId, sceneDescription: SceneDescription): IO[APIError, Scene]
-    def saveSceneImage(userId: UserId, sceneId: SceneId, bytes: Array[Byte]): IO[APIError, Unit]
+//    def saveSceneImage(userId: UserId, sceneId: SceneId, bytes: Array[Byte]): IO[APIError, Unit]
     def getScene(userId: UserId, sceneId: SceneId): IO[APIError, Scene]
     def getScenes(userId: UserId): IO[APIError, List[Scene]]
     def getSceneImage(userId: UserId, sceneId: SceneId): IO[APIError, Array[Byte]]
@@ -24,8 +24,8 @@ object Scenes {
   def createScene(userId: UserId, sceneDescription: SceneDescription): ZIO[Scenes, APIError, Scene] =
     ZIO.accessM(_.get.createScene(userId, sceneDescription))
 
-  def saveScene(userId: UserId, sceneId: SceneId, bytes: Array[Byte]): ZIO[Scenes, APIError, Unit] =
-    ZIO.accessM(_.get.saveSceneImage(userId, sceneId, bytes))
+//  def saveScene(userId: UserId, sceneId: SceneId, bytes: Array[Byte]): ZIO[Scenes, APIError, Unit] =
+//    ZIO.accessM(_.get.saveSceneImage(userId, sceneId, bytes))
 
   def getScene(userId: UserId, sceneId: SceneId): ZIO[Scenes, APIError, Scene] =
     ZIO.accessM(_.get.getScene(userId, sceneId))
@@ -44,7 +44,9 @@ object Scenes {
           for {
             sceneBundle <- SceneDescriptionToSceneBundle.sceneDescription2SceneBundle(sceneDescription).provideSome[Logging](_ ++ Has(atModule))
             bytes <- renderer.draw(sceneBundle)
+            _ <- log.info(s"image has been computed, now saving ${bytes.size} bytes to DB")
             _ <- scenesRepo.saveScene(userId, sceneId, bytes.toArray)
+            _ <- log.info(s"image for scene $sceneId saved in DB" )
           } yield ()
 
         def createScene(userId: UserId, sceneDescription: SceneDescription): IO[APIError, Scene] = {
@@ -52,19 +54,19 @@ object Scenes {
             id <- UIO.effectTotal(UUID.randomUUID())
             sceneId = SceneId(id)
             _ <- scenesRepo.createScene(userId, sceneId, sceneDescription)
-            _ <- renderAndSaveWhenReady(userId, sceneId, sceneDescription).forkDaemon.provide(Has(logger))
+            _ <- renderAndSaveWhenReady(userId, sceneId, sceneDescription).provide(Has(logger)).forkDaemon
           } yield Scene(sceneId, sceneDescription, SceneStatus.InProgress))
             .catchAll { e =>
             logger.throwable(s"Error starting scene computation", e) *> ZIO.fail(APIError("Error starting scene computation")),
           }
         }
 
-        def saveSceneImage(userId: UserId, sceneId: SceneId, bytes: Array[Byte]): IO[APIError, Unit] =
-          scenesRepo
-            .saveScene(userId, sceneId, bytes)
-            .catchAll { e =>
-              logger.throwable(s"Error saving scene image", e) *> ZIO.fail(APIError("Error saving scene image")),
-            }
+//        def saveSceneImage(userId: UserId, sceneId: SceneId, bytes: Array[Byte]): IO[APIError, Unit] =
+//          scenesRepo
+//            .saveScene(userId, sceneId, bytes)
+//            .catchAll { e =>
+//              logger.throwable(s"Error saving scene image", e) *> ZIO.fail(APIError("Error saving scene image")),
+//            }
 
         def getScene(userId: UserId, sceneId: SceneId): IO[APIError, Scene] =
           scenesRepo.getScene(userId, sceneId)

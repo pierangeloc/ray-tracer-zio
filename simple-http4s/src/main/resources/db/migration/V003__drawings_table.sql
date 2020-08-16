@@ -4,7 +4,7 @@ CREATE TABLE "drawings" (
   "scene" jsonb DEFAULT NULL,
   "resolution_w" int,
   "resolution_h" int,
-  "png" oid,
+  "png" bytea,
   PRIMARY KEY ("id"),
   CONSTRAINT fk_user_id
     FOREIGN KEY(user_id)

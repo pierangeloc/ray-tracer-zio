@@ -66,7 +66,7 @@ object zioEndpoints {
   object scenes {
     val triggerRendering: ZServerEndpoint[Scenes, SceneDescription, APIError, DrawResponse] =
       endpoints.drawImage.zServerLogic( sceneDescription =>
-        Scenes.createScene(UserId(UUID.fromString("07bebf03-6e15-410b-87ff-1bb70b1387ae")), sceneDescription)
+        Scenes.createScene(UserId(UUID.fromString("91171a5e-1376-4fc4-8929-b6e2654f5014")), sceneDescription)
           .map(scene => DrawResponse(scene.id, scene.status))
       )
   }

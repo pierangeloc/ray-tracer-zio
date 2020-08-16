@@ -105,12 +105,12 @@ object ScenesRepo {
 
     def saveScene(userId: UserId, sceneId: SceneId, png: Array[Byte]): Update0 =
       sql"""
-           |update drawings (
-           |set 'png' = ${png}
-           |) where (
-           |id = ${sceneId} and
-           |user_id = ${userId},
-           |)
+           |update drawings
+           |  set "png" = ${png}
+           |  where (
+           |    id = ${sceneId} and
+           |    user_id = ${userId}
+           |  )
            |""".stripMargin.update
 
     def getScene(userId: UserId, sceneId: SceneId): Query0[Json] =
