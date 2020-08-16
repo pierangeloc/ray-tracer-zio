@@ -4,7 +4,7 @@ package io.tuliplogic.raytracer.http.model.attapirato
 import java.util.UUID
 
 import io.tuliplogic.raytracer.http.model.attapirato.drawings.Scenes
-import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, SceneDescription}
+import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, Scene, SceneDescription, SceneId}
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.Event.{LoginSuccess, PasswordUpdated, UserCreated}
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.Cmd.{CreateUser, Login, UpdatePassword}
@@ -35,9 +35,24 @@ object endpoints {
     endpoint.post.in("login").in(jsonBody[Login]).out(jsonBody[LoginSuccess]).errorOut(jsonBody[APIError])
       .description("Login to obtain an access token")
 
-  val drawImage: Endpoint[SceneDescription, APIError, DrawResponse, Nothing] =
+  val renderScene: Endpoint[SceneDescription, APIError, DrawResponse, Nothing] =
     endpoint.post.in("scene").in(jsonBody[SceneDescription]).out(jsonBody[DrawResponse]).errorOut(jsonBody[APIError])
       .description("Draw an image from a given Scene description")
+
+  val getAllScenes: Endpoint[String, APIError, List[Scene], Nothing] =
+    endpoint.get.in("scene" / path[String]).out(jsonBody[List[Scene]]).errorOut(jsonBody[APIError])
+      .description("Fetch all the scene descriptions for the authenticated user")
+
+  val getScene: Endpoint[String, APIError, Scene, Nothing] =
+    endpoint.get.in("scene" / path[String])
+      .out(jsonBody[Scene]).errorOut(jsonBody[APIError])
+      .description("Fetch all a single scene descriptions for the authenticated user")
+
+  val getSceneImage: Endpoint[String, APIError, Array[Byte], Nothing] =
+    endpoint.get.in("scene" / path[String] / "png")
+      .out(byteArrayBody).errorOut(jsonBody[APIError])
+      .description("Fetch the image of a single scene")
+
 }
 
 object zioEndpoints {
@@ -65,10 +80,20 @@ object zioEndpoints {
 
   object scenes {
     val triggerRendering: ZServerEndpoint[Scenes, SceneDescription, APIError, DrawResponse] =
-      endpoints.drawImage.zServerLogic( sceneDescription =>
+      endpoints.renderScene.zServerLogic(sceneDescription =>
         Scenes.createScene(UserId(UUID.fromString("91171a5e-1376-4fc4-8929-b6e2654f5014")), sceneDescription)
           .map(scene => DrawResponse(scene.id, scene.status))
       )
+
+    val getScene =
+      endpoints.getScene.zServerLogic { sceneId =>
+            Scenes.getScene(UserId(UUID.fromString("91171a5e-1376-4fc4-8929-b6e2654f5014")), SceneId(UUID.fromString(sceneId)))
+      }
+
+    val getSceneImage =
+      endpoints.getSceneImage.zServerLogic { sceneId =>
+        Scenes.getSceneImage(UserId(UUID.fromString("91171a5e-1376-4fc4-8929-b6e2654f5014")), SceneId(UUID.fromString(sceneId)))
+      }
   }
 
 }
@@ -148,15 +173,16 @@ object AllRoutes {
     val createUser: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
     val updateUserPwd: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.updatePassword.toRoutesR
     val loginUser: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.login.toRoutesR
-
     val triggerRendering: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.triggerRendering.toRoutesR
+    val getScene: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.getScene.toRoutesR
+    val getSceneImage: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.getSceneImage.toRoutesR
 
     val openApiDocs: OpenAPI = endpoints.createUser.toOpenAPI("simple user management", "1.0")
       .servers(List(Server("localhost:8090").description("local server")))
 
     val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]
 
-    val allRoutes: List[URIO[Users with Scenes with Logging, HttpRoutes[Task]]] = List(createUser, updateUserPwd, loginUser, triggerRendering)
+    val allRoutes: List[URIO[Users with Scenes with Logging, HttpRoutes[Task]]] = List(createUser, updateUserPwd, loginUser, triggerRendering, getScene, getSceneImage)
 
   val serve: RIO[Users with Scenes with Logging, Unit] = for {
       allRoutes <- ZIO.mergeAll(allRoutes)(docsRoutes)(_ <+> _)

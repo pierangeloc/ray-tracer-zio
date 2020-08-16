@@ -61,13 +61,6 @@ object Scenes {
           }
         }
 
-//        def saveSceneImage(userId: UserId, sceneId: SceneId, bytes: Array[Byte]): IO[APIError, Unit] =
-//          scenesRepo
-//            .saveScene(userId, sceneId, bytes)
-//            .catchAll { e =>
-//              logger.throwable(s"Error saving scene image", e) *> ZIO.fail(APIError("Error saving scene image")),
-//            }
-
         def getScene(userId: UserId, sceneId: SceneId): IO[APIError, Scene] =
           scenesRepo.getScene(userId, sceneId)
             .catchAll { e =>
