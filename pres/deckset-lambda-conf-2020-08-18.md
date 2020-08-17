@@ -773,8 +773,39 @@ val runnable: ZIO[AppEnv,
 
 
 ---
-# Unit testing
 
+# Unit testing
+Test `Users.live`, mocking dependency on `UsersRepo`
+
+[.code-highlight: 1] 
+[.code-highlight: 1-9] 
+[.code-highlight: 1-11] 
+[.code-highlight: 1-13] 
+[.code-highlight: all] 
+```scala
+val live: URLayer[UsersRepo with Logging with Clock, Users] = ???
+
+//mock
+val userRepo: URLayer[Has[Ref[Map[UserId, User]]], UsersRepo] = ZLayer.fromService (users =>
+    new UsersRepo.Service {
+      def getUser(userId: UserId): IO[AppError.DBError, Option[User]] =
+        users.get.map(_.find(_._1 == userId).map(_._2))
+      /* ... */
+    })
+
+val usersRepoLayer: ULayer[UsersRepo] = ZLayer.fromEffect(Ref.make(Map(testUser.id -> testUser))) >>> userRepo
+val slf4jLogger: ULayer[Logging] = ???
+
+//Test assertion:
+(
+  for {
+    loginOutput <- Users.login(Email("aeinstein@research.com"), ClearPassword("pwd123"))
+  } yield assert(loginOutput.userId)(equalTo(testUser.id))
+).provideSomeLayer((slf4jLogger ++ usersRepoLayer ++ ZLayer.identity[Clock]) >>> Users.live)
+   
+
+
+```
 
 
 ---
@@ -783,9 +814,10 @@ val runnable: ZIO[AppEnv,
 [.text: alignment(left)]
 
 - Dependency graph in the code 💪
-- Type safety, no magic 🙌
+- Type safety, no magic, full control 🙌
 - Compiler helps to satisfy requirements 🤗
-- Easy to get it up and running in your team 😊
+- Resource safety
+- Easy to onboard even for non-fp devs 😊
 
 ---
 
