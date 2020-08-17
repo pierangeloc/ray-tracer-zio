@@ -14,7 +14,7 @@ object UsersRepo {
   trait Service {
     def getUser(userId: UserId): IO[DBError, Option[User]]
     def getUserByEmail(email: Email): IO[DBError, Option[User]]
-    def getUserByAccessToken(email: AccessToken): IO[DBError, Option[User]]
+    def getUserByAccessToken(at: AccessToken): IO[DBError, Option[User]]
     def createUser(user: User): IO[DBError, Unit]
     def updatePassword(userId: UserId, newPassword: PasswordHash): IO[DBError, Unit]
     def updateAccessToken(userId: UserId, newAccessToken: AccessToken, expiresAt: ZonedDateTime): IO[DBError, Unit]
