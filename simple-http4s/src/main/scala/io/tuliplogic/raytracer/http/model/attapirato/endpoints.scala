@@ -114,61 +114,7 @@ object zioEndpoints {
 }
 
 
-//object SimpleApp extends App {
-//
-//  import zio.interop.catz._
-//  import zio.interop.catz.implicits._
-//  import sttp.tapir.server.http4s.ztapir._
-//  import org.http4s.syntax.kleisli._
-//
-//  import org.http4s.server.Router
-//  import org.http4s.server.blaze.BlazeServerBuilder
-//  import sttp.tapir.docs.openapi._
-//  import sttp.tapir.openapi.Server
-//  import sttp.tapir.openapi.circe.yaml._
-//  import cats.implicits._
-//
-//  val slf4jLogger: ULayer[Logging] = Slf4jLogger.make((_, s) => s)
-//
-//  val layer: ZLayer[Blocking, types.AppError, UsersRepo] =
-//    (((Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor) ++ slf4jLogger) >>> UsersRepo.doobieLive
-//
-//  override def run(args: List[String]): ZIO[zio.ZEnv, Nothing, ExitCode] =
-//    serve
-//      .catchAll {
-//        case BootstrapError(_, _) => log.error("Error bootstrapping")
-//        case other => log.throwable(s"Other error at startup", other)
-//      }
-//      .provideSomeLayer[zio.ZEnv](layer ++ slf4jLogger)
-//      .exitCode
-//
-//
-//  val userRoutes: URIO[Users with Logging, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
-//  val drawRoutes: URIO[Any, HttpRoutes[Task]] = zioEndpoints.draw.toRoutesR
-//
-//  val openApiDocs: OpenAPI = endpoints.createUser.toOpenAPI("simple user management", "1.0")
-//    .servers(List(Server("localhost:8090").description("local server")))
-//
-//  val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]
-//
-//  val serve = for {
-//    allRoutes <- ZIO.mapParN(userRoutes, drawRoutes)((r1, r2) => r1 <+> r2 <+> docsRoutes)
-//    _         <- serveRoutes(allRoutes)
-//  } yield ()
-//
-//  def serveRoutes(rs: HttpRoutes[Task]): Task[Unit] = ZIO
-//    .runtime[Any]
-//    .flatMap { implicit rts =>
-//      BlazeServerBuilder[Task](rts.platform.executor.asEC)
-//        .bindHttp(8090, "localhost")
-//        .withHttpApp(Router("/"-> rs ).orNotFound)
-//        .serve
-//        .compile
-//        .drain
-//    }
-//}
 
-//        .withHttpApp(Router("/"->( userRoutes <+> docsRoutes.routes).orNotFound))
 
 
 object AllRoutes {
@@ -200,7 +146,7 @@ object AllRoutes {
       endpoints.getScene,
       endpoints.getSceneImage,
     ).toOpenAPI("Ray Tracing as a Service", "1.0")
-      .servers(List(Server("localhost:8090").description("local server")))
+      .servers(List(Server("http://localhost:8090").description("local server")))
 
     val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]
 

@@ -173,7 +173,7 @@ val prg: ZIO[Metrics with Log, Nothing, Unit] =
   for {
     _ <- Log.info("Hello")
     _ <- Metrics.inc("salutation")
-    _ <- Log.info("Rotterdam")
+    _ <- Log.info("LambdaConf")
     _ <- Metrics.inc("subject")
   } yield ()
 ```
@@ -182,7 +182,7 @@ val prg: ZIO[Metrics with Log, Nothing, Unit] =
 
 # ZIO-101: The `Has` data type
 
-`Has[A]` is a dependency on a service of type `A`
+`Has[A]` is a dependency on a value of type `A`
 
 [.code-highlight: none] 
 [.code-highlight: all] 
@@ -333,7 +333,7 @@ Provide required module to a program
 ```scala
 val p: ZIO[Metrics, Nothing, Unit] = Metrics.inc("LambdaConf")
 
-Metrics.live: Layer[Metrics]
+Metrics.live: ULayer[Metrics]
 
 val runnable: ZIO[Any, Nothing, Unit] = p.provideLayer(Metrics.live)
 
@@ -371,7 +371,7 @@ But what actually gives FP power from the operational point of view, that subsum
   - Referential Transparency :+1:
   - Immutability :+1:
   - Modularity and composability! :rocket:
-- `ZLayer` is a tool to compose dependency trees, with arbitrary complexity
+- `ZLayer` is a tool to compose dependency trees of arbitrary complexity, with strong resource management guarantees
 
 ---
 
@@ -416,6 +416,7 @@ object UsersRepo {
     def createUser(user: User): IO[DBError, Unit]
     def getUser(userId: UserId): IO[DBError, Option[User]]
     def getUserByEmail(email: Email): IO[DBError, Option[User]]
+    def getUserByAccessToken(email: AccessToken): IO[DBError, Option[User]]
     def updatePassword(userId: UserId, newPassword: PasswordHash): IO[DBError, Unit]
     def updateAccessToken(
       userId: UserId, newAccessToken: AccessToken, expiresAt: ZonedDateTime
@@ -464,6 +465,10 @@ object Queries {
 
 ```scala
 object Users {
+  
+  case class UserCreated(userId: UserId)
+  case class PasswordUpdated(userId: UserId)
+  case class LoginSuccess(userId: UserId, accessToken: AccessToken)
 
   trait Service {
     def createUser(email: Email): IO[APIError, UserCreated]
@@ -477,11 +482,11 @@ object Users {
 #### User Management / Service
 
 [.code-highlight: 1-7] 
-[.code-highlight: 1-10] 
-[.code-highlight: 1-7, 11-13] 
+[.code-highlight: 1-11] 
+[.code-highlight: 1-7, 12-14] 
+[.code-highlight: 1-7, 15-16] 
 [.code-highlight: 1-7, 17] 
-[.code-highlight: 1-7, 18-23] 
-[.code-highlight: 1-7, 24] 
+[.code-highlight: 1-7, 22] 
 ```scala
 val live: URLayer[UsersRepo with Logging with Clock, Has[Service]] =
   ZLayer.fromServices[UsersRepo.Service, Logger[String], Clock.Service, Service] { (usersRepo, logger, clock) =>
@@ -490,12 +495,10 @@ val live: URLayer[UsersRepo with Logging with Clock, Has[Service]] =
 
     def login(userEmail: Email, clearPassword: ClearPassword): IO[APIError, LoginSuccess] =
         for {
-          maybeUser <- usersRepo.getUserByEmail(userEmail).catchAll(e =>
-            logger.throwable("DB error fetching user by email", e) *> ZIO.fail(APIError("Couldn't fetch user"))
-          )
-          user      <- maybeUser.fold[IO[APIError, User]](
-            ZIO.fail(APIError("User not found"))
-            )(u => ZIO.succeed(u))
+          user <- usersRepo.getUserByEmail(userEmail).catchAll(e =>
+            logger.throwable("DB error fetching user by email", e) *>
+              ZIO.fail(APIError("Couldn't fetch user"))
+          ).some.mapError(_ => APIError("User not found"))
           pwdHash   <- user.password.fold[IO[APIError, PasswordHash]](
               ZIO.fail(APIError("Password not set for user, cannot authenticate"))
             )(ZIO.succeed(_))
@@ -762,7 +765,7 @@ val fullLayer: ZLayer[AppEnv, AppError, Users] =
 val program: ZIO[Users, 
   BootstrapError, Unit] =  ???
 
-val satisfied: ZIO[AppEnv, 
+val runnable: ZIO[AppEnv, 
   AppError, Unit] = program.provideLayer(fullLayer)
 ```
 

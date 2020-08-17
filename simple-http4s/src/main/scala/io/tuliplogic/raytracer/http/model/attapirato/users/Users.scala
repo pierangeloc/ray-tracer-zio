@@ -62,11 +62,10 @@ object Users {
 
       def login(userEmail: Email, clearPassword: ClearPassword): IO[APIError, LoginSuccess] =
         for {
-          maybeUser <- usersRepo.getUserByEmail(userEmail).catchAll(e =>
+          user <- usersRepo.getUserByEmail(userEmail).catchAll(e =>
             logger.throwable("DB error fetching user by email", e) *>
               ZIO.fail(APIError("Couldn't fetch user"))
-          )
-          user      <- maybeUser.fold[IO[APIError, User]](ZIO.fail(APIError("User not found")))(u => ZIO.succeed(u))
+          ).some.mapError(_ => APIError("User not found"))
           pwdHash   <- user.password.fold[IO[APIError, PasswordHash]](ZIO.fail(APIError("Password not set for user, cannot authenticate")))(ZIO.succeed(_))
           newToken  <- createToken(clearPassword, pwdHash)
           now       <- clock.instant
