@@ -53,7 +53,9 @@ object endpoints {
 
   val getSceneImage: Endpoint[(String, String), APIError, Array[Byte], Nothing] =
     endpoint.get.in("scene" / path[String]("sceneId") / "png").in(auth.bearer[String])
-      .out(byteArrayBody).errorOut(jsonBody[APIError])
+      .out(byteArrayBody)
+      .out(header("Content-Type", "image/png"))
+      .errorOut(jsonBody[APIError])
       .description("Fetch the image of a single scene")
 
 }
