@@ -324,9 +324,46 @@ val ver: ZLayer[Config, Nothing, UserRepo] =
 
 ---
 # ZIO-101: `ZLayer`
+Provide required module to a program
+
+[.code-highlight: 1] 
+[.code-highlight: 1-3] 
+[.code-highlight: 1-5] 
+[.code-highlight: 1-7] 
+```scala
+val p: ZIO[Metrics, Nothing, Unit] = Metrics.inc("LambdaConf")
+
+Metrics.live: Layer[Metrics]
+
+val runnable: ZIO[Any, Nothing, Unit] = p.provideLayer(Metrics.live)
+
+Runtime.default.unsafeRun(runnable)
+```
+
+
+[.code-highlight: 1-3] 
+[.code-highlight: 1-5] 
+[.code-highlight: 1-7] 
+---
+# ZIO-101: `ZLayer`
 `ZIO` uses ZLayer to provide the basic modules, all bundled in `ZEnv`
 
+```scala
+package object console {
+  type Console = Has[Console.Service]
+}
+
+val p: URIO[Console, Unit] = zio.console.putStrLn("Hello world")
+
+Runtime.default.unsafeRun(p)
+```
+
+
 ---
+^Let's have a quick digression on what is FP
+FP can be seen through the guarantee of RT
+or through Immutability
+But what actually gives FP power from the operational point of view, that subsumes the 2 properties above, is its compositionality
 
 # Digression
 
@@ -366,6 +403,7 @@ object PngRenderer {
 
 - Wrap in http layer
 - Minimal user management
+- Users can fetch their scenes after authentication
 
 ---
 
@@ -539,891 +577,203 @@ val serve: RIO[Users with Scenes with Logging, Unit] = for {
 #### Putting things together
 
 ```scala
-val program: ZIO[Users with Logging with Transactor with Scenes, BootstrapError, Unit] =
+val program: ZIO[Users 
+  with Logging 
+  with Transactor 
+  with Scenes, BootstrapError, Unit] =
   for {
     _ <- log.info("Running Flyway migration...")
     _ <- DB.runFlyWay
     _ <- log.info("Flyway migration performed!")
-    _ <- serve.mapError(e => BootstrapError("Error starting http server", Some(e)))
+    _ <- serve.mapError(e => 
+           BootstrapError("Error starting http server", Some(e))
+         )
   } yield ()
 
 override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =
   program.provideCustomLayer(???)
-
-
-//we are looking for a Layer[?, Nothing, Users with Logging with Transactor with Scenes]
 ```
 
 ---
+^As usual, follow the types!
 #### Putting things together
 
-As usual, follow the types!
-
+[.code-highlight: 1-4] 
+[.code-highlight: 6-7] 
+[.code-highlight: 6-11] 
 ```scala
-val program: ZIO[Users with Logging with Transactor with Scenes, BootstrapError, Unit] 
+val program: ZIO[Users 
+  with Logging 
+  with Transactor 
+  with Scenes, BootstrapError, Unit] = ???
 
-//Look for the layer producing the module we need
-val live: URLayer[UsersRepo with Logging with Clock, Users] = ???
+val program: ZIO[Users, 
+  BootstrapError, Unit] =  ???
 
-
-
+Users.live: URLayer[UsersRepo 
+  with Logging 
+  with Clock, Users]
 ```
 
-
-
+![right fit](img/users-layer-1.png)
 
 
 ---
+^As usual, follow the types!
+#### Putting things together
 
-[.code-highlight: 1-7] 
-[.code-highlight: 1-14] 
-[.code-highlight: 1-20] 
-```scala
-type UserRepo = Has[UserRepo.Service]
-
-object UserRepo {
-  trait Service {
-    def getUser(userId: UserId): IO[DBError, Option[User]]
-    def createUser(user: User): IO[DBError, Unit]
-  }
-
-  val inMemory: Layer[Nothing, UserRepo] = ZLayer.succeed(
-    new Service {
-      /* impl */
-    }
-  )
-
-  val db: ZLayer[Connection, Nothing, UserRepo] = ZLayer.fromService { conn: Connection =>
-    new Service {
-      /* impl uses conn */
-    }   
-  }
-}
-```
-
----
-# ZIO-101: `ZLayer`
-
-Provide layers to programs
-
-[.code-highlight: 1-2] 
-[.code-highlight: 1-8] 
-[.code-highlight: 1-12] 
-[.code-highlight: 1-16] 
-```scala
-  import zio.console.Console 
-  val checkUser: ZIO[UserRepo with AuthPolicy with Console, Nothing, Boolean]
-  
-  val liveLayer = UserRepo.inMemory ++ AuthPolicy.basicPolicy ++ Console.live
-
-  val full: ZIO[Any, Nothing, Boolean] = checkUser.provideLayer(
-    liveLayer
-  )
-
-  val partial: ZIO[Console, Nothing, Boolean] = checkUser.provideSomeLayer(
-    UserRepo.inMemory ++ AuthPolicy.basicPolicy
-  )
-
-  val updated: ZIO[Any, Nothing, Boolean] = checkUser.provideLayer(
-    liveLayer ++ UserRepo.postgres
-  )
-```
-
----
-
-^In ray tracing we have 3 components: 
-- The world (of spheres), and ambient light
-- A Light source
-- A Camera
-- Reflected Rays
-- Discarded rays
-- Canvas 
-
-![left fit](img/raytracing-description-1.png) 
-
-# Ray tracing
-[.list: alignment(left)]
-
-- World (spheres), light source, camera
-- Incident rays    
-- Reflected rays
-
----
-^To build an image we need a canvas, a rectangular surface divided in pixels where the rays coming from the world will hit and produce the color they carry in the ray
-
-![left fit](img/raytracing-description-2.png) 
-
-[.build-lists: false]
-
-# Ray tracing
-[.list: alignment(left)]
-
-- World (spheres), light source, camera
-- Incident rays    
-- Reflected rays
-- Discarded rays
-- Canvas
-
----
-
-![left fit](img/raytracing-description-3.png) 
-
-[.build-lists: false]
-
-# Ray tracing
-[.list: alignment(left)]
-
-- World (spheres), light source, camera
-- Incident rays    
-- Reflected rays
-- Discarded rays
-- Canvas
-- Colored pixels
-
----
-
-![left fit](img/raytracing-description-4.png) 
-
-[.build-lists: false]
-
-# Ray tracing
-[.list: alignment(left)]
-
-- World (spheres), light source, camera
-- Incident rays    
-- Reflected rays
-- Discarded rays
-- Canvas
-- Colored pixels
-
----
-^At this point we have 2 options, one is computing all the rays for all the objects, and then consider only those that hit the canvas
-Another option is work on the reverse problem, i.e. have rays going out of the canvas, hitting the objects in the world and determine how they behave considering all the agents
-
-![left fit](img/raytracing-description-4.png) 
-
-# Ray tracing
-
-Options:
-
-[.list: alignment(left)]
-1. Compute all the rays (and discard most of them)
-1. Compute only the rays outgoing from the camera through the canvas, and determine how they behave on the surfaces
-
-<!--
-^Let's start building our model. A ray is an infinite line with a starting point. So let's start with the components we need to represent it, i.e. points and vectors
-
-![left fit](img/rt-ray-def-tex.png) 
-
-# Ray
-
-A ray is defined by the point it starts from, and its direction
-
-$$
-P(t) = P_0 + t \vec{D},   t > 0 
-$$
-
----
-
-# Foundations
-^ The foundations of this all are points and vectors, which are both represented by 3 numbers, but the difference is that vectors can be added with each othr, but points cannot. What you can do with points is add a vector to a point to get another point. And what you are building this way is an affine space
-
-![left fit](img/pt-vec-combined.png) 
-
-[.list: alignment(left)]
-- Points and Vectors
-- Transformations (rotate, scale, translate)
-
----
-^ It's pretty easy to encode this in simple scala... and to verify that they satisfy the properties we just mentioned 
-
-![left fit](img/pt-vec-combined.png) 
-
-
-### Points and Vectors
-
-[.code-highlight: 1-6]
-[.code-highlight: 1-14]
-```scala
-case class Vec(x: Double, y: Double, z: Double) {
-  def +(other: Vec): Vec   = 
-    Vec(x + other.x, y + other.y, z + other.z)
-  def unary_- : Vec = 
-    Vec(-x, -y, -z)
-}
-
-case class Pt(x: Double, y: Double, z: Double) {
-  def -(otherPt: Pt): Vec =
-    Vec(x - otherPt.x, y - otherPt.y, z - otherPt.z)
-  def +(vec: Vec)         = 
-    Pt(x + vec.x, y + vec.y, z + vec.z)
-}
-```
-
----
-^The first thing we do when we build our representation is to establish properties, so we write some PBT to check that 
-* `(Vec, +)` form a group, 
-* `(Vec, Pt, +, -)` form an affine space
-* `approx` is due to double finite precision
-
-![left fit](img/pt-vec-combined.png) 
-
-### Points and Vectors
-
-`zio-test` for PBT
-
-[.code-highlight: 1-7]
-[.code-highlight: 1-14]
-```scala
-testM("vectors form a group")(
-  check(vecGen, vecGen, vecGen) { (v1, v2, v3) =>
-    assertApprox  (v1 + (v2 + v3), (v1 + v2) + v3) &&
-    assertApprox (v1 + v2 , v2 + v1) &&
-    assertApprox (v1 + Vec.zero , Vec.zero + v1)
-  }
-),
-
-
-testM("vectors and points form an affine space") (
-  check(ptGen, ptGen) { (p1, p2) =>
-    assertApprox (p2, p1 + (p2 - p1))
-  }
-)
-```
--->
-
----
-^once we define points and vectors, the definition of a ray is immediate:
-
-![left fit](img/rt-ray-def-tex.png) 
-
-### Ray
-
-$$
-P(t) = P_0 + t \vec{D},   t > 0 
-$$
-
-```scala
-case class Ray(origin: Pt, direction: Vec) {
-  def positionAt(t: Double): Pt =
-    origin + (direction * t)
-}
-```
-
----
-^ Provided 
-* we have an AT type for our affine transformation 
-* let's define a ZIO module to operate on  transformations, so we start defining a Service to apply them to point, vectors, and chain/compose them
-* Define a trait that has a val with the same name of the module, pointing to the service we just created
-* Define an object extending the Service, parameterized on the module itself. 
-* The accessor creation is pretty repetitive and mechanical, so an annotation can do the boring stuff for us (the same way simulacrum does for typeclasses)
-
-### Transformations Module
-
-```scala
-trait AT
-
-type ATModule = Has[ATModule.Service]
-object ATModule {
-  /* Service */
-  trait Service {
-    def applyTf(tf: AT, vec: Vec): ZIO[ATError, Vec]
-    def applyTf(tf: AT, pt: Pt): ZIO[ATError, Pt]
-    def compose(first: AT, second: AT): ZIO[ATError, AT]
-  }
-
-  def applyTf(tf: AT, vec: Vec): ZIO[ATModule, ATError, Vec] =
-    ZIO.accessM(_.aTModule.applyTf(tf, vec))
-  def applyTf(tf: AT, pt: Pt): ZIO[ATModule, ATError, Pt] =
-    ZIO.accessM(_.aTModule.applyTf(tf, pt))
-  def compose(first: AT, second: AT): ZIO[ATModule, ATError, AT] =
-    ZIO.accessM(_.aTModule.compose(first, second))
-}
-```
-
----
-^ This accessor object allows us to summon our module wherever necessary, and build something like this, where I'm summoning capabilities from different modules, not only, but the compiler is able to infer and mix these capabilities for us
-### Transformations Module
-
-[.code-highlight: 1-26]
-```scala
-val rotatedPt = 
-  for {
-    rotateX <- ATModule.rotateX(math.Pi / 2)
-    _       <- Log.info("rotated of π/2")
-    res     <- ATModule.applyTf(rotateX, Pt(1, 1, 1))
-  } yield  res
-```
----
-
-^ Show type inference
-### Transformations Module
-
-[.code-highlight: 1-26]
-```scala
-val rotatedPt: ZIO[ATModule with Log, ATError, Pt] =
-  for {
-    rotateX <- ATModule.rotateX(math.Pi / 2)
-    _       <- Log.info("rotated of π/2")
-    res     <- ATModule.applyTf(rotateX, Pt(1, 1, 1))
-  } yield  res
-```
-
----
-
-^ Now we want to provide an implementation of this module. With an easy convention to translate vectors and points into 4-tuples, all we need is matrix multiplication  
-### Transformations Module - Live
-
-```scala
-val rotated: ZIO[ATModule, ATError, Vec] = 
-  for {
-    rotateX <- ATModule.rotateX(math.Pi/2)
-    res     <- ATModule.applyTf(rotateX, Pt(1, 1, 1))
-  } yield res
-```
-
-[.list: alignment(left)]
-- `Vec(x, y, z)`  $$ \Rightarrow [x, y, z, 0]^T$$ 
-
-- `Pt(x, y, z)⠀`  $$ \Rightarrow [x, y, z, 1]^T$$ 
-
-- ⠀
-$$
-\mathtt{rotated} = \begin{pmatrix}
-\cos \pi/2 & -\sin \pi/2 & 0 & 0\\
-\sin \pi/2 & \cos \pi/2 & 0 & 0\\
-0 & 0 & 1 & 0 \\
-0 & 0 & 0 & 1 \\
-\end{pmatrix}
-\begin{pmatrix}
-x\\
-y\\
-z \\
-0\\
-\end{pmatrix}
-$$
-
----
-
-### Transformations Module - Live
-
-$$
-\mathtt{rotated} = \begin{pmatrix}
-\cos \pi/2 & -\sin \pi/2 & 0 & 0\\
-\sin \pi/2 & \cos \pi/2 & 0 & 0\\
-0 & 0 & 1 & 0 \\
-0 & 0 & 0 & 1 \\
-\end{pmatrix}
-\begin{pmatrix}
-x\\
-y\\
-z \\
-0\\
-\end{pmatrix}
-$$
-
-
-```scala
-val live: ZLayer[MatrixModule, Nothing, ATModule] = 
-  ZLayer.fromService { matrixSvc =>
-    new Service {
-      def applyTf(tf: AT, vec: Vec) = 
-        matrixSvc.mul(tf.direct, v)
-      
-      /* ...  */   
-    }
-}
-```
----
-^So now we have a tool that allows us to perform the std transformations on our points and vectors, so we are ready to build a camera
-
-### Layer 1: Transformations
-
-![inline 80%](img/rotate-animated.gif)![inline 80%](img/translate-animated.gif)![inline 80%](img/scale-animated.gif)
-
-<!--
-
----
-^The first thing to consider is that everything is relative. If my standard position as observer is x=0, and I want to see how things look like from x = -3, what I can do is translate the world of +3 and keep on sitting at x = 0. We call this the canonical position
-### Camera 
-
-##### Everything is relative!
-
-![inline](img/camera-translate.png) 
-
-- Canonical camera: observe always from `x = 0` and translate the world by `+3`
-
----
-^In the same spirit, let's define our canonical camera
-
-![left fit](img/canonical-camera.png) 
-
-### Camera - canonical
-
-[.code-highlight: 1-4, 6]
-[.code-highlight: 1-6]
-```scala
-case class Camera (
-  hRes: Int,
-  vRes: Int,
-  fieldOfViewRad: Double,
-  tf: AT // world transformation
-)
-```
-
--->
-
----
-
-### Camera
-^Following the same reasoning we did with our camera translated in x=-3, we can generalize and build a generic camera by composing 2 transformations, one coping for the rotations, and one for the translations that brought our camera there. We have just to use the inverse because we will apply them to the world
-
-![left fit](img/rotated-camera.png) 
-
-[.code-highlight: 1-8]
-[.code-highlight: 1-20]
-```scala
-object Camera {
-  def make(
-    viewFrom: Pt, 
-    viewTo: Pt, 
-    upDirection: Vec, 
-    visualAngleRad: Double, 
-    hRes: Int, 
-    vRes: Int): 
-    ZIO[ATModule, AlgebraicError, Camera] =
-    worldTransformation(viewFrom, viewTo, upDirection).map { 
-      worldTf => Camera(hRes, vRes, visualAngleRad, worlfTf)
-    }
-```
-
----
-
-^For shapes we follow the same approach we followed for camera, canonical + transformation
-
-### World
-- `Sphere.canonical` $$ \{(x, y, z) : x^2 + y^2 + z^2 = 1\} $$
-- `Plane.canonical` $$\{(x, y, z) : y = 0\} $$
-
-[.code-highlight: none]
-[.code-highlight: 1-4]
-[.code-highlight: 1-6]
-[.code-highlight: 1-7]
-```scala
-sealed trait Shape {
-  def transformation: AT
-  def material: Material
-}
-
-case class Sphere(transformation: AT, material: Material) extends Shape
-case class Plane(transformation: AT, material: Material) extends Shape
-```
----
-^Let's see how we can make a generic sphere, a generic plane, and put them in the world
-
-### World
-
-##### Make a world
-
-[.code-highlight: none]
-[.code-highlight: 1-7]
-[.code-highlight: 1-11]
-[.code-highlight: 1-13]
-```scala
-object Sphere {
-  def make(center: Pt, radius: Double, mat: Material): ZIO[ATModule, ATError, Sphere] = for {
-    scale     <- ATModule.scale(radius, radius, radius)
-    translate <- ATModule.translate(center.x, center.y, center.z)
-    composed  <- ATModule.compose(scale, translate)
-  } yield Sphere(composed, mat)
-}
-
-object Plane {
-  def make(...): ZIO[ATModule, ATError, Plane] = ???
-}
-
-case class World(pointLight: PointLight, objects: List[Shape])
-```
-
-- Everything requires `ATModule`
-
----
-^Rendering a world means producing an image that reprsents how the world looks like from our camera. So from the highest level I want to be able to produce a stream of colored pixels representing my image. So we define the module, make it accessible, and provide a trivial implementation that produces white pixels no matter what
-
-### World Rendering - Top Down
-#### Rastering - Generate a stream of colored pixels
-
-```scala
-type RasteringModule = Has[Service]
-object RasteringModule {
-  trait Service {
-    def raster(world: World, camera: Camera): 
-      Stream[RayTracerError, ColoredPixel]
-  }
-}
-```
-
----
-^Now what do we need to provide a LIVE implementation of this? We need to be able to provide one ray for each pixel of the camera, and for each ray we need to compute the color. Let's introduce 2 modules with these responsibilities
-
-![left fit](img/raytracing-description-4.png) 
-
-### World Rendering - Top Down
-#### Rastering - **Live**
-
-- Camera module - Ray per pixel
-
-[.code-highlight: none]
-[.code-highlight: all]
-```scala
-type CameraModule = Has[Service]
-object CameraModule {
-  trait Service {
-    def rayForPixel(
-      camera: Camera, px: Int, py: Int
-    ): UIO[Ray]
-  }
-}
-```
-
-- World module - Color per ray
-
-[.code-highlight: none]
-[.code-highlight: all]
-```scala
-type WorldModule = Has[Service]
-object WorldModule {
-  trait Service {
-    def colorForRay(
-      world: World, ray: Ray
-    ): IO[RayTracerError, Color]
-  }
-}
-```
-
----
-^And with these 2 modules we can provide a live implementation of the rastering logic. We declare dependencies on the *services* of our modules, and then we access them in the implmentation
-
-### World Rendering - Top Down
-#### Rastering **Live** - Module Dependency
-
+[.code-highlight: 1-3] 
 [.code-highlight: 1-5]
-[.code-highlight: 1-6]
-[.code-highlight: all]
 ```scala
-val chunkRasteringModule: ZLayer[CameraModule with WorldModule, Nothing, RasteringModule] =
-  ZLayer.fromServices[cameraModule.Service, worldModule.Service, rasteringModule.Service] {
-    (cameraSvc, worldSvc) =>
-      new Service {
-        override def raster(world: World, camera: Camera): 
-          Stream[Any, RayTracerError, ColoredPixel] = {
-          val pixels: Stream[Nothing, (Int, Int)] = ???
-          pixels.mapM{
-            case (px, py) =>
-              for {
-                ray   <- cameraModule.rayForPixel(camera, px, py)
-                color <- worldModule.colorForRay(world, ray)
-              } yield data.ColoredPixel(Pixel(px, py), color)
-          }
-      }
-    }
-  }
+Users.live: URLayer[UsersRepo 
+  with Logging 
+  with Clock, Users]
+
+UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+
+type AppEnv = Blocking with Clock with Logging
+val baseLayer = ZLayer.identity[AppEnv]
+
+val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
+(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
 ```
 
----
-^So the takeaway of this is...
-
-### Layers
-
-#### Takeaway
-#### Implement and test every layer only in terms of the immediately underlying layer
+![right fit](img/users-layer-2.png)
 
 ---
-^And now that we got warmed up with this, let's go on and implement all the logic through modules
-
-![100%](img/modules-all-the-way-meme.jpg) 
-
----
-^We can go on and fragment our logic in modules small enough to be tested and thought of in isolation
-
-![left fit](img/modules-0.png) 
-
-### Live **CameraModule**
-
+^As usual, follow the types!
+#### Putting things together
+[.code-highlight: 1-8] 
+[.code-highlight: 1-11]
 ```scala
-object CameraModule {
-  val live: ZLayer[ATModule, Nothing, CameraModule] = 
-    ZLayer.fromService { atSvc => 
-      /* ... */
-    }
-}
+Users.live: URLayer[UsersRepo 
+  with Logging 
+  with Clock, Users]
+
+UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+
+type AppEnv = Blocking with Clock with Logging
+val baseLayer = ZLayer.identity[AppEnv]
+
+val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
+(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+
 ```
 
----
-^And implement the world module
-
-![left fit](img/modules-1.png) 
-### Live **WorldModule**
-#### **WorldTopologyModule**
-
-[.code-highlight: none]
-```scala
-object WorldTopologyModule {
-  trait Service {
-    def intersections(world: World, ray: Ray): 
-      UIO[List[Intersection]]
-    
-    def isShadowed(world: World, pt: Pt): 
-      UIO[Boolean]
-  }  
-}
-```
----
-^World topology module solves this problem
-
-![left fit](img/shadow.png) 
-### Live **WorldModule**
-#### **WorldTopologyModule**
-
-[.code-highlight: all]
-```scala
-object WorldTopologyModule {
-  trait Service {
-    def intersections(world: World, ray: Ray): 
-      UIO[List[Intersection]]
-    
-    def isShadowed(world: World, pt: Pt): 
-      UIO[Boolean]
-  }  
-}
-```
+![right fit](img/users-layer-3.png)
 
 ---
-^And implement the world module
+^As usual, follow the types!
+#### Putting things together
 
-![left fit](img/modules-2.png) 
-### Live **WorldModule**
-#### **WorldHitCompsModule**
-
-[.code-highlight: none]
 ```scala
-case class HitComps(
-  shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, 
-  rayReflectV: Vec, n1: Double = 1, n2: Double = 1
-)
+Users.live: URLayer[UsersRepo 
+  with Logging 
+  with Clock, Users]
 
-object WorldHitCompsModule {
-  trait Service {
-    def hitComps(
-      ray: Ray, hit: Intersection, 
-      intersections: List[Intersection]
-    ): IO[GenericError, HitComps]
-  }
-}
+UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
 
+type AppEnv = Blocking with Clock with Logging
+val baseLayer = ZLayer.identity[AppEnv]
+
+val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
+(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+
+DB.transactor: ZLayer[Blocking with Configuration, DBError, Transactor] = ???
 ```
+
+![right fit](img/users-layer-4.png)
+
 ---
-^World hit components module
-
-![left fit](img/hit-components.png) 
-### Live **WorldModule**
-#### **WorldHitCompsModule**
+^As usual, follow the types!
+#### Putting things together
 
 ```scala
-case class HitComps(
-  shape: Shape, hitPt: Pt, normalV: Vec, eyeV: Vec, 
-  rayReflectV: Vec, n1: Double = 1, n2: Double = 1
-)
+Users.live: URLayer[UsersRepo 
+  with Logging 
+  with Clock, Users]
 
-object WorldHitCompsModule {
-  trait Service {
-    def hitComps(
-      ray: Ray, hit: Intersection, 
-      intersections: List[Intersection]
-    ): IO[GenericError, HitComps]
-  }
-}
+UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+
+type AppEnv = Blocking with Clock with Logging
+val baseLayer = ZLayer.identity[AppEnv]
+
+val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
+(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+
+DB.transactor: ZLayer[Blocking with Configuration, DBError, Transactor] = ???
 ```
+
+![right fit](img/users-layer-5.png)
+
 ---
+^As usual, follow the types!
+#### Putting things together
 
-![left fit](img/modules-3.png) 
-### Live **WorldModule**
-#### **PhongReflectionModule**
-
-[.code-highlight: none]
 ```scala
-case class PhongComponents(
-  ambient: Color, diffuse: Color, reflective: Color
-) {
-  def toColor: Color = ambient + diffuse + reflective
-}
+Users.live: URLayer[UsersRepo 
+  with Logging 
+  with Clock, Users]
 
-object PhongReflectionModule {
-  trait Service {
-    def lighting(
-      pointLight: PointLight, hitComps: HitComps, 
-      inShadow: Boolean
-    ): UIO[PhongComponents]
-  }
-}
+UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+
+type AppEnv = Blocking with Clock with Logging
+val baseLayer = ZLayer.identity[AppEnv]
+
+val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
+(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+
+DB.transactor: ZLayer[Blocking with Configuration, DBError, Transactor] = ???
+
+val transactorLayer: ZLayer[Blocking, AppError, Transactor] = 
+(Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor
 ```
+
+![right fit](img/users-layer-6.png)
+
 ---
-^World hit components module
+^As usual, follow the types!
+#### Putting things together
 
-![left fit](img/hit-components.png) 
-### Live **WorldModule**
-#### **PhongReflectionModule**
-
-[.code-highlight: all]
+[.code-highlight: 1-19] 
+[.code-highlight: 1-22] 
+[.code-highlight: all] 
 ```scala
-case class PhongComponents(
-  ambient: Color, diffuse: Color, reflective: Color
-) {
-  def toColor: Color = ambient + diffuse + reflective
-}
+Users.live: URLayer[UsersRepo 
+  with Logging 
+  with Clock, Users]
 
-object PhongReflectionModule {
-  trait Service {
-    def lighting(
-      pointLight: PointLight, hitComps: HitComps, 
-      inShadow: Boolean
-    ): UIO[PhongComponents]
-  }
-}
+UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+
+type AppEnv = Blocking with Clock with Logging
+val baseLayer = ZLayer.identity[AppEnv]
+
+val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
+(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+
+DB.transactor: ZLayer[Blocking with Configuration, DBError, Transactor] = ???
+
+val transactorLayer: ZLayer[Blocking, AppError, Transactor] = 
+(Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor
+
+val fullLayer: ZLayer[AppEnv, AppError, Users] = 
+(transactorLayer ++ baseLayer) >>> usersLayer
+
+val program: ZIO[Users, 
+  BootstrapError, Unit] =  ???
+
+val satisfied: ZIO[AppEnv, 
+  AppError, Unit] = program.provideLayer(fullLayer)
 ```
+
+![right fit](img/users-layer-7.png)
 
 
 ---
-^So far we didn't look at the color of objects, or their material properties, but that's what makes the colors of an object. So we define a data type that collects the material properties that make how it looks like
-*Ambient models the presence of an "ambient" light uniformly distributed in the world
-*Diffusion models the behavior of light hitting a matte material and assumes that the effect of light hitting a material at a give point is just depending on the projection of the ray of light on the normal vector to the surface at that point. This will affect any eye observing that point in LOS.
-*Specularity/shininess model how the source of light is reflected by the material, i.e. how you are going to see that lamp reflected on the object itself.
+# Unit testing
 
 
-![left fit](img/specular-shininess.png) 
-### Reflect the ligtht source
 
-Describe material properties
-
-```scala
-case class Material(
-  color: Color, // the basic color
-  ambient: Double,  // ∈ [0, 1] 
-  diffuse: Double,  // ∈ [0, 1]
-  specular: Double, // ∈ [0, 1]
-  shininess: Double, // ∈ [10, 200]
-)
-```
----
-
-![left fit](img/modules-5.png) 
-### Live **PhongReflectionModule**
-#### With **LightDiffusion** and **LightReflection** 
-
-
-```scala
-object PhongReflectionModule {
-  trait Service { }
-
-  val live: ZLayer[ATModule 
-    with LightDiffusionModule 
-    with LightReflectionModule, 
-    Nothing, 
-    PhongReflectionModule]
-}
-```
-
----
-![left fit](img/modules-5.png) 
-### Drawing program
-
-```scala
-def draw(sceneBundle: SceneBundle): 
-  ZIO[CanvasSerializer 
-    with RasteringModule 
-    with ATModule,
-    Nothing, 
-    Array[Byte]]
-```
-
----
-![left fit](img/modules-5.png) 
-### With Http4s
-
-```scala
-class DrawRoutes[R <: CanvasSerializer with RasteringModule with ATModule] {
-  type F[A] = RIO[R, A]
-  private val http4sDsl = new Http4sDsl[F] {}
-  import http4sDsl._
-
-  val httpRoutes: HttpRoutes[F] = HttpRoutes.of[F] {
-    case req @ POST -> Root / "draw" =>
-      req.decode[Scene] { scene =>
-        (for {
-          bundle    <- Http2World.httpScene2World(scene)
-          bytes     <- draw(bundle)
-        } yield bytes).foldM {
-          e => InternalServerError(s"something went wrong"),
-          Ok(bytes, "image/png")
-        }
-      }
-  }
-}
-```
-
----
-![left fit](img/modules-5.png) 
-# And in main
-## **Provide the layers**
-
-```scala
-val world: ZLayer[ATModule, Nothing, WorldModule] = 
-  (topologyM ++ hitCompsM ++ phongM) >>> worldModule.live  
-
-val rastering: ZLayer[ATModule, Nothing, RasteringModule] = 
-  (world ++ cameraModule.live) >>> rasteringModule.chunkRasteringModule
-
-val full: Layer[Nothing, Rastering] = (layers.atM >>> rastering)
-
-object Main extends zio.App {
-
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] =
-    httpProgram.provideLayer(full)
-}
-```
----
-
-### **Swapping modules**
-
-![left fit](img/refractive-without-refraction-blue.png) 
-
-[.build-lists: false]
-- Red: reflective = 0.9
-- Green/white: reflective = 0.6
-- Blue: reflective = 0.9, transparency: 1
-
-```scala
-val world: ZLayer[ATModule, Nothing, WorldModule] = 
-  (topologyM ++ hitCompsM ++ phongM) >>> worldModule.opaque
-```
---- 
-[.autoscale: false]
-
-### **Swapping modules**
-
-![left fit](img/refractive-with-refraction-blue.png) 
-
-[.build-lists: false]
-
-- Red: reflective = 0.9
-- Green/white: reflective = 0.6
-- Blue: reflective = 0.9, transparency: 1
-
-
-```scala
-val world: ZLayer[ATModule, Nothing, WorldModule] = 
-  (topologyM ++ hitCompsM ++ phongM) >>> worldModule.live
-```
 ---
 
 ### Conclusion - **ZLayer**
@@ -1432,7 +782,7 @@ val world: ZLayer[ATModule, Nothing, WorldModule] =
 - Dependency graph in the code 💪
 - Type safety, no magic 🙌
 - Compiler helps to satisfy requirements 🤗
-- Try it out, and join ZIO Discord channel 😊
+- Easy to get it up and running in your team 😊
 
 ---
 

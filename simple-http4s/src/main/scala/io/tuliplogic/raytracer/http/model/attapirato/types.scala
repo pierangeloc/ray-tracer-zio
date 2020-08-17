@@ -41,7 +41,7 @@ object types {
     @newtype case class PasswordHash(value: NonEmptyString)
     @newtype case class ClearPassword(value: NonEmptyString)
 
-    case class User(id: UserId, email: Email, password: Option[PasswordHash], accessToken: Option[AccessToken])
+    case class User(id: UserId, email: Email, password: Option[PasswordHash], accessToken: Option[AccessToken], expiresAt: Option[Long])
 
     object Cmd {
       case class CreateUser(email: Email)

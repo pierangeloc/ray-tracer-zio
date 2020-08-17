@@ -14,6 +14,7 @@ object UsersRepo {
   trait Service {
     def getUser(userId: UserId): IO[DBError, Option[User]]
     def getUserByEmail(email: Email): IO[DBError, Option[User]]
+    def getUserByAccessToken(email: AccessToken): IO[DBError, Option[User]]
     def createUser(user: User): IO[DBError, Unit]
     def updatePassword(userId: UserId, newPassword: PasswordHash): IO[DBError, Unit]
     def updateAccessToken(userId: UserId, newAccessToken: AccessToken, expiresAt: ZonedDateTime): IO[DBError, Unit]
@@ -25,6 +26,10 @@ object UsersRepo {
 
   def getUserByEmail(email: Email): ZIO[UsersRepo, DBError, Option[User]] =
     ZIO.accessM(_.get.getUserByEmail(email))
+
+  def getUserByAccessToken(at: AccessToken): ZIO[UsersRepo, DBError, Option[User]] =
+    ZIO.accessM(_.get.getUserByAccessToken(at))
+
 
   def createUser(user: User): ZIO[UsersRepo, DBError, Unit] =
     ZIO.accessM(_.get.createUser(user))
@@ -45,11 +50,15 @@ object UsersRepo {
             .mapError(e => DBError(s"Error fetching user with id = $userId", Some(e)))
         }
 
-
         override def getUserByEmail(email: Email): IO[DBError, Option[User]] =
           Queries.getUserByEmail(email)
             .option.transact(transactor)
             .mapError(e => DBError(s"Error fetching user with email = $email", Some(e)))
+
+        override def getUserByAccessToken(at: AccessToken): IO[DBError, Option[User]] =
+          Queries.getUserByAccessToken(at)
+            .option.transact(transactor)
+            .mapError(e => DBError(s"Error fetching user by access token", Some(e)))
 
         override def createUser(user: User): IO[DBError, Unit] = {
           Queries.createUser(user)
@@ -57,7 +66,6 @@ object UsersRepo {
             .mapError(e => DBError(s"Error creating user with id = ${user.id}", Some(e)))
             .unit
         }
-
 
         override def updatePassword(userId: UserId, newPassword: PasswordHash): IO[DBError, Unit] =
           Queries.updatePassword(userId, newPassword)
@@ -70,7 +78,6 @@ object UsersRepo {
             .run.transact(transactor)
             .mapError(e => DBError(s"Error updating access token for user with id = $userId", Some(e)))
             .unit
-
       }
     }
 
@@ -91,6 +98,12 @@ object UsersRepo {
       sql"""select * from users
            |  where email = ${email.value}
          """.stripMargin.query[User]
+
+    def getUserByAccessToken(accessToken: AccessToken): Query0[User] =
+      sql"""select * from users
+           |  where access_token = ${accessToken.value}
+         """.stripMargin
+        .query[User]
 
     def createUser(user: User): Update0 =
       sql"""

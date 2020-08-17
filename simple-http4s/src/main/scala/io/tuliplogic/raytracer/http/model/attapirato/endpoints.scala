@@ -3,12 +3,13 @@ package io.tuliplogic.raytracer.http.model.attapirato
 
 import java.util.UUID
 
+import eu.timepit.refined.types.string.NonEmptyString
 import io.tuliplogic.raytracer.http.model.attapirato.drawings.Scenes
 import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, Scene, SceneDescription, SceneId}
 import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.Event.{LoginSuccess, PasswordUpdated, UserCreated}
 import io.tuliplogic.raytracer.http.model.attapirato.types.user.Cmd.{CreateUser, Login, UpdatePassword}
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.UserId
+import io.tuliplogic.raytracer.http.model.attapirato.types.user.AccessToken
 import io.tuliplogic.raytracer.http.model.attapirato.users.Users
 import org.http4s.HttpRoutes
 import sttp.tapir.openapi.OpenAPI
@@ -35,21 +36,23 @@ object endpoints {
     endpoint.post.in("login").in(jsonBody[Login]).out(jsonBody[LoginSuccess]).errorOut(jsonBody[APIError])
       .description("Login to obtain an access token")
 
-  val renderScene: Endpoint[SceneDescription, APIError, DrawResponse, Nothing] =
-    endpoint.post.in("scene").in(jsonBody[SceneDescription]).out(jsonBody[DrawResponse]).errorOut(jsonBody[APIError])
+  val renderScene: Endpoint[(SceneDescription, String), APIError, DrawResponse, Nothing] =
+    endpoint.post.in("scene").in(jsonBody[SceneDescription]).in(auth.bearer[String])
+      .out(jsonBody[DrawResponse]).errorOut(jsonBody[APIError])
       .description("Draw an image from a given Scene description")
 
-  val getAllScenes: Endpoint[String, APIError, List[Scene], Nothing] =
-    endpoint.get.in("scene" / path[String]("sceneId")).out(jsonBody[List[Scene]]).errorOut(jsonBody[APIError])
+  val getAllScenes: Endpoint[(String, String), APIError, List[Scene], Nothing] =
+    endpoint.get.in("scene" / path[String]("sceneId")).in(auth.bearer[String])
+      .out(jsonBody[List[Scene]]).errorOut(jsonBody[APIError])
       .description("Fetch all the scene descriptions for the authenticated user")
 
-  val getScene: Endpoint[String, APIError, Scene, Nothing] =
-    endpoint.get.in("scene" / path[String]("sceneId"))
+  val getScene: Endpoint[(String, String), APIError, Scene, Nothing] =
+    endpoint.get.in("scene" / path[String]("sceneId")).in(auth.bearer[String])
       .out(jsonBody[Scene]).errorOut(jsonBody[APIError])
       .description("Fetch all a single scene descriptions for the authenticated user")
 
-  val getSceneImage: Endpoint[String, APIError, Array[Byte], Nothing] =
-    endpoint.get.in("scene" / path[String]("sceneId") / "png")
+  val getSceneImage: Endpoint[(String, String), APIError, Array[Byte], Nothing] =
+    endpoint.get.in("scene" / path[String]("sceneId") / "png").in(auth.bearer[String])
       .out(byteArrayBody).errorOut(jsonBody[APIError])
       .description("Fetch the image of a single scene")
 
@@ -79,20 +82,30 @@ object zioEndpoints {
   }
 
   object scenes {
-    val triggerRendering: ZServerEndpoint[Scenes, SceneDescription, APIError, DrawResponse] =
-      endpoints.renderScene.zServerLogic(sceneDescription =>
-        Scenes.createScene(UserId(UUID.fromString("91171a5e-1376-4fc4-8929-b6e2654f5014")), sceneDescription)
-          .map(scene => DrawResponse(scene.id, scene.status))
-      )
 
-    val getScene =
-      endpoints.getScene.zServerLogic { sceneId =>
-            Scenes.getScene(UserId(UUID.fromString("91171a5e-1376-4fc4-8929-b6e2654f5014")), SceneId(UUID.fromString(sceneId)))
+
+    val triggerRendering: ZServerEndpoint[Scenes with Users, (SceneDescription, String), APIError, DrawResponse] =
+      endpoints.renderScene.zServerLogic { case (sceneDescription, at) =>
+        for {
+          userId <- Users.authenticate(AccessToken(NonEmptyString.unsafeFrom(at)))
+          scene  <- Scenes.createScene(userId, sceneDescription)
+        } yield DrawResponse(scene.id, scene.status)
       }
 
-    val getSceneImage =
-      endpoints.getSceneImage.zServerLogic { sceneId =>
-        Scenes.getSceneImage(UserId(UUID.fromString("91171a5e-1376-4fc4-8929-b6e2654f5014")), SceneId(UUID.fromString(sceneId)))
+    val getScene: ZServerEndpoint[Scenes with Users, (String, String), APIError, Scene] =
+      endpoints.getScene.zServerLogic { case (sceneId, at) =>
+        for {
+          userId <- Users.authenticate(AccessToken((NonEmptyString.unsafeFrom(at))))
+          scene <- Scenes.getScene(userId, SceneId(UUID.fromString(sceneId)))
+        } yield scene
+      }
+
+    val getSceneImage: ZServerEndpoint[Scenes with Users, (String, String), APIError, Array[Byte]] =
+      endpoints.getSceneImage.zServerLogic { case (sceneId, at) =>
+        for {
+          userId <- Users.authenticate(AccessToken((NonEmptyString.unsafeFrom(at))))
+          sceneBytes <- Scenes.getSceneImage(userId, SceneId(UUID.fromString(sceneId)))
+        } yield sceneBytes
       }
   }
 
@@ -173,9 +186,9 @@ object AllRoutes {
     val createUser: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
     val updateUserPwd: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.updatePassword.toRoutesR
     val loginUser: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.login.toRoutesR
-    val triggerRendering: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.triggerRendering.toRoutesR
-    val getScene: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.getScene.toRoutesR
-    val getSceneImage: URIO[Scenes, HttpRoutes[Task]] = zioEndpoints.scenes.getSceneImage.toRoutesR
+    val triggerRendering: URIO[Scenes with Users, HttpRoutes[Task]] = zioEndpoints.scenes.triggerRendering.toRoutesR
+    val getScene: URIO[Scenes  with Users, HttpRoutes[Task]] = zioEndpoints.scenes.getScene.toRoutesR
+    val getSceneImage: URIO[Scenes with Users, HttpRoutes[Task]] = zioEndpoints.scenes.getSceneImage.toRoutesR
 
     val openApiDocs: OpenAPI = Seq(
       endpoints.createUser,

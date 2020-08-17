@@ -47,7 +47,7 @@ object Layers {
     transactorLayer ++ baseLayer
 
   val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
-    (UsersRepo.doobieLive ++ withTransactor) >>> Users.live
+    (UsersRepo.doobieLive ++ baseLayer) >>> Users.live
 
   val pngRendererLayer: URLayer[Blocking, ATModule with RasteringModule with CanvasSerializer with PngRenderer] =
     ((layers.atM >+> layers.rasteringM) ++ layers.cSerializerM) >+> PngRenderer.live
@@ -56,5 +56,8 @@ object Layers {
     (ScenesRepo.doobieLive ++ pngRendererLayer ++ ZLayer.identity[Logging]) >>> Scenes.live
 
   val programLayer: ZLayer[AppEnv, AppError, Users with Scenes with Transactor with Logging] = (transactorLayer ++ baseLayer) >+> (usersLayer ++ scenesLayer)
+
+  val fullLayer: ZLayer[AppEnv, AppError, Users] = (transactorLayer ++ baseLayer) >>> usersLayer
+
 
 }
