@@ -10,43 +10,22 @@ Under `ray-tracer/io.tuliplogic.raytracer.ops.programs` you'll find a few progra
 It is possible also to have images served through http.
 
 
+1. Run docker-compose
+```
+> docker-compose up
+```
+
 1. Run the http server (port 8080)
 
 ```
-> simple-http4s/runMain io.tuliplogic.raytracer.http.model.Main`
+> simple-http4s/reStart`
 ```
 
-2. Describe a world as a json, e.g. the same world that is described programmatically in `io.tuliplogic.raytracer.ops.programs.Chapter10World2` corresponds to the file [`world10w2.json`](simple-http4s/worlds/world10w2.json)
+2. Open swagger [docs](http://localhost:8090/docs/index.html?url=/docs/docs.yaml)
 
-3. Send a POST to `localhost:8080/ray-tracer/draw`
- 
-```
-curl -X POST \
-  http://localhost:8080/ray-tracer/draw \
-  -d '{<content of the json file defined at point 2>}'
-```
-
-This will provide an ID
-
-```json
-{
-    "value": 5929599111289830703
-}
-```
-
-4. Get the world rendering from the Id
-
-```
-curl -X GET \
-  http://localhost:8080/ray-tracer/draw/5929599111289830703 
-```
-
-If the image is ready you will get the png, otherwise you will get a json message that tells when the image computation was submitted
-
-
-You can also retrieve the list of submitted world computations (regardless if computed or in progress)
-
-```
-curl -X GET \
-  http://localhost:8080/ray-tracer/draw
-```
+3. Create a user
+4. Update user password
+5. Login and get an access token
+6. Use the access token to submit a computation to `POST /scene`
+7. Check the status of the submitted scenes `GET /scene`
+8. Access a single complete scene png with `GET /scene/<sceneId>/png`
