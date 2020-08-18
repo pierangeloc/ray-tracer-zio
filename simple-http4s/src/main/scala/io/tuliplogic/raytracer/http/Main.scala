@@ -41,7 +41,8 @@ object Layers {
   type AppEnv = Blocking with Clock with Logging
   val baseLayer = ZLayer.identity[AppEnv]
 
-  val transactorLayer: ZLayer[Blocking, AppError, Transactor] = (Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor
+  val transactorLayer: ZLayer[Blocking, AppError, Transactor] =
+    (Config.fromTypesafeConfig() ++ ZLayer.identity[Blocking]) >>> DB.transactor
 
   val withTransactor: ZLayer[AppEnv, AppError, Transactor with AppEnv] =
     transactorLayer ++ baseLayer
@@ -55,9 +56,11 @@ object Layers {
   val scenesLayer: ZLayer[Transactor with Blocking with Logging, Nothing, Scenes] =
     (ScenesRepo.doobieLive ++ pngRendererLayer ++ ZLayer.identity[Logging]) >>> Scenes.live
 
-  val programLayer: ZLayer[AppEnv, AppError, Users with Scenes with Transactor with Logging] = (transactorLayer ++ baseLayer) >+> (usersLayer ++ scenesLayer)
+  val programLayer: ZLayer[AppEnv, AppError, Users with Scenes with Transactor with Logging] =
+    (transactorLayer ++ baseLayer) >+> (usersLayer ++ scenesLayer)
 
-  val fullLayer: ZLayer[AppEnv, AppError, Users] = (transactorLayer ++ baseLayer) >>> usersLayer
+  val fullLayer: ZLayer[AppEnv, AppError, Users] =
+    (transactorLayer ++ baseLayer) >>> usersLayer
 
 
 }
