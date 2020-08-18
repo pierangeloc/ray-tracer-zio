@@ -1,13 +1,13 @@
-package io.tuliplogic.raytracer.http.model.attapirato.users
+package io.tuliplogic.raytracer.http.users
 
 import java.time.ZoneId
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import eu.timepit.refined.types.string.NonEmptyString
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.Event.{LoginSuccess, PasswordUpdated, UserCreated}
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, ClearPassword, Email, PasswordHash, User, UserId}
+import io.tuliplogic.raytracer.http.types.AppError.APIError
+import io.tuliplogic.raytracer.http.types.user.Event.{LoginSuccess, PasswordUpdated, UserCreated}
+import io.tuliplogic.raytracer.http.types.user.{AccessToken, ClearPassword, Email, PasswordHash, User, UserId}
 import zio.clock.Clock
 import zio.logging.{Logger, Logging}
 import zio.{IO, UIO, URLayer, ZIO, ZLayer}

@@ -1,11 +1,11 @@
-package io.tuliplogic.raytracer.http.model.attapirato
+package io.tuliplogic.raytracer.http
 
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
-import io.tuliplogic.raytracer.http.model.attapirato.DB.Transactor
-import io.tuliplogic.raytracer.http.model.attapirato.drawings.{PngRenderer, Scenes, ScenesRepo}
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.BootstrapError
-import io.tuliplogic.raytracer.http.model.attapirato.users.{Users, UsersRepo}
+import io.tuliplogic.raytracer.http.DB.Transactor
+import io.tuliplogic.raytracer.http.drawings.{PngRenderer, Scenes, ScenesRepo}
+import io.tuliplogic.raytracer.http.types.AppError
+import io.tuliplogic.raytracer.http.types.AppError.BootstrapError
+import io.tuliplogic.raytracer.http.users.{Users, UsersRepo}
 import io.tuliplogic.raytracer.ops.model.modules.rasteringModule.RasteringModule
 import io.tuliplogic.raytracer.ops.programs.layers
 import io.tuliplogic.raytracer.ops.rendering.canvasSerializer.CanvasSerializer

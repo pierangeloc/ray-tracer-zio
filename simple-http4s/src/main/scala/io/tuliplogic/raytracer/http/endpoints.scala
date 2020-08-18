@@ -1,16 +1,15 @@
-package io.tuliplogic.raytracer.http.model.attapirato
-
+package io.tuliplogic.raytracer.http
 
 import java.util.UUID
 
 import eu.timepit.refined.types.string.NonEmptyString
-import io.tuliplogic.raytracer.http.model.attapirato.drawings.Scenes
-import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{DrawResponse, Scene, SceneDescription, SceneId}
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.Event.{LoginSuccess, PasswordUpdated, UserCreated}
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.Cmd.{CreateUser, Login, UpdatePassword}
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.AccessToken
-import io.tuliplogic.raytracer.http.model.attapirato.users.Users
+import io.tuliplogic.raytracer.http.drawings.Scenes
+import io.tuliplogic.raytracer.http.types.drawing.{DrawResponse, Scene, SceneDescription, SceneId}
+import io.tuliplogic.raytracer.http.types.AppError.APIError
+import io.tuliplogic.raytracer.http.types.user.Event.{LoginSuccess, PasswordUpdated, UserCreated}
+import io.tuliplogic.raytracer.http.types.user.Cmd.{CreateUser, Login, UpdatePassword}
+import io.tuliplogic.raytracer.http.types.user.AccessToken
+import io.tuliplogic.raytracer.http.users.Users
 import org.http4s.HttpRoutes
 import sttp.tapir.openapi.OpenAPI
 import sttp.tapir.swagger.http4s.SwaggerHttp4s

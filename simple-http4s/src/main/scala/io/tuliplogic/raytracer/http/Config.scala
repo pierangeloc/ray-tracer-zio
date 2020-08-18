@@ -1,6 +1,7 @@
-package io.tuliplogic.raytracer.http.model.attapirato
+package io.tuliplogic.raytracer.http
+
 import com.typesafe.config.ConfigFactory
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.BootstrapError
+import io.tuliplogic.raytracer.http.types.AppError.BootstrapError
 import pureconfig.ConfigSource
 import pureconfig.module.catseffect.syntax._
 import pureconfig.generic.auto._

@@ -1,12 +1,12 @@
-package io.tuliplogic.raytracer.http.model.attapirato.users
+package io.tuliplogic.raytracer.http.users
 
 import java.time.ZonedDateTime
 
 import doobie._
 import doobie.hikari.HikariTransactor
-import io.tuliplogic.raytracer.http.model.attapirato.DB
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.DBError
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.{AccessToken, Email, PasswordHash, User, UserId}
+import io.tuliplogic.raytracer.http.DB
+import io.tuliplogic.raytracer.http.types.AppError.DBError
+import io.tuliplogic.raytracer.http.types.user.{AccessToken, Email, PasswordHash, User, UserId}
 import zio.{IO, Task, URLayer, ZIO, ZLayer}
 
 object UsersRepo {
@@ -87,7 +87,7 @@ object UsersRepo {
     import doobie.implicits._
     import doobie.refined.implicits._
     import doobie.postgres.implicits._
-    import io.tuliplogic.raytracer.http.model.attapirato.doobieUtils._
+    import io.tuliplogic.raytracer.http.doobieUtils._
 
     def getUser(userId: UserId): Query0[User] =
       sql"""select * from users

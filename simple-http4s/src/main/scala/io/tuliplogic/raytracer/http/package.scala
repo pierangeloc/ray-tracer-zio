@@ -1,4 +1,4 @@
-package io.tuliplogic.raytracer.http.model
+package io.tuliplogic.raytracer
 
 import eu.timepit.refined.W
 import eu.timepit.refined.api.Refined
@@ -8,7 +8,7 @@ import sttp.tapir.Schema
 import io.estatico.newtype.Coercible
 import io.estatico.newtype.ops._
 import zio.Has
-package object attapirato {
+package object http {
   // ----- Coercible codecs -----
   implicit def coercibleDecoder[A: Coercible[B, *], B: Decoder]: Decoder[A] =
     Decoder[B].map(_.coerce[A])

@@ -1,13 +1,12 @@
-package io.tuliplogic.raytracer.http.model.attapirato.drawings
-
+package io.tuliplogic.raytracer.http.drawings
 
 import doobie.hikari.HikariTransactor
 import doobie.{Query0, Update0}
 import io.circe.Json
-import io.tuliplogic.raytracer.http.model.attapirato.DB
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.DBError
-import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{Scene, SceneDescription, SceneId, SceneStatus}
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.UserId
+import io.tuliplogic.raytracer.http.DB
+import io.tuliplogic.raytracer.http.types.AppError.DBError
+import io.tuliplogic.raytracer.http.types.drawing.{Scene, SceneDescription, SceneId, SceneStatus}
+import io.tuliplogic.raytracer.http.types.user.UserId
 import zio.{IO, Task, URLayer, ZIO, ZLayer}
 
 object ScenesRepo {
@@ -89,7 +88,7 @@ object ScenesRepo {
 
     import doobie.implicits._
     import doobie.postgres.implicits._
-    import io.tuliplogic.raytracer.http.model.attapirato.doobieUtils._
+    import io.tuliplogic.raytracer.http.doobieUtils._
     import io.circe.generic.auto._
     import io.circe.syntax._
 

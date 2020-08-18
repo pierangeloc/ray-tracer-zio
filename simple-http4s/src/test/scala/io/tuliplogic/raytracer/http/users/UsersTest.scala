@@ -1,4 +1,4 @@
-package io.tuliplogic.raytracer.http.model.attapirato.users
+package io.tuliplogic.raytracer.http.users
 
 import java.time.ZonedDateTime
 import java.util.UUID
@@ -13,6 +13,8 @@ import zio.test.Assertion._
 import zio.test.{DefaultRunnableSpec, ZSpec, suite}
 import com.github.t3hnar.bcrypt._
 import eu.timepit.refined.types.string.NonEmptyString
+import io.tuliplogic.raytracer.http.types.AppError.DBError
+import io.tuliplogic.raytracer.http.types.user.{User, UserId}
 import zio.clock.Clock
 import zio.logging.Logging
 import zio.logging.slf4j.Slf4jLogger
@@ -32,7 +34,7 @@ object UsersTest extends DefaultRunnableSpec {
 
   val userRepo: URLayer[Has[Ref[Map[UserId, User]]], UsersRepo] = ZLayer.fromService (users =>
     new UsersRepo.Service {
-      override def getUser(userId: UserId): IO[AppError.DBError, Option[User]] =
+      override def getUser(userId: UserId): IO[DBError, Option[User]] =
         users.get.map(_.find(_._1 == userId).map(_._2))
 
       override def getUserByEmail(email: Email): IO[AppError.DBError, Option[User]] =

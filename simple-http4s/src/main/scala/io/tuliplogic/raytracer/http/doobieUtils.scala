@@ -1,5 +1,4 @@
-package io.tuliplogic.raytracer.http.model.attapirato
-
+package io.tuliplogic.raytracer.http
 
 import cats.data.NonEmptyList
 import cats.{Eq, Show}

@@ -29,13 +29,13 @@ lazy val `simple-http4s` = project
   .settings(commonSettings)
   .enablePlugins(JavaServerAppPackaging)
   .settings(
-    mainClass in Compile := Some("io.tuliplogic.raytracer.http.model.attapirato.Main"),
+    mainClass in Compile := Some("io.tuliplogic.raytracer.http.Main"),
     packageName in Docker := "ray-tracer-zio",
     dockerBaseImage := "openjdk:jre-alpine"
   )
   .settings(
     name := "simple-http4s",
-    mainClass in reStart := Some("io.tuliplogic.raytracer.http.model.attapirato.Main"),
+    mainClass in reStart := Some("io.tuliplogic.raytracer.http.Main"),
       libraryDependencies ++= (Seq(
       zio,
       zioCats exclude("dev.zio", "zio-test"),

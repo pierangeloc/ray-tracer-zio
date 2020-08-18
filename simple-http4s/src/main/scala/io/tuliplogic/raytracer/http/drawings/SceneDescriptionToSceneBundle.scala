@@ -1,19 +1,21 @@
-package io.tuliplogic.raytracer.http.model
+package io.tuliplogic.raytracer.http.drawings
 
-import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.commons.errors.BusinessError.GenericError
-import io.tuliplogic.raytracer.commons.errors.IOError.HttpError
-import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
-import io.tuliplogic.raytracer.geometry.affine.aTModule
+import io.tuliplogic.raytracer.commons.errors.RayTracerError
 import io.tuliplogic.raytracer.geometry.affine.PointVec.{Pt, Vec}
-import io.tuliplogic.raytracer.http.model.DrawingProgram.SceneBundle
-import io.tuliplogic.raytracer.http.model.Shape.{Plane, Sphere}
+import io.tuliplogic.raytracer.geometry.affine.aTModule
+import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
+import io.tuliplogic.raytracer.http.DrawingProgram.SceneBundle
+import io.tuliplogic.raytracer.http.types.AppError.APIError
+import io.tuliplogic.raytracer.http.types.drawing.Shape.{Plane, Sphere}
+import io.tuliplogic.raytracer.http.types.drawing.{Camera, Material, Pattern, SceneDescription, Shape}
 import io.tuliplogic.raytracer.ops.model.data
-import io.tuliplogic.raytracer.ops.model.data.{Color, Scene, World}
-import zio.console.Console
+import io.tuliplogic.raytracer.ops.model.data.{Color, World}
+import zio.logging.{Logging, log}
 import zio.{UIO, ZIO}
 
-object Http2World {
+object SceneDescriptionToSceneBundle {
+
   private def viewFrom(httpCamera: Camera): Pt =
     Pt(httpCamera.fromX, httpCamera.fromY, httpCamera.fromZ)
   private def viewTo(httpCamera: Camera): Pt = Pt(httpCamera.toX, httpCamera.toY, httpCamera.toZ)
@@ -47,12 +49,12 @@ object Http2World {
     } yield data.Pattern.GradientX(col1, col2, tf)
   }
 
-  private def material(mat: Material): ZIO[ATModule with Console, GenericError, data.Material] = mat match {
+  private def material(mat: Material): ZIO[ATModule with Logging, GenericError, data.Material] = mat match {
     case m @ Material(p, ambient, diffuse, specular, shininess, reflective, transparency, refractionIndex) =>
       for {
-        _ <- zio.console.putStrLn(s"Creating material from $m")
+        _ <- log.info(s"Creating material from $m")
         p <- pattern(p)
-        _ <- zio.console.putStrLn(s"Created pattern $p for material")
+        _ <- log.info(s"Created pattern $p for material")
       } yield
         data.Material(
           p,
@@ -66,10 +68,10 @@ object Http2World {
         )
   }
 
-  private def httpShape2Shape(s: Shape): ZIO[ATModule with Console, RayTracerError with Product with Serializable, data.Scene.Shape] = s match {
+  private def httpShape2Shape(s: Shape): ZIO[ATModule with Logging, RayTracerError with Product with Serializable, data.Scene.Shape] = s match {
     case p @ Plane(m, rotateX, rotateY, rotateZ, translateX, translateY, translateZ) =>
       for {
-        _   <- zio.console.putStrLn(s"creating plane from $p")
+        _   <- log.info(s"creating plane from $p")
         mat <- material(m)
         plane <- data.Scene.Plane.make(
           rotateX.getOrElse(0),
@@ -81,7 +83,7 @@ object Http2World {
 
     case sph @ Sphere(m, centerX, centerY, centerZ, radius) =>
       for {
-        _   <- zio.console.putStrLn(s"creating sphere from $sph")
+        _   <- log.info(s"creating sphere from $sph")
         mat <- material(m)
         s <- data.Scene.Sphere.make(
           Pt(centerX, centerY, centerZ),
@@ -91,10 +93,10 @@ object Http2World {
       } yield s
   }
 
-  def httpScene2World(httpScene: Scene): ZIO[ATModule with Console, HttpError, SceneBundle] = (
+  def sceneDescription2SceneBundle(httpScene: SceneDescription): ZIO[ATModule with Logging, APIError, SceneBundle] = (
     for {
-      worldShapes     <- ZIO.foreach(httpScene.shapes)(httpShape2Shape).mapError(e => HttpError(e.getMessage))
-      pointLightColor <- Color.fromHex(httpScene.pointLight.color).mapError(e => HttpError(e.getMessage))
+      worldShapes     <- ZIO.foreach(httpScene.shapes)(httpShape2Shape).mapError(e => APIError(e.getMessage))
+      pointLightColor <- Color.fromHex(httpScene.pointLight.color).mapError(e => APIError(e.getMessage))
       pointLight      <- UIO(data.Scene.PointLight(Pt(httpScene.pointLight.ptX, httpScene.pointLight.ptY, httpScene.pointLight.ptZ), pointLightColor))
 
     } yield

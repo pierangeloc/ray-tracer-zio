@@ -1,13 +1,13 @@
-package io.tuliplogic.raytracer.http.model.attapirato.drawings
+package io.tuliplogic.raytracer.http.drawings
 
 import java.util.UUID
 
 import io.tuliplogic.raytracer.geometry.affine.aTModule
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
-import io.tuliplogic.raytracer.http.model.attapirato.types
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.APIError
-import io.tuliplogic.raytracer.http.model.attapirato.types.drawing.{Scene, SceneDescription, SceneId, SceneStatus}
-import io.tuliplogic.raytracer.http.model.attapirato.types.user.UserId
+import io.tuliplogic.raytracer.http.types
+import io.tuliplogic.raytracer.http.types.AppError.APIError
+import io.tuliplogic.raytracer.http.types.drawing.{Scene, SceneDescription, SceneId, SceneStatus}
+import io.tuliplogic.raytracer.http.types.user.UserId
 import zio.logging.{Logger, Logging, log}
 import zio.{Has, IO, UIO, URLayer, ZIO, ZLayer}
 

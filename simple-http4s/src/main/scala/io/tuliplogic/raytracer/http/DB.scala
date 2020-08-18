@@ -1,9 +1,9 @@
-package io.tuliplogic.raytracer.http.model.attapirato
+package io.tuliplogic.raytracer.http
 
 import cats.effect.Blocker
 import zio.interop.catz._
 import doobie.hikari.HikariTransactor
-import io.tuliplogic.raytracer.http.model.attapirato.types.AppError.{BootstrapError, DBError}
+import io.tuliplogic.raytracer.http.types.AppError.{BootstrapError, DBError}
 import org.flywaydb.core.Flyway
 import zio.blocking.Blocking
 import zio.{Has, Runtime, Task, ZIO, ZLayer}

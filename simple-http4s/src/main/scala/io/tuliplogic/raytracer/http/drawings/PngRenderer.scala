@@ -1,8 +1,8 @@
-package io.tuliplogic.raytracer.http.model.attapirato.drawings
+package io.tuliplogic.raytracer.http.drawings
 
 import io.tuliplogic.raytracer.geometry.affine.aTModule
 import io.tuliplogic.raytracer.geometry.affine.aTModule.ATModule
-import io.tuliplogic.raytracer.http.model.DrawingProgram.SceneBundle
+import io.tuliplogic.raytracer.http.DrawingProgram.SceneBundle
 import io.tuliplogic.raytracer.ops.model.modules.rasteringModule
 import io.tuliplogic.raytracer.ops.model.modules.rasteringModule.RasteringModule
 import io.tuliplogic.raytracer.ops.programs.RaytracingProgram
