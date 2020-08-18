@@ -2,7 +2,7 @@ autoscale: true
 slidenumbers: false
 build-lists: true
 list: alignment(left)
-theme: Fira, 3
+theme: Next, 3
 
 ^Plan for the talk: 
 1. ZIO[R, E, A] lends to the module pattern
@@ -22,7 +22,7 @@ theme: Fira, 3
 
 # `ZLayer`
 
-## Let's build a full application
+## Build a web application
 ##### Pierangelo Cecchetto
 
 <br/>
