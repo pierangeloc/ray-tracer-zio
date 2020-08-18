@@ -40,8 +40,8 @@ object endpoints {
       .out(jsonBody[DrawResponse]).errorOut(jsonBody[APIError])
       .description("Draw an image from a given Scene description")
 
-  val getAllScenes: Endpoint[(String, String), APIError, List[Scene], Nothing] =
-    endpoint.get.in("scene" / path[String]("sceneId")).in(auth.bearer[String])
+  val getAllScenes: Endpoint[String, APIError, List[Scene], Nothing] =
+    endpoint.get.in("scene").in(auth.bearer[String])
       .out(jsonBody[List[Scene]]).errorOut(jsonBody[APIError])
       .description("Fetch all the scene descriptions for the authenticated user")
 
@@ -101,6 +101,14 @@ object zioEndpoints {
         } yield scene
       }
 
+    val getAllScenes: ZServerEndpoint[Scenes with Users, String, APIError, List[Scene]] =
+      endpoints.getAllScenes.zServerLogic { case at =>
+        for {
+          userId <- Users.authenticate(AccessToken((NonEmptyString.unsafeFrom(at))))
+          scene <- Scenes.getScenes(userId)
+        } yield scene
+      }
+
     val getSceneImage: ZServerEndpoint[Scenes with Users, (String, String), APIError, Array[Byte]] =
       endpoints.getSceneImage.zServerLogic { case (sceneId, at) =>
         for {
@@ -135,6 +143,7 @@ object AllRoutes {
     val loginUser: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.login.toRoutesR
     val triggerRendering: URIO[Scenes with Users, HttpRoutes[Task]] = zioEndpoints.scenes.triggerRendering.toRoutesR
     val getScene: URIO[Scenes  with Users, HttpRoutes[Task]] = zioEndpoints.scenes.getScene.toRoutesR
+    val getAllScenes: URIO[Scenes  with Users, HttpRoutes[Task]] = zioEndpoints.scenes.getAllScenes.toRoutesR
     val getSceneImage: URIO[Scenes with Users, HttpRoutes[Task]] = zioEndpoints.scenes.getSceneImage.toRoutesR
 
     val openApiDocs: OpenAPI = Seq(
@@ -143,13 +152,14 @@ object AllRoutes {
       endpoints.login,
       endpoints.renderScene,
       endpoints.getScene,
+      endpoints.getAllScenes,
       endpoints.getSceneImage,
     ).toOpenAPI("Ray Tracing as a Service", "1.0")
       .servers(List(Server("http://localhost:8090").description("local server")))
 
     val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]
 
-    val allRoutes: List[URIO[Users with Scenes with Logging, HttpRoutes[Task]]] = List(createUser, updateUserPwd, loginUser, triggerRendering, getScene, getSceneImage)
+    val allRoutes: List[URIO[Users with Scenes with Logging, HttpRoutes[Task]]] = List(createUser, updateUserPwd, loginUser, triggerRendering, getScene, getAllScenes, getSceneImage)
 
   val serve: RIO[Users with Scenes with Logging, Unit] = for {
       allRoutes <- ZIO.mergeAll(allRoutes)(docsRoutes)(_ <+> _)

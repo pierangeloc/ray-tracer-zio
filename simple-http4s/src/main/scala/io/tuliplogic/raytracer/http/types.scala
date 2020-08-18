@@ -3,10 +3,11 @@ package io.tuliplogic.raytracer.http
 import java.util.UUID
 
 import eu.timepit.refined.types.string.NonEmptyString
+import io.circe.{Decoder, Encoder}
 import io.estatico.newtype.macros.newtype
 import zio.ZIO
 
-import scala.util.Random
+import scala.util.{Failure, Random, Success}
 
 object types {
 
@@ -122,6 +123,17 @@ object types {
     object SceneStatus {
       case object InProgress extends SceneStatus
       case object Done extends SceneStatus
+
+      implicit val encoder: Encoder[SceneStatus] = Encoder.encodeString.contramap[SceneStatus]{
+        case InProgress => "in-progress"
+        case Done => "done"
+      }
+
+      implicit val decoder: Decoder[SceneStatus] = Decoder.decodeString.emapTry{
+        case "in-progress" => Success(InProgress)
+        case "done" => Success(Done)
+        case other => Failure(new IllegalArgumentException(s"scene status $other is not legal"))
+      }
     }
 
     case class DrawResponse(drawingId: SceneId, status: SceneStatus)

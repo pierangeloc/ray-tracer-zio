@@ -430,8 +430,11 @@ object UsersRepo {
 
 #### User Management / UserRepo
 
+[.code-highlight: 1-4] 
+[.code-highlight: 1-8] 
+[.code-highlight: all] 
 ```scala
-val doobieLive: URLayer[DB.Transactor, UsersRepo] =
+val live: URLayer[DB.Transactor, UsersRepo] =
   ZLayer.fromService[HikariTransactor[Task], UsersRepo.Service] { 
     transactor =>
     new Service {
@@ -632,13 +635,13 @@ Users.live: URLayer[UsersRepo
   with Logging 
   with Clock, Users]
 
-UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+UsersRepo.live: URLayer[DB.Transactor, UsersRepo] = ???
 
 type AppEnv = Blocking with Clock with Logging
 val baseLayer = ZLayer.identity[AppEnv]
 
 val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
-(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+(UsersRepo.live ++ baseLayer) >>> Users.live
 ```
 
 ![right fit](img/users-layer-2.png)
@@ -653,13 +656,13 @@ Users.live: URLayer[UsersRepo
   with Logging 
   with Clock, Users]
 
-UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+UsersRepo.live: URLayer[DB.Transactor, UsersRepo] = ???
 
 type AppEnv = Blocking with Clock with Logging
 val baseLayer = ZLayer.identity[AppEnv]
 
 val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
-(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+(UsersRepo.live ++ baseLayer) >>> Users.live
 
 ```
 
@@ -674,13 +677,13 @@ Users.live: URLayer[UsersRepo
   with Logging 
   with Clock, Users]
 
-UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+UsersRepo.live: URLayer[DB.Transactor, UsersRepo] = ???
 
 type AppEnv = Blocking with Clock with Logging
 val baseLayer = ZLayer.identity[AppEnv]
 
 val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
-(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+(UsersRepo.live ++ baseLayer) >>> Users.live
 
 DB.transactor: ZLayer[Blocking with Configuration, DBError, Transactor] = ???
 ```
@@ -696,13 +699,13 @@ Users.live: URLayer[UsersRepo
   with Logging 
   with Clock, Users]
 
-UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+UsersRepo.live: URLayer[DB.Transactor, UsersRepo] = ???
 
 type AppEnv = Blocking with Clock with Logging
 val baseLayer = ZLayer.identity[AppEnv]
 
 val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
-(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+(UsersRepo.live ++ baseLayer) >>> Users.live
 
 DB.transactor: ZLayer[Blocking with Configuration, DBError, Transactor] = ???
 ```
@@ -718,13 +721,13 @@ Users.live: URLayer[UsersRepo
   with Logging 
   with Clock, Users]
 
-UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+UsersRepo.live: URLayer[DB.Transactor, UsersRepo] = ???
 
 type AppEnv = Blocking with Clock with Logging
 val baseLayer = ZLayer.identity[AppEnv]
 
 val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
-(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+(UsersRepo.live ++ baseLayer) >>> Users.live
 
 DB.transactor: ZLayer[Blocking with Configuration, DBError, Transactor] = ???
 
@@ -746,13 +749,13 @@ Users.live: URLayer[UsersRepo
   with Logging 
   with Clock, Users]
 
-UsersRepo.doobieLive: URLayer[DB.Transactor, UsersRepo] = ???
+UsersRepo.live: URLayer[DB.Transactor, UsersRepo] = ???
 
 type AppEnv = Blocking with Clock with Logging
 val baseLayer = ZLayer.identity[AppEnv]
 
 val usersLayer: ZLayer[Transactor with AppEnv, AppError, Users] =
-(UsersRepo.doobieLive ++ baseLayer) >>> Users.live
+(UsersRepo.live ++ baseLayer) >>> Users.live
 
 DB.transactor: ZLayer[Blocking with Configuration, DBError, Transactor] = ???
 
@@ -771,6 +774,9 @@ val runnable: ZIO[AppEnv,
 
 ![right fit](img/users-layer-7.png)
 
+---
+
+# Demo time!
 
 ---
 
@@ -816,8 +822,8 @@ val slf4jLogger: ULayer[Logging] = ???
 - Dependency graph in the code 💪
 - Type safety, no magic, full control 🙌
 - Compiler helps to satisfy requirements 🤗
-- Resource safety
-- Easy to onboard even for non-fp devs 😊
+- Resource safety 🦺
+- Easy to onboard 😊
 
 ---
 
