@@ -1,27 +1,27 @@
 import sbt._
 
 object Dependencies {
-  val http4sVersion = "0.21.6"
-  val tapirZioVersion = "0.16.11"
+  val http4sVersion = "0.21.20"
+  val tapirZioVersion = "0.17.16"
 
-  val zioVersion       = "1.0.0"
-  val zioCatsVersion   = "2.1.4.0"
+  val zioVersion       = "1.0.5"
+  val zioCatsVersion   = "2.3.1.0"
 //  val zioMacrosVersion = "0.6.0"
 
-  val fs2Version        = "2.0.0"
-  val catsVersion       = "2.0.0"
-  val catsEffectVersion = "2.1.4"
-  val circeVersion      = "0.12.1"
+  val fs2Version        = "2.5.3"
+  val catsVersion       = "2.4.2"
+  val catsEffectVersion = "2.3.3"
+  val circeVersion      = "0.13.0"
   val scrimageVersion   = "3.0.0"
 
   lazy val scalaTest  = "org.scalatest"  %% "scalatest"  % "3.2.0-M1"
-  lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.14.0"
+  lazy val scalaCheck = "org.scalacheck" %% "scalacheck" % "1.15.3"
 
   lazy val cats       = "org.typelevel" %% "cats-core"   % catsVersion
   lazy val catsEffect = "org.typelevel" %% "cats-effect" % catsEffectVersion
   lazy val catsLaws   = "org.typelevel" %% "cats-laws"   % "1.1.0"
 
-  lazy val mouse       = "org.typelevel" %% "mouse"            % "0.23"
+  lazy val mouse       = "org.typelevel" %% "mouse"            % "1.0.0"
   lazy val zio         = "dev.zio"       %% "zio"              % zioVersion
   lazy val zioStreams  = "dev.zio"       %% "zio-streams"      % zioVersion
   lazy val zioCats     = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
@@ -40,7 +40,7 @@ object Dependencies {
   lazy val tapirOpenAPICirce  = "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % tapirZioVersion
   lazy val tapirSwagger       = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-http4s"  % tapirZioVersion
 
-  lazy val newType = "io.estatico" %% "newtype" % "0.4.3"
+  lazy val newType = "io.estatico" %% "newtype" % "0.4.4"
 
   lazy val http4sAll = Seq(http4sServer, http4sClient, http4sDsl, http4sCirce)
 
@@ -50,7 +50,7 @@ object Dependencies {
   lazy val circeParser   = "io.circe" %% "circe-parser"          % circeVersion
   lazy val circeRefined  = "io.circe" %% "circe-refined"         % circeVersion
 
-  val doobieVersion = "0.8.8"
+  val doobieVersion = "0.12.1"
 
   val db: Seq[ModuleID] =
     Seq(
@@ -59,35 +59,35 @@ object Dependencies {
       "org.tpolecat" %% "doobie-hikari"   % doobieVersion, // HikariCP transactor.
       "org.tpolecat" %% "doobie-postgres" % doobieVersion, // Postgres driver 42.2.5 + type mappings.
       "org.tpolecat" %% "doobie-refined"  % doobieVersion,  // For refined types,
-      "org.flywaydb" %  "flyway-core"     % "6.3.0"
+      "org.flywaydb" %  "flyway-core"     % "7.7.0"
 
   )
 
   // type-level restrictions
-  lazy val breeze       = "org.scalanlp" %% "breeze"         % "1.0"
-  lazy val breezeNative = "org.scalanlp" %% "breeze-natives" % "1.0"
-  lazy val singletonOps = "eu.timepit"   %% "singleton-ops"  % "0.4.1"
+  lazy val breeze       = "org.scalanlp" %% "breeze"         % "1.1"
+  lazy val breezeNative = "org.scalanlp" %% "breeze-natives" % "1.1"
+  lazy val singletonOps = "eu.timepit"   %% "singleton-ops"  % "0.5.2"
   lazy val refined      = "eu.timepit"   %% "refined"        % "0.9.7"
   lazy val refinedCats  = "eu.timepit"   %% "refined-cats"   % "0.9.7"
 
   lazy val circeAll = Seq(circeCore, circeGeneric, circeGenericX)
 
   lazy val log4CatsCore  = "io.chrisdavenport" %% s"log4cats-core"  % "1.0.1"
-  lazy val log4CatsSlf4j = "io.chrisdavenport" %% s"log4cats-slf4j" % "1.0.1"
+  lazy val log4CatsSlf4j = "io.chrisdavenport" %% s"log4cats-slf4j" % "1.1.1"
 
-  val zioLoggingVersion = "0.4.0"
+  val zioLoggingVersion = "0.5.7"
   val logging = List(
     "com.typesafe.scala-logging"  %% "scala-logging"            % "3.9.2",
     "ch.qos.logback"              % "logback-classic"           % "1.2.3",
-    "net.logstash.logback"        % "logstash-logback-encoder"  % "6.4",
-    "org.codehaus.janino"         % "janino"                    % "3.1.2",
+    "net.logstash.logback"        % "logstash-logback-encoder"  % "6.6",
+    "org.codehaus.janino"         % "janino"                    % "3.1.3",
     "dev.zio"                     %% "zio-logging-slf4j"        % zioLoggingVersion
   )
 
   val cfg = List(
-    "com.github.pureconfig"   %% "pureconfig-cats-effect" % "0.12.2",
-    "com.github.pureconfig"   %% "pureconfig-generic" % "0.12.2",
-    "eu.timepit"              %% "refined-pureconfig"     % "0.9.13"
+    "com.github.pureconfig"   %% "pureconfig-cats-effect" % "0.14.1",
+    "com.github.pureconfig"   %% "pureconfig-generic" % "0.14.1",
+    "eu.timepit"              %% "refined-pureconfig"     % "0.9.21"
   )
 
   lazy val bcrypt    = "com.github.t3hnar" %% "scala-bcrypt" % "4.3.0"

@@ -6,7 +6,7 @@ enablePlugins(ScalafmtPlugin)
 
 lazy val commonSettings = inThisBuild(
     Seq(
-      scalaVersion := "2.13.1",
+      scalaVersion := "2.13.5",
       scalacOptions ++= Seq("-Ymacro-annotations"),
       resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       updateOptions := updateOptions.value.withLatestSnapshots(false),

@@ -16,11 +16,23 @@ import sttp.tapir.swagger.http4s.SwaggerHttp4s
 import zio.logging.Logging
 import zio.{RIO, Task, URIO, ZIO}
 
+object kurac {
+
+  object endpoints {
+
+    import sttp.tapir._
+    implicitly[Schema[CreateUser]]
+  }
+
+}
+
 object endpoints {
   import sttp.tapir._
   import sttp.tapir.json.circe._
   import io.circe.generic.auto._
   import io.circe.refined._
+
+  implicitly[Schema[CreateUser]]
 
   val createUser: Endpoint[CreateUser, APIError, UserCreated, Nothing] =
     endpoint.post.in("user").in(jsonBody[CreateUser]).out(jsonBody[UserCreated]).errorOut(jsonBody[APIError])

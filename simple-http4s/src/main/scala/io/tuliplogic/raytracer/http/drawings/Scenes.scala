@@ -57,26 +57,26 @@ object Scenes {
             _ <- renderAndSaveWhenReady(userId, sceneId, sceneDescription).provide(Has(logger)).forkDaemon
           } yield Scene(sceneId, sceneDescription, SceneStatus.InProgress))
             .catchAll { e =>
-            logger.throwable(s"Error starting scene computation", e) *> ZIO.fail(APIError("Error starting scene computation")),
+            logger.throwable(s"Error starting scene computation", e) *> ZIO.fail(APIError("Error starting scene computation"))
           }
         }
 
         def getScene(userId: UserId, sceneId: SceneId): IO[APIError, Scene] =
           scenesRepo.getScene(userId, sceneId)
             .catchAll { e =>
-              logger.throwable(s"Error retrieving scene description", e) *> ZIO.fail(APIError("Error retrieving scene description")),
+              logger.throwable(s"Error retrieving scene description", e) *> ZIO.fail(APIError("Error retrieving scene description"))
             }
 
         def getScenes(userId: UserId): IO[APIError, List[Scene]] =
           scenesRepo.getScenes(userId)
             .catchAll { e =>
-              logger.throwable(s"Error retrieving all scene descriptions", e) *> ZIO.fail(APIError("Error retrieving scene description")),
+              logger.throwable(s"Error retrieving all scene descriptions", e) *> ZIO.fail(APIError("Error retrieving scene description"))
             }
 
         def getSceneImage(userId: UserId, sceneId: SceneId): IO[APIError, Array[Byte]] =
           scenesRepo.getSceneImage(userId, sceneId)
             .catchAll { e =>
-              logger.throwable(s"Error retrieving scene image", e) *> ZIO.fail(APIError("Error retrieving scene description")),
+              logger.throwable(s"Error retrieving scene image", e) *> ZIO.fail(APIError("Error retrieving scene description"))
             }
       }
 

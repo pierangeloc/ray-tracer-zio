@@ -1,5 +1,5 @@
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.4")
-addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.10")
+addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.16")
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.7.3")
 
 // Allows To Continuously Reload Applications
