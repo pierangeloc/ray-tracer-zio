@@ -1,7 +1,6 @@
 package io.tuliplogic.raytracer.http
 
 import java.util.UUID
-
 import eu.timepit.refined.types.string.NonEmptyString
 import io.tuliplogic.raytracer.http.drawings.Scenes
 import io.tuliplogic.raytracer.http.types.drawing.{DrawResponse, Scene, SceneDescription, SceneId}
@@ -13,57 +12,51 @@ import io.tuliplogic.raytracer.http.users.Users
 import org.http4s.HttpRoutes
 import sttp.tapir.openapi.OpenAPI
 import sttp.tapir.swagger.http4s.SwaggerHttp4s
+import zio.clock.Clock
 import zio.logging.Logging
-import zio.{RIO, Task, URIO, ZIO}
-
-object kurac {
-
-  object endpoints {
-
-    import sttp.tapir._
-    implicitly[Schema[CreateUser]]
-  }
-
-}
+import zio.{RIO, UIO, ZIO}
 
 object endpoints {
-  import sttp.tapir._
+
+  import sttp.tapir.ztapir._
+  import sttp.tapir.generic.auto._
   import sttp.tapir.json.circe._
+  import sttp.tapir.codec.newtype._
+  import sttp.tapir.codec.refined._
   import io.circe.generic.auto._
   import io.circe.refined._
 
-  implicitly[Schema[CreateUser]]
-
-  val createUser: Endpoint[CreateUser, APIError, UserCreated, Nothing] =
+  val authBearer = auth.bearer[String]()
+  val createUser: ZEndpoint[CreateUser, APIError, UserCreated] =
     endpoint.post.in("user").in(jsonBody[CreateUser]).out(jsonBody[UserCreated]).errorOut(jsonBody[APIError])
       .description("Create a user")
 
-  val updatePassword: Endpoint[UpdatePassword, APIError, PasswordUpdated, Nothing] =
+  val updatePassword: ZEndpoint[UpdatePassword, APIError, PasswordUpdated] =
     endpoint.put.in("user").in(jsonBody[UpdatePassword]).out(jsonBody[PasswordUpdated]).errorOut(jsonBody[APIError])
       .description("Update user password")
 
 
-  val login: Endpoint[Login, APIError, LoginSuccess, Nothing] =
+  val login: ZEndpoint[Login, APIError, LoginSuccess] =
     endpoint.post.in("login").in(jsonBody[Login]).out(jsonBody[LoginSuccess]).errorOut(jsonBody[APIError])
       .description("Login to obtain an access token")
 
-  val renderScene: Endpoint[(SceneDescription, String), APIError, DrawResponse, Nothing] =
-    endpoint.post.in("scene").in(jsonBody[SceneDescription]).in(auth.bearer[String])
+  val renderScene: ZEndpoint[(SceneDescription, String), APIError, DrawResponse] =
+    endpoint.post.in("scene").in(jsonBody[SceneDescription]).in(authBearer)
       .out(jsonBody[DrawResponse]).errorOut(jsonBody[APIError])
       .description("Draw an image from a given Scene description")
 
-  val getAllScenes: Endpoint[String, APIError, List[Scene], Nothing] =
-    endpoint.get.in("scene").in(auth.bearer[String])
+  val getAllScenes: ZEndpoint[String, APIError, List[Scene]] =
+    endpoint.get.in("scene").in(authBearer)
       .out(jsonBody[List[Scene]]).errorOut(jsonBody[APIError])
       .description("Fetch all the scene descriptions for the authenticated user")
 
-  val getScene: Endpoint[(String, String), APIError, Scene, Nothing] =
-    endpoint.get.in("scene" / path[String]("sceneId")).in(auth.bearer[String])
+  val getScene: ZEndpoint[(String, String), APIError, Scene] =
+    endpoint.get.in("scene" / path[String]("sceneId")).in(authBearer)
       .out(jsonBody[Scene]).errorOut(jsonBody[APIError])
       .description("Fetch all a single scene descriptions for the authenticated user")
 
-  val getSceneImage: Endpoint[(String, String), APIError, Array[Byte], Nothing] =
-    endpoint.get.in("scene" / path[String]("sceneId") / "png").in(auth.bearer[String])
+  val getSceneImage: ZEndpoint[(String, String), APIError, Array[Byte]] =
+    endpoint.get.in("scene" / path[String]("sceneId") / "png").in(authBearer)
       .out(byteArrayBody)
       .out(header("Content-Type", "image/png"))
       .errorOut(jsonBody[APIError])
@@ -95,7 +88,6 @@ object zioEndpoints {
   }
 
   object scenes {
-
 
     val triggerRendering: ZServerEndpoint[Scenes with Users, (SceneDescription, String), APIError, DrawResponse] =
       endpoints.renderScene.zServerLogic { case (sceneDescription, at) =>
@@ -138,27 +130,21 @@ object zioEndpoints {
 
 object AllRoutes {
 
-    import zio.interop.catz._
-    import zio.interop.catz.implicits._
-    import sttp.tapir.server.http4s.ztapir._
-    import org.http4s.syntax.kleisli._
+  import zio.interop.catz._
+  import zio.interop.catz.implicits._
+  import sttp.tapir.server.http4s.ztapir.ZHttp4sServerInterpreter
+  import sttp.tapir.ztapir._
+  import org.http4s.syntax.kleisli._
 
-    import org.http4s.server.Router
-    import org.http4s.server.blaze.BlazeServerBuilder
-    import sttp.tapir.docs.openapi._
-    import sttp.tapir.openapi.Server
-    import sttp.tapir.openapi.circe.yaml._
-    import cats.implicits._
+  import org.http4s.server.Router
+  import org.http4s.server.blaze.BlazeServerBuilder
+  import sttp.tapir.docs.openapi._
+  import sttp.tapir.openapi.Server
+  import sttp.tapir.openapi.circe.yaml._
+  import cats.implicits._
 
-    val createUser: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.createUser.toRoutesR
-    val updateUserPwd: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.updatePassword.toRoutesR
-    val loginUser: URIO[Users, HttpRoutes[Task]] = zioEndpoints.user.login.toRoutesR
-    val triggerRendering: URIO[Scenes with Users, HttpRoutes[Task]] = zioEndpoints.scenes.triggerRendering.toRoutesR
-    val getScene: URIO[Scenes  with Users, HttpRoutes[Task]] = zioEndpoints.scenes.getScene.toRoutesR
-    val getAllScenes: URIO[Scenes  with Users, HttpRoutes[Task]] = zioEndpoints.scenes.getAllScenes.toRoutesR
-    val getSceneImage: URIO[Scenes with Users, HttpRoutes[Task]] = zioEndpoints.scenes.getSceneImage.toRoutesR
-
-    val openApiDocs: OpenAPI = Seq(
+  val openApiDocs: OpenAPI = OpenAPIDocsInterpreter.toOpenAPI(
+    List(
       endpoints.createUser,
       endpoints.updatePassword,
       endpoints.login,
@@ -166,22 +152,35 @@ object AllRoutes {
       endpoints.getScene,
       endpoints.getAllScenes,
       endpoints.getSceneImage,
-    ).toOpenAPI("Ray Tracing as a Service", "1.0")
-      .servers(List(Server("http://localhost:8090").description("local server")))
+    ), "Ray Tracing as a Service", "1.0"
+  ).servers(List(Server("http://localhost:8090").description("local server")))
 
-    val docsRoutes: HttpRoutes[Task] = new SwaggerHttp4s(openApiDocs.toYaml).routes[Task]
+  val docsRoutes = new SwaggerHttp4s(openApiDocs.toYaml)
 
-    val allRoutes: List[URIO[Users with Scenes with Logging, HttpRoutes[Task]]] = List(createUser, updateUserPwd, loginUser, triggerRendering, getScene, getAllScenes, getSceneImage)
+  type MyEnv = Users with Scenes with Logging
+  type F[A] = RIO[MyEnv, A]
+  type G[A] = RIO[MyEnv with Clock, A]
+  val allRoutes: HttpRoutes[G] = ZHttp4sServerInterpreter.from(
+    List(
+      zioEndpoints.user.createUser.widen[MyEnv],
+      zioEndpoints.user.updatePassword.widen[MyEnv],
+      zioEndpoints.user.login.widen[MyEnv],
+      zioEndpoints.scenes.triggerRendering.widen[MyEnv],
+      zioEndpoints.scenes.getScene.widen[MyEnv],
+      zioEndpoints.scenes.getAllScenes.widen[MyEnv],
+      zioEndpoints.scenes.getSceneImage.widen[MyEnv]
+    )
+  ).toRoutes
 
-  val serve: RIO[Users with Scenes with Logging, Unit] = for {
-      allRoutes <- ZIO.mergeAll(allRoutes)(docsRoutes)(_ <+> _)
+  val serve: G[Unit] = for {
+      allRoutes <- UIO.succeed(allRoutes <+> docsRoutes.routes[G])
       _         <- serveRoutes(allRoutes)
     } yield ()
 
-  def serveRoutes(rs: HttpRoutes[Task]): Task[Unit] = ZIO
-      .runtime[Any]
+  def serveRoutes(rs: HttpRoutes[G]): G[Unit] = ZIO
+      .runtime[MyEnv with Clock]
       .flatMap { implicit rts =>
-        BlazeServerBuilder[Task](rts.platform.executor.asEC)
+        BlazeServerBuilder[G](rts.platform.executor.asEC)
           .bindHttp(8090, "localhost")
           .withHttpApp(Router("/"-> rs ).orNotFound)
           .serve

@@ -50,6 +50,8 @@ lazy val `simple-http4s` = project
       tapirOpenAPICirce,
       tapirSwagger,
       tapirCirce,
+      tapirNewType,
+      tapirRefined,
       circeCore,
       circeParser,
       circeGeneric,

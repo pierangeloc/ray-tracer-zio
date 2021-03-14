@@ -27,7 +27,7 @@ object Main extends App {
       }.provideCustomLayer((ZLayer.identity[Blocking with Clock] ++ slf4jLogger) >>> Layers.programLayer).exitCode
   }
 
-  val program: ZIO[Users with Logging with Transactor with Scenes, BootstrapError, Unit] =
+  val program: ZIO[Users with Logging with Transactor with Scenes with Clock, BootstrapError, Unit] =
     for {
       _ <- log.info("Running Flyway migration...")
       _ <- DB.runFlyWay

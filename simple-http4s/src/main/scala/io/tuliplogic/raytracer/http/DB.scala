@@ -5,6 +5,7 @@ import zio.interop.catz._
 import doobie.hikari.HikariTransactor
 import io.tuliplogic.raytracer.http.types.AppError.{BootstrapError, DBError}
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.output.MigrateResult
 import zio.blocking.Blocking
 import zio.{Has, Runtime, Task, ZIO, ZLayer}
 
@@ -32,7 +33,7 @@ object DB {
         ).toManagedZIO.mapError(t => DBError("Error creating Hikari transactor", Some(t)))
     } yield transactor).toLayer
 
-  def runFlyWay: ZIO[Transactor, BootstrapError, Int] =
+  def runFlyWay: ZIO[Transactor, BootstrapError, MigrateResult] =
     ZIO.service[HikariTransactor[Task]].flatMap { transactor =>
       transactor.configure { ds =>
         for {

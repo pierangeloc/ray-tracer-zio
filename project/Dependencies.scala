@@ -35,6 +35,8 @@ object Dependencies {
 
   lazy val tapirZio           = "com.softwaremill.sttp.tapir" %% "tapir-zio"                % tapirZioVersion
   lazy val tapirCirce         = "com.softwaremill.sttp.tapir" %% "tapir-json-circe"         % tapirZioVersion
+  lazy val tapirNewType       = "com.softwaremill.sttp.tapir" %% "tapir-newtype"            % tapirZioVersion
+  lazy val tapirRefined       = "com.softwaremill.sttp.tapir" %% "tapir-refined"            % tapirZioVersion
   lazy val tapirZioHttp4s     = "com.softwaremill.sttp.tapir" %% "tapir-zio-http4s-server"  % tapirZioVersion
   lazy val tapirOpenAPI       = "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs"       % tapirZioVersion
   lazy val tapirOpenAPICirce  = "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % tapirZioVersion
