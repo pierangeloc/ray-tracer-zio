@@ -5,6 +5,7 @@ object Dependencies {
   val tapirZioVersion = "0.17.16"
 
   val zioVersion       = "1.0.5"
+  val zioMagicVersion  = "0.1.12"
   val zioCatsVersion   = "2.3.1.0"
 //  val zioMacrosVersion = "0.6.0"
 
@@ -25,6 +26,7 @@ object Dependencies {
   lazy val zio         = "dev.zio"       %% "zio"              % zioVersion
   lazy val zioStreams  = "dev.zio"       %% "zio-streams"      % zioVersion
   lazy val zioCats     = "dev.zio"       %% "zio-interop-cats" % zioCatsVersion
+  lazy val zioMagic    = "io.github.kitlangton" %% "zio-magic" % zioMagicVersion
 
   lazy val fs2 = "co.fs2" %% "fs2-io" % fs2Version
 

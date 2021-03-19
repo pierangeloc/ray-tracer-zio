@@ -9,6 +9,7 @@ import io.estatico.newtype.ops._
 import zio.Has
 
 package object http {
+
   // ----- Coercible codecs -----
   implicit def coercibleDecoder[A: Coercible[B, *], B: Decoder]: Decoder[A] =
     Decoder[B].map(_.coerce[A])
@@ -21,14 +22,6 @@ package object http {
 
   implicit def coercibleKeyEncoder[A: Coercible[*, B], B: KeyEncoder]: KeyEncoder[A] =
     KeyEncoder[B].contramap[A](_.coerce[B])
-
-//  implicit def coercibleSchema[
-//    A: Coercible[B, *],
-//    B: Schema
-//  ]: Schema[A] = {
-//    val bSchema = implicitly[Schema[B]]
-//    Schema[A](bSchema.schemaType, bSchema.isOptional, bSchema.description, bSchema.format)
-//  }
 
   type EmailPred = MatchesRegex[W.`"""^[A-Za-z0-9+_.-]+@(.+)$"""`.T]
   type EmailValue = String Refined EmailPred

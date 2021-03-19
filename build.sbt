@@ -38,6 +38,7 @@ lazy val `simple-http4s` = project
     mainClass in reStart := Some("io.tuliplogic.raytracer.http.Main"),
       libraryDependencies ++= (Seq(
       zio,
+      zioMagic,
       zioCats exclude("dev.zio", "zio-test"),
       cats,
       catsEffect,
@@ -72,6 +73,7 @@ lazy val geometry = project
     name := "geometry",
     libraryDependencies ++= Seq(
       zio,
+      zioMagic,
       zioCats exclude("dev.zio", "zio-test"),
       cats,
       catsEffect,
@@ -93,6 +95,7 @@ lazy val commons = project
     name := "commons",
     libraryDependencies ++= Seq(
       zio,
+      zioMagic,
       zioStreams,
       cats,
       mouse
@@ -106,6 +109,7 @@ lazy val `ray-tracer` = project
     name := "ray-tracer",
     libraryDependencies ++= Seq(
       zio,
+      zioMagic,
       zioCats exclude("dev.zio", "zio-test"),
       cats,
       catsEffect,
